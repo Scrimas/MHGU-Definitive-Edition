@@ -783,11 +783,67 @@ def wholemap_offsets(d):
     return bytes(b), 'whole-map offsets -> 4U m19 %s' % new
 
 
+# Supply rocket (issue #47; C unless marked). GU's delivery service sOtodokeService (0x1908d4) drops items by rocket,
+# stage shell st009 spawned by 0x502a88 in the hunter's current area (sStage +0x49) at that area's record of this file:
+# s16 x, y, z at +0xc, u16 yaw in degrees at +0x12 (memory +0x10 / +0x16, read through 0x4f9040). The rocket falls to
+# that height, then offers its item through a kind-36 interaction record of radius 150 / height 200 (0x499a08): only a
+# hunter within ~1 m of that height reaches it. An alias kept the GU stage's points, which miss the 4U floors (the
+# Heaven's Mount camp's hangs 11 m up), while all 10 of GU m24's lie within 1 m of its own floor.
+def rocket_spot(g00, sis_d):
+    """(x, y, z) on a flat floor of the area: 5 m (then 4, 6, 3, 7, 8, 2, 10 m) from one of its SIS arrival points
+    (the quest start's first), at the height of the floor a hunter lands on there (the highest up to 6 m below the
+    point: some 4U arrivals drop in), with floor within 30 of that height all around at 150 (the pickup reach); None
+    when no arrival has one"""
+    import sbc, sis
+    s = sbc.parse(g00)
+    V = np.frombuffer(s['verts'], '<f4').reshape(-1, 4)[:, :3]
+    tri = lambda p, k: 32 * (p['pairs'][2] + k)
+    T = np.array([V[[p['pairs'][4] + v for v in struct.unpack_from('<3H', s['tris'], tri(p, k) + 12)]]
+                  for p in s['parts'] for k in range(p['pairs'][3])
+                  if struct.unpack_from('<f', s['tris'], tri(p, k) + 4)[0] >= 0.9])     # normal y: walkable
+    det = (T[:, 1, 2] - T[:, 2, 2]) * (T[:, 0, 0] - T[:, 2, 0]) + (T[:, 2, 0] - T[:, 1, 0]) * (T[:, 0, 2] - T[:, 2, 2])
+    T, det = T[np.abs(det) > 1e-6], det[np.abs(det) > 1e-6]
+    a, b, c = T[:, 0], T[:, 1], T[:, 2]
+
+    def floors(x, z):
+        l1 = ((b[:, 2] - c[:, 2]) * (x - c[:, 0]) + (c[:, 0] - b[:, 0]) * (z - c[:, 2])) / det
+        l2 = ((c[:, 2] - a[:, 2]) * (x - c[:, 0]) + (a[:, 0] - c[:, 0]) * (z - c[:, 2])) / det
+        l3 = 1 - l1 - l2
+        return (l1 * a[:, 1] + l2 * b[:, 1] + l3 * c[:, 1])[(l1 >= 0) & (l2 >= 0) & (l3 >= 0)]
+
+    def near(x, z, y, tol):
+        h = floors(x, z)
+        h = h[np.abs(h - y) < tol]
+        return float(h[np.argmin(np.abs(h - y))]) if len(h) else None
+    arr = [(r[0x11], struct.unpack_from('<3f', r, 4)) for r in sis.parse(sis_d)['sec'][2]]
+    for _, (ax, ay, az) in sorted(arr, key=lambda e: e[0] != 0xff):
+        h = floors(ax, az)
+        h = h[(h <= ay + 50) & (h >= ay - 600)]
+        if not len(h): continue
+        for r in (500, 400, 600, 300, 700, 800, 200, 1000):
+            for k in range(24):
+                x, z = ax + r * np.cos(k * np.pi / 12), az + r * np.sin(k * np.pi / 12)
+                y = near(x, z, float(h.max()), 150)
+                if y is not None and all(near(x + 150 * np.cos(j * np.pi / 4), z + 150 * np.sin(j * np.pi / 4), y, 30)
+                                         is not None for j in range(8)):
+                    return int(round(x)), int(round(y)), int(round(z))
+    return None
+
+
+def rocket_spots(d, spots):
+    """the stage record file d (T_WMAP) with {area: (x, y, z)} as its supply rocket landing points (GU's yaw kept)"""
+    b = bytearray(d)
+    for a, p in spots.items():
+        struct.pack_into('<3h', b, 8 + 20 * a + 12, *p)
+    return bytes(b)
+
+
 def build_map_com(report):
     import sbc
     ver, ents = arcpack.read(open(os.path.join(GUX, 'loc', 'arc', 'stage', 'map_com', 'm26.arc'), 'rb').read())
     rows = []
     out = []
+    ground, sis_d = {}, {}               # alias area -> its converted ground collision / SIS (rocket_spot)
     for p, t, d in ents:
         if t == T_SBC:
             name = p.split('\\')[-1]
@@ -799,11 +855,13 @@ def build_map_com(report):
                     d = sbc.convert_4u(d4)
                     s = sbc.parse(d)
                     rows.append((p, ALIAS_COLLISION[area] + src, len(s['parts']), s['nA'], s['nB'], s['nC']))
+                    if kind == '-a-g00': ground[int(area[4:6])] = d
                 else:
                     rows.append((p, 'Fortress (kept)'))
         elif t == T_SIS and p.split('\\')[-1][:7] in ALIAS_SIS:
             src = ALIAS_SIS[p.split('\\')[-1][:7]]
             d = convert_sis(src)
+            sis_d[int(p.split('\\')[-1][4:6])] = d
             rows.append((p, src + '-info (area numbers remapped)'))
         elif t == T_WMAP and p == 'stage\\m26d\\m26d':
             d, what = wholemap_offsets(d)
@@ -826,6 +884,10 @@ def build_map_com(report):
             d, what = relation_for(sbc.convert_4u(g00), d)
             rows.append((p, '%s floors -> %s' % (area4, what)))
         out.append((p, t, d))
+    spots = {a: rocket_spot(ground[a], sis_d[a]) for a in WMAP_AREAS}  # 4U m19 has no per-area point (WMAP_4U)
+    assert all(spots.values()), ('no supply rocket spot', spots)
+    out = [(p, t, rocket_spots(d, spots) if (p, t) == ('stage\\m26d\\m26d', T_WMAP) else d) for p, t, d in out]
+    rows.append(('stage\\m26d\\m26d', 'supply rocket landing points -> %s (4U floors, rocket_spot)' % spots))
     report['collision'] = rows
     return out
 

@@ -489,16 +489,20 @@ def exits_walkable(d):
 
 
 def wholemap_4u():
+    """4U m05 whole map: (W, [(x, z) offset per area], [per-area point]); 4U's 24-B records {s32 x, s32 z, u32,
+    f32 10000, u16, s16 x, y, z} end with a point as GU's 20-B ones do (0, 0, 0 in areas 0 and 4; the other seven
+    lie on the 4U floor to 1 cm, so they serve as the supply rocket's, issue #47)"""
     m = open(MEM4U, 'rb').read()
     u = lambda a: struct.unpack_from('<I', m, a - 0x100000)[0]
     recs = u(AMAP05_WMAP)
-    return u(AMAP05_WMAP + 4), [struct.unpack_from('<2i', m, recs + 24 * a - 0x100000) for a in range(N4)]
+    return u(AMAP05_WMAP + 4), [struct.unpack_from('<2i', m, recs + 24 * a - 0x100000) for a in range(N4)], \
+        [struct.unpack_from('<3h', m, recs + 24 * a + 0x12 - 0x100000) for a in range(N4)]
 
 
 def wholemap_offsets(d):
     """GU whole-map records (f32, u32 n, n x 20 B {s32 x, s32 z, ...}) with 4U m05's offsets for areas 0..8 (area 9
     keeps GU's: no 4U area)"""
-    w, offs = wholemap_4u()
+    w, offs, _ = wholemap_4u()
     b = bytearray(d)
     assert struct.unpack_from('<I', b, 4)[0] == NGU and len(b) == 8 + 20 * NGU, len(b)
     for a, o in enumerate(offs):
@@ -612,7 +616,7 @@ def build_map_com(rep):
     empty_wp = E[('stage\\_way_point\\map%d\\%sa00' % (STAGE, G), T_WP)]
     assert len(empty_pp) == 12 and len(empty_wp) == 153, (len(empty_pp), len(empty_wp))
     graph = area_graph()
-    g00 = {}
+    g00, sis_d = {}, {}
     rows = []; out = []; seen = set(); dropped = []
     area_rx = '|'.join('%02d' % a for a in range(N4))
     for p, t, d in ents:
@@ -628,6 +632,7 @@ def build_map_com(rep):
         elif t == T_SIS and re.match(r'%sa(%s)d-info$' % (G, area_rx), name):
             a = name[4:6]
             d, walk = exits_walkable(u4('stage\\m05d\\m05a%sd\\m05a%sd-info' % (a, a), T_SIS))
+            sis_d[int(a)] = d
             rows.append((p, 'm05a%sd-info (verbatim: same area numbers%s)' % (a, walk)))
         elif (p, t) in ITEM_POPS and t == T_IPL:
             d, what = gu_ipl(u4(ITEM_POPS[(p, t)], t), gu_item())
@@ -681,6 +686,13 @@ def build_map_com(rep):
             d, what = s4.relation_for(g00[a], d)
             rel.append((p, 'm05a%02dd floors: %s' % (a, what)))
         out.append((p, t, d))
+    # the supply rocket's landing points (issue #47, stage4u2gu.py "Supply rocket"): 4U's per-area point where it
+    # has one (wholemap_4u), else a spot on the area's floor; area 9 (no 4U area) keeps GU's
+    spots = {a: p4 if any(p4) else s4.rocket_spot(g00[a], sis_d[a]) for a, p4 in enumerate(wholemap_4u()[2])}
+    assert all(spots.values()), ('no supply rocket spot', spots)
+    wmap = ('stage\\%sd\\%sd' % (G, G), T_WMAP)
+    out = [(p, t, s4.rocket_spots(d, spots) if (p, t) == wmap else d) for p, t, d in out]
+    rows.append((wmap[0], 'supply rocket landing points -> %s (4U m05 points, areas 0 / 4 rocket_spot)' % spots))
     rep['map_com'] = rows + rel
     rep['map_com_dropped'] = dropped
     assert len([r for r in rows if r[0].endswith(('-g00', '-w00', '-g00-shell', '-w00-shell', '-cam'))]) == 5 * N4

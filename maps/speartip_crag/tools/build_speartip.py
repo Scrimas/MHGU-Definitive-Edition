@@ -297,6 +297,7 @@ def wholemap_offsets(d):
 def build_map_com(rep):
     ver, ents = arcpack.read(gu_file('loc/arc/stage/map_com/%s.arc' % G))
     rows = []; out = []; seen = set()
+    ground, sis_d = {}, {}                  # area -> its 4U ground collision / SIS (s4.rocket_spot)
     for p, t, d in ents:
         name = p.split('\\')[-1]
         if t == T_SBC and re.match(r'%sa0[01]d-a-' % G, name):
@@ -305,9 +306,11 @@ def build_map_com(rep):
             d = sbc.convert_4u(d4)
             s = sbc.parse(d)
             rows.append((p, area4 + src, [x['id'] for x in s['parts']], s['nA'], s['nB'], s['nC']))
+            if kind == '-a-g00': ground[int(name[4:6])] = d
         elif t == T_SIS and re.match(r'%sa0[01]d-info' % G, name):
             a4 = 'm08' + name[3:7]
             d = open(os.path.join(U4, 'm08', 'stage', 'm08d', a4, '%s-info.%08x' % (a4, T_SIS)), 'rb').read()
+            sis_d[int(name[4:6])] = d
             rows.append((p, 'm08' + name[3:7] + '-info (verbatim: same area numbers)'))
         elif (p, t) in ITEM_POPS:
             src = ITEM_POPS[(p, t)]
@@ -327,6 +330,12 @@ def build_map_com(rep):
         seen.add((p, t))
         out.append((p, t, d))
     assert len(seen) == 10 + 2 + 4 + 2 + 1, sorted(seen)
+    # the supply rocket's landing points (issue #47, stage4u2gu.py "Supply rocket"): 4U m08 has no per-area point
+    spots = {a: s4.rocket_spot(ground[a], sis_d[a]) for a in (0, 1)}
+    assert all(spots.values()), ('no supply rocket spot', spots)
+    wmap = ('stage\\%sd\\%sd' % (G, G), T_WMAP)
+    out = [(p, t, s4.rocket_spots(d, spots) if (p, t) == wmap else d) for p, t, d in out]
+    rows.append((wmap[0], 'supply rocket landing points -> %s (4U floors, rocket_spot)' % spots))
     rep['map_com'] = rows
     return out
 

@@ -234,6 +234,10 @@ pairs where possible (tools/dt_vote.py, dt_map.py, snd4u2gu.py selftest), then a
   4U's (Heaven's Mount shipped 4U's IDs up to 1.0.0: wrong items). By English name, the earlier ports' substitutes,
   and the closest GU item for a 4U-only one (no item is added for a map; maps/heavens_mount/tools/
   items_heavens_mount.py, build_heavens_mount.py gu_ipl).
+- Supply rockets: the map_com stage record (`stage\mNNd\mNNd`, type 0x6ff78212) also holds each area's landing point
+  of GU's supply rocket, not only the whole-map offsets. GU's points miss the 4U floors and the rocket can't be
+  reached (issue #47): set them with stage4u2gu.py rocket_spot / rocket_spots ("Supply rocket"), or with 4U's own
+  per-area point where 4U's record has one (Heaven's Mount).
 - Harvest Tours: if 4U has tours on the map, they belong to the map package (a monster requiring the map brings
   them, and so does the installer's Harvest Tours bundle, bundles/harvest_tours: add the map to its `requires`).
   Stars: the MHGU precedent of the closest GU map (ask the maintainer); IDs in allocations.toml `[[map]]` (quests,
