@@ -34,8 +34,8 @@ version = "0.1.18"      # bump on every published change of this package's files
                         # seltas_shots.c), a new Desert Seltas enters buried for his Queen's pull as in 4U (module
                         # seltas.c buried_entry; he flew in before); 0.1.9: on
                         # MHGU Definitive Edition 2.0.0 (its package keys, the core's mhgu_de data folder), a test
-                        # log of where each of their shells takes its effects from (module seltas_shots.c, the user
-                        # on 0.1.8: his shots on her back still green); 0.1.8:
+                        # log of where each of their shells takes its effects from (module seltas_shots.c, the
+                        # contributor on 0.1.8: his shots on her back still green); 0.1.8:
                         # his volley's ground splash in his own 4U colours (tools/shots_seltas.py family 0x13a, module
                         # seltas_shots.c hook 0xFDCBE4; it was GU's green splash), all their soil-coloured dust at
                         # 1x (build_seltas_arc.py own_sand: her pull of him out of the sand was bright yellow); 0.1.7:

@@ -31,7 +31,7 @@ and CB Maximinsect (52: half, 4 of 8 items), and the lines of other monsters wit
 Zamtrista Akzar, White Catastrophe, Dragonwood Godblade, Webbonscylla and others).
 Data: affinity, defense, slots, rarity, price, bowgun ammo, GL shelling, DB second element = the 4U records'. Raw and element = the 4U
 records' on GU's balance (each class's median of GU's final level / 4U over the weapons both games have by name at 4U G rarity,
-weapons4u.gu_scale; raw to tens), as Shrouded Nerscylla's (the user: "Skaliere ... Waffen ... wenn nötig auf MHGU Niveau"), a DEVIATION
+weapons4u.gu_scale; raw to tens), as Shrouded Nerscylla's (the contributor: "scale ... weapons ... to MHGU's level where needed"), a DEVIATION
 from 4U, wanted. No status weapon in their lines (water, C).
 Sharpness: mKireType is a byte and the table is full (C): entries GU holds take its row. The others keep their 4U row in KIRX (weapons4u
 exact; module/gear.c answers GU's sharpness getter 0xf4724 with it), and mKireType holds the GU row nearest the 4U entry (kire_near: the

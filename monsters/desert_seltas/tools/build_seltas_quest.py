@@ -7,7 +7,7 @@
 Writes (default DIR = monsters/desert_seltas/romfs), per quest: the quest arc, loose questData / questLink and the 5 GMDs
 (tools/quest4u.py assemble / write).
 
-Their 4U quests (C, all of quest00 / 01.arc; their event quests are left out, the user 2026-11-09):
+Their 4U quests (C, all of quest00 / 01.arc; their event quests are left out, the contributor 2026-11-09):
   m01030  caravan 10 star (G), the Dunes (17): hunt a Desert Seltas; subquest break his horn
   m10805  guild G1, the Ancestral Steppe (1): hunt a Desert Seltas; a Rajang intrudes (+0x30: 100 %, stat block 2)
   m10815  guild G1, the Dunes: slay 30 Bnahabra, subquest slay 8 Konchu; a Desert Seltas intrudes (100 %, stat block 2)
@@ -20,9 +20,9 @@ Their 4U quests (C, all of quest00 / 01.arc; their event quests are left out, th
           names a Shrouded Nerscylla for X in all 5 languages, its file spawns a Cephadrome (em 105): the text here names the
           Cephadrome (the monster that comes)
   Not ported: m10812 (Purple Gypceros on the Sunken Hollow, Desert Seltas its 50 % intruder): GU has neither.
-Placement (the user's rules, 2026-11-08): caravan -> village (1068, 10 star G), guild -> hub, ranks by the README rule: 4U's G1
+Placement (the contributor's rules, 2026-11-08): caravan -> village (1068, 10 star G), guild -> hub, ranks by the README rule: 4U's G1
 Desert Seltas sits with 4U's G1 Seltas and GU's Seltas hunt q11103 is G1 -> hub G1; 4U's G2 Queen sits with 4U's G2 Seltas Queen
-and GU's lowest G Seltas Queen quest q11305 is G3 -> hub G3. No quest waits for a GU monster's own quest (the user 2026-11-09:
+and GU's lowest G Seltas Queen quest q11305 is G3 -> hub G3. No quest waits for a GU monster's own quest (the contributor 2026-11-09:
 G rank quests).
 
 Sources (C unless marked):
@@ -74,7 +74,7 @@ Sources (C unless marked):
   Rewards        their own materials (items_seltas.py, appended IDs), the other 4U items as items_seltas OTHER_4U_GU /
                  SUBSTITUTES, else by English name in GU itemData_eng; a 4U item GU lacks is left out, logged. Reward slots
                  3 / 4 = GU's empty row rem_000000.
-  Frenzy         spawn byte +0xF 1 (m10818, m10928): GU has no frenzy (the user: left out), logged per quest.
+  Frenzy         spawn byte +0xF 1 (m10818, m10928): GU has no frenzy (the contributor: left out), logged per quest.
   Night Dunes    m10924 (4U 18) -> GU's Dunes (5): GU has no night Dunes, a DEVIATION with the stage (Shrouded Nerscylla's).
 GU emSetList (C over 3608 records of 136 GU quest sets): 'esl\\0', u32 2, 14 u32 block offsets (block k = area k + 1, 0 = none),
 a block 'ESD\\0', u32 0x20151214, u16 n, then n records of 0x24 B {u16 em, u8 count, 0xcd, u8 link, u8 area, u8 a, u8 b, 0, 0,

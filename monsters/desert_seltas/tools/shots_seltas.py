@@ -20,29 +20,29 @@ shell00 10 / 21. GU's hit entries are 4U's records converted: shell37 0 = record
 0 = uShell001 33 (kind 36), 1 = 92 (90, shared). So each copy = GU's def with its PEL (and hit data) on ours: a PEL
 with GU's list-2 records of those ids on their 4U EFLs (mask: 4U's; -1 = all), hit entries with the bytes where the
 Desert record differs from GU's source record. GU's kind files (ef / snd / hit / sh) stay shared: they name no PEL.
-Colour (0.1.6, C unless marked; the user on 0.1.5: his spit on her back is green): the species' 4U shot EFLs em025_001 /
-002 / 005 carry a colour block for a code colour (header +0x2c word 0 bit 4, +0xc byte 2 set: tools/efl4u2gu.py
-efl_colour_block), theirs (em094_201..203, em095_020 / 021) none, so 4U draws their shots in their EFLs' own colours.
-GU moved the species' code colours into its list-2 records: em076_00u ids 0 / 11 sand aa9650, ids 1 / 21 green 788c46,
-mode +0x71 3 (RGB lerp, alpha kept) at factor +0x68 1.0; records 0 and 1 differ only in id, element mask and that colour.
-GU's own kinds draw them (S: through the kinds, the record's +0x70 is 0): shell37 kinds 6-8 (4U subtype 13, his 7/57
-on her back) and shell00 (7/52) take the green. Our records keep GU's bytes but white at factor 0 (NEUTRAL): no tint
-in either mode, their EFL colours as in 4U. The Queen's records carry GU's default black at 0.5 (as GU's normal
-Queen's); neutral too, by the same 4U rule (her EFLs have no colour block either).
+Colour (0.1.6, C unless marked; the contributor on 0.1.5: his spit on her back is green): the species' 4U shot EFLs
+em025_001 / 002 / 005 carry a colour block for a code colour (header +0x2c word 0 bit 4, +0xc byte 2 set:
+tools/efl4u2gu.py efl_colour_block), theirs (em094_201..203, em095_020 / 021) none, so 4U draws their shots in their
+EFLs' own colours. GU moved the species' code colours into its list-2 records: em076_00u ids 0 / 11 sand aa9650, ids 1 /
+21 green 788c46, mode +0x71 3 (RGB lerp, alpha kept) at factor +0x68 1.0; records 0 and 1 differ only in id, element
+mask and that colour. GU's own kinds draw them (S: through the kinds, the record's +0x70 is 0): shell37 kinds 6-8 (4U
+subtype 13, his 7/57 on her back) and shell00 (7/52) take the green. Our records keep GU's bytes but white at factor 0
+(NEUTRAL): no tint in either mode, their EFL colours as in 4U. The Queen's records carry GU's default black at 0.5 (as
+GU's normal Queen's); neutral too, by the same 4U rule (her EFLs have no colour block either).
 4U's code colours themselves (C, 0.1.8): uShell001 init 0xc4c54c hands the setter 0xc48378 the colour of its kind from
 the table 0x10ba3fc, which the static initializer 0xd34794 fills: kinds 36 / 90 = 788c46 green, 74 / 91 / 117 / 118
 white. So their own kinds take no colour in 4U, also where an EFL had a colour block.
-The ground splash (0.1.8, C; the user on 0.1.7 with a picture: green splashes and a green puddle on the ground when
-he fires from her back): GU's Seltas shell class (table slot at 0x17ee9d0 = 0xfdca90) posts, at a ground hit (its mode
-1), GU's shell 0x13a = em076_00_shell01 as the splash: kind 3 for a shell of kind 3 (7/63's shots, modes 1 / 2 of
+The ground splash (0.1.8, C; the contributor on 0.1.7 with a picture: green splashes and a green puddle on the ground
+when he fires from her back): GU's Seltas shell class (table slot at 0x17ee9d0 = 0xfdca90) posts, at a ground hit (its
+mode 1), GU's shell 0x13a = em076_00_shell01 as the splash: kind 3 for a shell of kind 3 (7/63's shots, modes 1 / 2 of
 0xfd7c78: list-2 id 999, nothing drawn), kind 2 for every other (his volley 7/52 7/60, kinds 0..2) = em076_00u id 20,
 em076_00_002 in green at 1.0. The 0.1.3 swap never reached it (its post is 0xfdcbec, not one of the class's shots).
 4U has no second shell there: uShell001 draws its ground effect itself (0x1017d60: kinds 117 / 118 -> (70, 11) =
 em094_202, mask 1 / 2; the species' 36 / 74 -> em025_002 = GU's em076_00_002). So their copy = GU's shell01 def on a
 PEL whose ids 10 / 20 are em094_202 (GU's masks), neutral. Its 4 hit entries match no 4U uShell001 / uShell012 record
 (GU's own, not traced in 4U) but carry the species' shot status bytes (below): theirs get his (build_status_hits).
-The other ground posts (0.1.10, C; the user on 0.1.9: on her back the shots are still green where they land; the 0.1.9
-test log, quest 11372, named each effect post): (a) his 7/57 shots (shell37) took GU's def of 0x13a with kind 1 =
+The other ground posts (0.1.10, C; the contributor on 0.1.9: on her back the shots are still green where they land; the
+0.1.9 test log, quest 11372, named each effect post): (a) his 7/57 shots (shell37) took GU's def of 0x13a with kind 1 =
 em076_00u id 20, the green em076_00_002. That post is not the shell class's: GU's Seltas class has a shell callback
 (0xfc6a30, table word 0x17ecf48) that posts the shell id the unit keeps at this+0xcac8 (0x13a) with a kind from a table,
 requests 0xfc6c08 / 0xfc6df0, owner = the shot's owner. The module marks both for the Desert Seltas, so they take the

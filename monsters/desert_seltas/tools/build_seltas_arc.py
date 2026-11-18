@@ -67,14 +67,14 @@ HIDDEN_GROUPS = (50,)
 # 4U's common dust at 1x (Shrouded Nerscylla's DUST_1X: 4U's Intensity 1 baked x2 draws it white-yellow in GU); their own sand too (own_sand(),
 # since 0.1.4; every soil-coloured file since 0.1.8); their other own effects keep the bake
 DUST_1X = tuple('qe006_%03d' % k for k in range(64))
-# Her shot (0.1.13; the user on 0.1.12: "die Königin schießt ab und zu so 3 riesen Geschosse ab, die sind zu hell belichtet"): her 7/9 7/15 7/34 7/79
+# Her shot (0.1.13; the contributor on 0.1.12: "now and then the Queen fires about 3 huge shots, they are lit too brightly"): her 7/9 7/15 7/34 7/79
 # post three of GU's shell 0x127 on our copy (tools/shots_seltas.py: flight em095_020, hit em095_021; her ground splash em095_021 too). Their
 # particle units carry 4U's Intensity 1 (C: em095_020 units ff708c87 / ffb5fff0, em095_021 ff609e90 / ff7fb299), and x2 clamps them to nearly
-# white (b5fff0 -> ffffff); his flight em094_201 has no such unit (his shots look right to the user). At 1x like the dust: a DEVIATION from 4U's
+# white (b5fff0 -> ffffff); his flight em094_201 has no such unit (his shots look right to the contributor). At 1x like the dust: a DEVIATION from 4U's
 # brightness, for GU's look (the dust's lesson: 4U's x2 draws too bright in GU).
 SHOT_1X = ('em095_020', 'em095_021')
 SOLID_FILL = (127, 127, 127, 255)       # colourless 4U solid effect meshes: vertex RGB 127 = 1.0
-# Her underside glow 'XfB__m03_add' (0.1.17; the user on 0.1.16: "am Schwanz der Königin wirken die Texturen an der Unterseite des Schwanzes komisch"):
+# Her underside glow 'XfB__m03_add' (0.1.17; the contributor on 0.1.16: "on the Queen's tail the textures on its underside look odd"):
 # a 4U constant-colour additive overlay (CBMaterialConstant, RSMeshBias10; mesh 29, g14: 112 vertices on the underside of her thorax and abdomen, 90 of
 # them on body vertices). 4U em095's material = 4U em026's (the Seltas Queen) byte for byte, its 4 animations too, and Capcom's GU em069_00 draws it
 # unlit with the constant's alpha: 'Normal' (alpha 0 = off), 'Angry_Start' / 'Angry_Repeat' / 'Angry_End' (C: the names are GU strings, the keys 4U's
@@ -472,10 +472,10 @@ def pel_names(pel, li):
 
 
 def gu_common_effects(e, psl, gu_psl, her_u, gu_c, bank, ground, notes):
-    """the user's rule (2026-11-06): where an animation is the same as GU's, GU's effects, as with the roar. Their banks and GU's have equal frames in
+    """the contributor's rule (2026-11-06): where an animation is the same as GU's, GU's effects, as with the roar. Their banks and GU's have equal frames in
     every shared slot (motion_bank), so GU's slots fit. GU's common effects (PEL c, kind 3, its cm* files: air, dust, spray) go into their entry and
     replace their 4U common effects (kind 4, qe*: 4U's dust) there; their own em094_* / em095_* effects stay, but for their sand on the ground (MEF
-    ground flag, ids `ground`) where GU's motion has its own dust (cm202_*): the user's rule on environment effects (2026-11-08: sand and dust are GU's
+    ground flag, ids `ground`) where GU's motion has its own dust (cm202_*): the contributor's rule on environment effects (2026-11-08: sand and dust are GU's
     where GU has a fitting one; 0.1.3 test: the Queen's 4U sand every 15 frames of her walk next to GU's steps). Where GU's motion has no common
     effect, theirs stay as they are. GU's commons of other grounds: none of GU's Seltas' or Seltas Queen's PEL c files is a forest debris (cm200_067,
     Shrouded Nerscylla's lesson; C, their lists: cm202_* dust / air, cm200_* splashes, cm104_000)"""
@@ -589,9 +589,9 @@ def soil_units(d):
 def own_sand(e, S, groups):
     """their own 4U sand and dust: every own EFL whose units 4U multiplies by the area (soil) colour (soil_units), the ones their MEF ground-flag
     records name and the others. Drawn at 1x like 4U's common dust (DUST_1X): 4U's Intensity 1 baked x2 into the soil-multiplied grey made them
-    bright yellow-white in GU (the user on 0.1.3, 2026-11-09: "grell gelb schon fast weiß"), e.g. the Queen's em095_000 unit 11: (178, 178, 178) x
+    bright yellow-white in GU (the contributor on 0.1.3, 2026-11-09: "glaring yellow, almost white"), e.g. the Queen's em095_000 unit 11: (178, 178, 178) x
     the Dunes soil x 2 = (255, 230, 162), at 1x (147, 115, 81), the brown of GU's own Dunes dust (cm202_002's sand (159, 127, 95), Shrouded
-    Nerscylla's lesson). Up to 0.1.7 only the ground-flag ones: the user on 0.1.4 (2026-11-10, "grell gelb" when the Queen pulls him out of the
+    Nerscylla's lesson). Up to 0.1.7 only the ground-flag ones: the contributor on 0.1.4 (2026-11-10, "glaring yellow" when the Queen pulls him out of the
     ground) saw her em095_028 / 029 (her call 7/72, motion 0x465) at (255, 231, 163); his em094_006 / 007 and her em095_023 were x2 as well.
     Each such file holds soil units only (asserted), so no other unit loses its Intensity."""
     mef = efl4u2gu.mef_records(S[(e.c['mef'], efl4u2gu.T['MEF'])])
@@ -620,7 +620,7 @@ def effects(e, S, gu_pel_u, gu_pel_c, gu_psls, soil, notes):
                 hide_grey_models='chunks')
     log = []
     out = efl4u2gu.effect_set(spec, log)
-    # Their own rock model (0.1.16; the user on 0.1.15: at one of her moves "Steine am Boden, komplett schwarz"): their
+    # Their own rock model (0.1.16; the contributor on 0.1.15: at one of her moves "stones on the ground, completely black"): their
     # ground EFLs (the soil-coloured ones, own_sand) also draw grey rock units with their own effect model ef_em09N,
     # which the shared rule (hide_grey_models 'chunks': CHUNK_MODELS only) does not name; GU draws them black. The same
     # rule as the project's (issue #6: grey 4U rock-chunk model units dropped, "gone entirely") on those files with

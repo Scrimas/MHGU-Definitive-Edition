@@ -11,7 +11,7 @@ Choices (the rules of Black Gravios', Monoblos', Tidal Najarala's and Shrouded N
   - Template: GU Seltas X (914 / 915, G rank, the same species line: 4U's Seltas X is the Seltas Queen's G set): max level, limit levels,
     defense table, sound, look.
   - Defense: 4U defense x the GU / 4U ratio of the template's set: 4U Seltas Helm X / Cap X (ANCHORS: 96 / 52) -> GU Seltas X (122 / 73).
-    Scaled on GU's balance, as the user asked ("Skaliere ... Waffen und Rüstungen wenn nötig auf MHGU Niveau").
+    Scaled on GU's balance, as the contributor asked ("scale ... weapons and armor to MHGU's level where needed").
   - Skills by GU tree name: GU has every tree of the set (C), none dropped.
   - Level rows: the template's 5, the Seltas Queen's own material swapped for hers (LEVEL_SWAP: GU's rows ask Hyper S.Queen Cortex; GU has
     no Hyper Desert Seltas Queen, as Monoblos' Hyper Diablos Cortex and Tidal's Hyper Najarala Cortex); D.S.QueenConcentrate and the armor

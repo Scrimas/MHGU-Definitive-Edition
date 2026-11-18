@@ -578,8 +578,8 @@ Notes: monsters/tigerstripe_zamtrios/notes/ (plan, phase1-variant-map, missing-a
 - A kept variant test can stand right before a shell post and skip it: GU's Seltas class posts nothing for variant 1 at
   five shot sites where 4U posts the Desert Seltas' own subtypes (uShell012 56..59 for the Seltas' 6 / 7 / 13 / 24,
   uShell001 117 / 118 for 36 / 74), the Queen's class at one (7/56, her uShell001 92). An
-  attack that plays without its projectile is the sign (the user: "spit attacks without spit effects"). List every 4U
-  shell post with the species test before it and look at GU's twin of each, not only at its attack indexes.
+  attack that plays without its projectile is the sign (the contributor: "spit attacks without spit effects"). List
+  every 4U shell post with the species test before it and look at GU's twin of each, not only at its attack indexes.
 - A subspecies' own shot when its parent can share the quest: GU caches a shell family's def per shell id for every
   monster (0x48c388; all 412 ids are taken), so new kinds or a changed def under GU's path would reach the parent too
   (Desert Seltas' 11140 has a normal Seltas). Desert Seltas 0.1.3's way: copies of GU's defs under its own paths, on its

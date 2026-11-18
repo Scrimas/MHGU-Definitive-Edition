@@ -614,12 +614,12 @@ ui_icon = 208
 icon_4u = 103                           # his quests' board icon: 4U m01030 / m10805 / m10924 +0xE8 list 104 = index + 1
                                         # (right block; m10924 lists 105 for the Queen next to it)
 notes_entry = 132                       # past the save map: no save bit (module/notes.c)
-quests = [1068, 11138, 11139, 11140]    # 4U m01030 caravan -> village; m10805 / m10815 / m10818 guild -> hub (the user,
-                                        # 2026-11-08): m01030 (caravan ★10 G, Dunes) -> village ★10 G 1068; m10805 (G1,
-                                        # Anc. Steppe), m10815 (G1, Dunes: slay 30 Bnahabra, he comes at 100 %), m10818
-                                        # (G1, Anc. Steppe, with a Seltas) -> hub G1 11138 / 11139 / 11140, the rank of
-                                        # GU's Seltas hunt q11103. Not ported: m10812 (Purple Gypceros on the Sunken
-                                        # Hollow, he is its 50 % intruder; GU has neither)
+quests = [1068, 11138, 11139, 11140]    # 4U m01030 caravan -> village; m10805 / m10815 / m10818 guild -> hub (the
+                                        # contributor, 2026-11-08): m01030 (caravan ★10 G, Dunes) -> village ★10 G 1068;
+                                        # m10805 (G1, Anc. Steppe), m10815 (G1, Dunes: slay 30 Bnahabra, he comes at
+                                        # 100 %), m10818 (G1, Anc. Steppe, with a Seltas) -> hub G1 11138 / 11139 /
+                                        # 11140, the rank of GU's Seltas hunt q11103. Not ported: m10812 (Purple
+                                        # Gypceros on the Sunken Hollow, he is its 50 % intruder; GU has neither)
 quest_append = true                     # new quest list entries after GU's (module/quest.c), no quest_slots
 standin_alt = [0x45, 11140]             # m10818 has a real Seltas next to him: that quest names him by Seltas Queen
                                         # (none in it), swapped like standin_id (module/port.c port_standin)
@@ -658,8 +658,8 @@ icon_4u = 104                           # her quests' board icon: 4U m10924 / m1
 notes_entry = 133                       # past the save map: no save bit (module/notes.c)
 quests = [11374, 11373]                 # 4U m10924 (G2, night Dunes) and m10928 (G2, Dunes: a Cephadrome first, then her
                                         # with her Desert Seltas) -> hub G3, GU's lowest G rank of its Seltas Queen (q11305
-                                        # / q11346). Guild quests only, so she has no village quest (the user's rule).
-                                        # m10924 was 11372 until Heaven's Mount's G3 tour took it (not shipped)
+                                        # / q11346). Guild quests only, so she has no village quest (the contributor's
+                                        # rule). m10924 was 11372 until Heaven's Mount's G3 tour took it (not shipped)
 quest_append = true                     # new quest list entries after GU's (module/quest.c), no quest_slots
 items = [3058, 3062]                    # her 5 materials, 4U 1397..1401 (4U 1396 D.S.QueenConcentrate is GU's item 1032:
                                         # GU's Seltas Queen gives it; monsters/desert_seltas/tools/items_seltas.py)

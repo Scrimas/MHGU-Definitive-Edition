@@ -29,7 +29,7 @@ static int unit_gone(void *u) { return !u || !FIELD(uint32_t, u, EN_ID); }
  * mode 0, counted down at this+0x1c), 3 the crash (attack 35), 4 nothing more: neither game's handler ends the action
  * itself. The 0.1.4 test has him 101 s in 7/67 until the quest ended (GU's same-action watchdog 0xad7b4 = 4U 0x93f6e4
  * ends an action only after 7200 frames of this+0x13f8).
- * The launched male's end (0.1.7; the user, 2026-11-10: "Ja, so einbauen"). 4U, per monsterhunterwiki.org
+ * The launched male's end (0.1.7; the contributor, 2026-11-10: "Yes, build it that way"). 4U, per monsterhunterwiki.org
  * Desert_Seltas_Queen_(MH4U) (S, not code): her "Beetle Cannon" fires him from her tail pincers and "shatters him",
  * her tail launch kills him "leaving behind no carvable remains", and she digs up a new one. The 4U code that kills him
  * is NOT found (his crash step posts uShell003 240: power 10, type 10, no kill; neither class writes his HP). What both
@@ -79,9 +79,9 @@ static void launch_end(uint8_t *self)
     fallDeath(self);
 }
 
-/* His entry as 4U's (0.1.10; the user, 2026-11-11, after playing 4U: the Queen soon digs a new one out of the ground,
- * ours never did). 4U (C): the Seltas class's entry slot 54 (0x7890a8) gives category 12 number 0 to the Seltas (em
- * 25) and number 1 to the Desert Seltas, and clears the pair's +0x6a for him; his 12/1 (0x777c6c) runs sleepFlagA,
+/* His entry as 4U's (0.1.10; the contributor, 2026-11-11, after playing 4U: the Queen soon digs a new one out of the
+ * ground, ours never did). 4U (C): the Seltas class's entry slot 54 (0x7890a8) gives category 12 number 0 to the Seltas
+ * (em 25) and number 1 to the Desert Seltas, and clears the pair's +0x6a for him; his 12/1 (0x777c6c) runs sleepFlagA,
  * sleepFlagB, W+0x978 = 1, setTargetMode(4), vertSet(this, 0x93e7b4(this)), then setActionNext(6, 3): he enters
  * BURIED. In 6/3 (GU 0xfd440c = 4U 0x784308) he waits for his partner's pull (her 7/72, motion 0x465) and comes out
  * with 6/4, or digs out himself (6/1) when he has no partner (GU 0xfd4548).
@@ -165,8 +165,8 @@ static int buried_entry(uint8_t *self)
     return 1;
 }
 
-/* No discovery sting for her new male (0.1.15, C unless marked; the user on 0.1.14: the discovery sound still plays at
- * each pull-out, "die Königin zieht im Laufe des Kampfes ja viele Desert Seltas aus dem Boden"). The 0.1.14 log (her
+/* No discovery sting for her new male (0.1.15, C unless marked; the contributor on 0.1.14: the discovery sound still
+ * plays at each pull-out, "the Queen pulls many Desert Seltas out of the ground during the fight"). The 0.1.14 log (her
  * m10924 quest): 4.4 s after his restore, while he was still in the ground, sSoundControl requested ch 4 kind 6 slot 0 id 0xa
  * (from 0x4e5288), the same request as the first discovery at the quest start; his own alert went 0 -> 1 silently.
  * sSoundControl's unit scan 0x4e4224 raises its sting flag ctl+0x1b9d (0x4e4ef8) for a unit in battle whose slot is
@@ -174,8 +174,8 @@ static int buried_entry(uint8_t *self)
  * death set it to 0 (0x75c40), so every restored male was announced again. 0x4e51c8 posts the sting when the flag is
  * set (0x4e5240..0x4e5288: id 10, 14 for variant 4). Here: from his buried entry until 180 frames after he left the
  * ground (6/3, 6/4; at most 60 s), a mid hook at 0x4e5240 clears the flag before that post. A DEVIATION from GU's
- * sound control by the user's rule (4U announces none of her dug-out males, as the user hears in 4U); every other first
- * discovery stays. */
+ * sound control by the contributor's rule (4U announces none of her dug-out males, as the contributor hears in 4U);
+ * every other first discovery stays. */
 static void quiet_frame(uint8_t *self)
 {
     uint32_t act = (uint32_t)FIELD(uint8_t, self, EN_ACT_CAT) << 8 | FIELD(uint8_t, self, EN_ACT_NUM);
@@ -186,13 +186,13 @@ static void quiet_frame(uint8_t *self)
     if (!s_quiet_left) s_quiet = 0;
 }
 
-/* No "new monster" at all for him (0.1.16, S unless marked; the user on 0.1.15: the sound is gone, but when the new
- * Desert Seltas appears under the ground the hunter stops briefly "wie erschrocken"). The 0.1.15 log: the sting flag was
- * raised 21 ms after his buried entry (C), the moment the hunter was startled; sSoundControl's scan announced him as a
- * new unit because it had cleared his announce mark at his death (0x4e4b18, C). Here that mark is kept for her Desert
- * Seltas while his Queen fights (a mid hook at the clear: r4 = the mark, r5 = the unit + 0x1428, C), so his restore is
- * no new unit to it and nothing is announced; seltas_sting stays as a second guard. Whether the hunter's startle hangs
- * on that announcement is not traced (S). */
+/* No "new monster" at all for him (0.1.16, S unless marked; the contributor on 0.1.15: the sound is gone, but when the
+ * new Desert Seltas appears under the ground the hunter stops briefly "as if startled"). The 0.1.15 log: the sting flag
+ * was raised 21 ms after his buried entry (C), the moment the hunter was startled; sSoundControl's scan announced him
+ * as a new unit because it had cleared his announce mark at his death (0x4e4b18, C). Here that mark is kept for her
+ * Desert Seltas while his Queen fights (a mid hook at the clear: r4 = the mark, r5 = the unit + 0x1428, C), so his
+ * restore is no new unit to it and nothing is announced; seltas_sting stays as a second guard. Whether the hunter's
+ * startle hangs on that announcement is not traced (S). */
 #define ENEMY_MGR   0x1851fe0u
 typedef uint8_t *(*enemy_at_t)(void *mgr, uint32_t k);
 #define enemyAt FN(enemy_at_t, 0x5ceb4)     /* the k-th of the 10 monster slots, or 0 */

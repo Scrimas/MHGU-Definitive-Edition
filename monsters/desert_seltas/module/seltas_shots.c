@@ -13,13 +13,13 @@
  * 0x13b / 0x139 / 0x127 the cache holds our copy for that one read (GU's def on our PEL and hit data, found by file ID),
  * and gets GU's back at the request's exit 0x48c54c, which every path takes. So only these posts see a copy: a normal
  * Seltas or Queen next to them (quest 11140) keeps GU's family, and GU's kinds, directions and timing stay.
- * The ground splash (0.1.8, C; the user on 0.1.7: green splashes and a green puddle where his volley from her back
- * lands): GU's Seltas shell class posts a second shell at a ground hit, 0x13a (em076_00_shell01) from 0xfdca90 (r4 =
- * the shell that hit), kind 2 for his volley 7/52 7/60 = GU's green em076_00_002. 4U draws that ground effect inside
+ * The ground splash (0.1.8, C; the contributor on 0.1.7: green splashes and a green puddle where his volley from her
+ * back lands): GU's Seltas shell class posts a second shell at a ground hit, 0x13a (em076_00_shell01) from 0xfdca90 (r4
+ * = the shell that hit), kind 2 for his volley 7/52 7/60 = GU's green em076_00_002. 4U draws that ground effect inside
  * uShell001 (his kinds 117 / 118: em094_202). A mid hook before that post (0xfdcbe4) marks the shell's owner when he
  * is the Desert Seltas, so the request takes our 0x13a copy (em094_202, no tint; tools/shots_seltas.py).
- * The other ground posts (0.1.10, C; the user on 0.1.9: on her back their shots are still green where they land; the
- * 0.1.9 effect log showed two GU defs): GU's Seltas class has a shell callback 0xfc6a30 that posts the unit's shell
+ * The other ground posts (0.1.10, C; the contributor on 0.1.9: on her back their shots are still green where they land;
+ * the 0.1.9 effect log showed two GU defs): GU's Seltas class has a shell callback 0xfc6a30 that posts the unit's shell
  * id this+0xcac8 (0x13a) with a kind from a table (his 7/57 shots took kind 1 = GU's green em076_00_002), requests
  * 0xfc6c08 / 0xfc6df0; and GU's Queen shell class 0xf9dc80 posts 0x128 (em069_00_shell01) kind 2 at a ground or wall
  * hit of her shot (request 0xf9dda4), GU's normal-Queen hit effect. Mid hooks before the three requests mark a Desert
