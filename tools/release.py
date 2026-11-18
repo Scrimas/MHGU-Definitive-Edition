@@ -162,6 +162,8 @@ def clean_env():
 
 def build():
     for p in packages():
+        if p.get('kind') == 'bundle':        # no files, no build.py (bundles/harvest_tours: its requires only)
+            continue
         print('== build %s' % p['name'], flush=True)
         subprocess.run([sys.executable, os.path.join(paths.package_dir(p['name']), 'build.py')], check=True,
                        env=clean_env())
