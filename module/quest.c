@@ -150,14 +150,56 @@ int quest_group_append_c(uint32_t *regs)
     return 0;
 }
 
+/* The counter's quest lists (C): 0x3bc96c(mgr, i) -> u32 quest IDs, 0x3bc9f8(mgr, i) -> their count, mgr =
+ * [0x188ae38]. List i = a regular quest's star (village 1..10, Hub 1..7, G 11..14; slot map 0x1753ff4 by counter
+ * mode) holds that star board's quests, locked ones too (its builder 0x3bab28 has no unlock check); list 23 is the
+ * Hunt of the Day, the day's monster at every rank. */
+typedef const uint32_t *(*qlist_t)(void *mgr, uint32_t i);
+typedef uint16_t (*qlist_count_t)(void *mgr, uint32_t i);
+typedef uint8_t (*quest_check_t)(void *unused, uint32_t id);
+#define qlist FN(qlist_t, 0x3bc96c)
+#define qlist_count FN(qlist_count_t, 0x3bc9f8)
+#define quest_check FN(quest_check_t, 0x3b2174)
+#define QLIST_STAR_LAST 14u
+#define QLIST_DAILY 23u
+
+static int qlist_find(void *mgr, uint32_t i, uint32_t id, const uint32_t **l, uint32_t *n)
+{
+    uint32_t k;
+    *l = qlist(mgr, i);
+    *n = *l ? qlist_count(mgr, i) : 0;
+    for (k = 0; k < *n && (*l)[k] != id; k++) ;
+    return k < *n;
+}
+
+/* a ported quest is unlocked when its star board is open: when that board holds an unlocked GU quest (the counter's
+ * own test for a star tab, 0x783074, next to its progress flag). On the Hunt of the Day alone, its rank has no board
+ * here yet; on no list (none built, or the other hall's quest): unlocked, as before. */
+static int star_board_open(uint32_t id)
+{
+    void *mgr = *(void *volatile *)MAIN(0x188ae38u);
+    const uint32_t *l;
+    uint32_t n;
+    if (!mgr) return 1;
+    for (uint32_t i = 1; i <= QLIST_STAR_LAST; i++) {
+        if (!qlist_find(mgr, i, id, &l, &n)) continue;
+        for (uint32_t k = 0; k < n; k++)
+            if (port_quest_owner(l[k], 0) < 0 && port_tour_of(l[k]) < 0 && quest_check(0, l[k])) return 1;
+        return 0;
+    }
+    return !qlist_find(mgr, QLIST_DAILY, id, &l, &n);
+}
+
 /* 0x3b2174(_, id) -> bool: "quest unlocked?" (script check_quest_unlocked has no rule for our IDs). Mid hook 0x3b2194,
  * before its check call 0x3d7e90: r1 = &result byte, r2 = id; nonzero -> 0x3b219c returns the byte (build.py
- * MID_EXIT). Not at the entry: the Forge plugin Key Quest Markers checks its first 0x20 bytes (issue #10). */
+ * MID_EXIT). Not at the entry: the Forge plugin Key Quest Markers checks its first 0x20 bytes (issue #10). A ported
+ * quest follows its star board (star_board_open): answering 1 let the Hunt of the Day list ported quests of ranks
+ * not reached yet, and the village take them (issue #46). Tours stay unlocked. */
 int quest_unlocked_c(uint32_t *regs)
 {
     int m = port_quest_owner(regs[R2], 0), t = port_tour_of(regs[R2]);
     if (m >= 0 ? !port_installed(m) : !port_tour_present(t)) return 0;
-    *(uint8_t *)(uintptr_t)regs[R1] = 1;
+    *(uint8_t *)(uintptr_t)regs[R1] = (uint8_t)(m < 0 || star_board_open(regs[R2]));
     return 1;
 }
 
