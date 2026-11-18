@@ -440,6 +440,12 @@ def convert(nn, src, idx, model=None, log=print, alpha=False, anim=False, shield
                 a4 = anim_4u(d4, m, gw, gblock)
                 if a4 is not None: ganim, src_an = a4, '4U'
             if ganim:
+                # a CB blade's animated type-30 material holds two entries in GU (C: all 83 of GU's, e.g. Capcom's
+                # blade032 'emia': f05cf980 twice); S: the CB plays its charge state's index 0 / 1 on them. A
+                # one-entry template from another class (hbg044) crashed the Gogma CB's draw attacks (issue #45)
+                if nn == 14 and mp.split('\\')[-1].startswith('blade') and mtype == 30:
+                    ents = mrl_anim.parse(ganim)
+                    if len(ents) == 1: ganim = mrl_anim.build(ents * 2)
                 extra['anim'] = ganim
                 kinds = {tr['kind'] & 0xF for e in mrl_anim.parse(ganim) for tr in e['tracks']}
                 an = ' +%s anim %d B (kinds %s)' % (src_an, len(ganim), sorted(kinds))

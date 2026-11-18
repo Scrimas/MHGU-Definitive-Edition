@@ -349,6 +349,9 @@ if ITEMS_APPENDED:
 if 'EM089_DMG_RECV_DIAG' in os.environ.get('GOG_DEFINES', '').split():   # diagnostic: monster damage receiver
     HOOKS += [('dmg_recv', 0x9D6F8)]   # (monster, part, damage, kind) log (em089_diag.c). Its entry is checked by
     PLUGIN_CHECKED.pop(0x9D6F8)        # Damage Numbers: test builds only (that plugin then installs nothing)
+if 'MOTION_GUARD' in os.environ.get('GOG_DEFINES', '').split():   # diagnostic: material animation index past its set
+    HOOKS += [('motion_guard', 0x88F4A8)]                               # (main.c)
+    MID_EXIT['motion_guard'] = 0x88F4D4  # add r7, r7, #1: the update loop's next material, this one not evaluated
 if 'TEST_QUEST_RANK' in os.environ.get('GOG_DEFINES', ''):   # test: Stygian's quests at that rank (em057_01_ai.c)
     HOOKS += [('em057_01_rank', 0x3A8D68)]                   # GU quest rank getter (4U 0x69ae70)
 

@@ -133,6 +133,14 @@ Layout (C):
 - Fields: +0 u32 mGmkMotNo, +4 u32 mDispType, +8 u32 mCarryType, +12 u8 mSubParam[4].
 - Indexed by **model ID**: n = highest mModelID + 1 in all 14 classes (C).
 - GL varies in mSubParam. mGmkMotNo probably picks arc/weapon/wNN/gNN.arc (motion arcs wgNN_00), G.
+- mDispType = the gimmick type (C, issue #45): the part setup 0x288d10 loads the rPlayerGimmickType file
+  weapon\wNN\pwl\pl_wNN_g<type> (player/com/com.arc, 20-B records: which weapon motions each move plays) next to the
+  motion lists of set 0 and of the model's set (getters of mem +4 / +8 / +0xc: 0x13f554 / 0x13f594 / 0x13f5d4).
+  GU ships each type with certain sets only (CB: type 2 with set 0 alone); whether another pair breaks anything is
+  not known (the Gogma CB's set 1 with type 2 was not the cause of its crash).
+- Material animations (C, issue #45): on a CB blade, every animated MRL material of type 30 holds two entries in
+  GU (83 of 83), and the CB plays its charge state's index 0 / 1 on them (S); one entry crashed the draw attacks in
+  the evaluator 0xb0ea4c. tools/weapon4u2gu.py doubles a one-entry block there.
 
 Highest model (= pwl n - 1), C:
 

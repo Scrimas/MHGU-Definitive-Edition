@@ -147,6 +147,13 @@ Save data, rewards / materials, armor and weapons, skills, monster tables, quest
   from a "relaxed" match (other weapons' glow colours). 197156 B, not tested.
   TEST 13:02 (log 13-02-42, user): all 14 Gogma weapons show up correctly in the smithy. Log: gear pl_w04 model 40
   motion set 0, pl_w08 model 77 motion set 20 (both fixes applied). Uninstalled.
+  Issue #45 (2026-11-18, a player's Ryujinx log, Switch too; the maintainer's tests 18-34 / 18-50): the CB crashed on
+  its draw attacks (A from sheathed, the running draw) in the material animation evaluator 0xb0ea4c (C:
+  tools/mrl_anim.py), on the blade's 5th MOD material XfBA_E__m00_blade027_emia_ (type 30, f05cf980). Its template
+  was HBG hbg044's material, one animation entry; every animated type-30 material of GU's CB blades holds two (C, all
+  83; Capcom's blade032 'emia' has f05cf980 twice) and the CB plays its charge state's index 0 / 1 on them (S).
+  tools/weapon4u2gu.py now doubles a one-entry block there (byte-equal to blade032's 284 B). A first guess (the
+  rPlayerWeaponList gimmick type, mDispType 2 on motion set 1) was wrong and reverted.
   Built 2026-10-20 afternoon, NOT tested in game (216892 B test build, 215420 B release, 0 warnings):
   - Descriptions (C): 4U's own armor / weapon texts. Index = u16 table per part / class in the 4U exe (armor head
     0xef1308, body 0xeef4f8, arm 0xeefc90, waist 0xef0408, leg 0xef0b80; weapons 0xef1ae2.. per class,

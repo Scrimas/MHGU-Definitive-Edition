@@ -206,6 +206,32 @@ int hunt_all_slot_c(uint32_t *regs)
     return 0;
 }
 
+#ifdef MOTION_GUARD
+/* Test switch MOTION_GUARD (issue #45 diagnosis). 0x88f4a8, in the material update loop 0x88f45c: r4 = the model,
+ * r5 = its material [r4+0xf8][i] whose animation set +0x74 is not 0. The evaluator 0xb0ea4c (the material's vt+0x20,
+ * tools/mrl_anim.py) reads each of 4 slots (+0x50 + 8 k: u16 index, bit 15 = off) as [[set+0x10] + 4 + 4 * index]
+ * ({count, entry*[count]}) with no check. A slot past the count or on a null entry is logged once per set and index
+ * and the material is not evaluated (MID_EXIT 0x88f4d4: the loop's next one) instead of the bad read. */
+int motion_guard_c(uint32_t *regs)
+{
+    static uint32_t s_seen[32][2], s_n;
+    uint8_t *c = (uint8_t *)regs[R5], *set = FIELD(uint8_t *, c, 0x74), *tab = FIELD(uint8_t *, set, 0x10);
+    uint32_t n = tab ? FIELD(uint32_t, tab, 0) : 0;
+    for (uint32_t k = 0; k < 4; k++) {
+        uint32_t w = FIELD(uint32_t, c, 0x50 + 8 * k), idx = w & 0xffff, i;
+        if (w & 0x8000 || (idx < n && FIELD(uint32_t, tab, 4 + 4 * idx))) continue;
+        for (i = 0; i < s_n && (s_seen[i][0] != (uint32_t)(uintptr_t)set || s_seen[i][1] != idx); i++) ;
+        if (i == s_n && s_n < 32) {
+            s_seen[s_n][0] = (uint32_t)(uintptr_t)set, s_seen[s_n][1] = idx, s_n++;
+            logf("mhgu-de: motion guard: model %x (vt main+%x) material %x slot %u: animation %u of %u: not evaluated",
+                 regs[R4], FIELD(uint32_t, regs[R4], 0) - MAIN_BASE, regs[R5], k, idx, n);
+        }
+        return 1;
+    }
+    return 0;
+}
+#endif
+
 /* 0x55bda4(mgr, id) -> monsterName GMD entry, = 0x50b64(id) (entry k = registry index k). Entry 137 already
  * starts the GMD's second list (Rathian), so a ported index reads its name_entry (an unused 'dummy' entry that
  * items.c renames in the loaded GMD), and a save slot leased for a quest its lessee's (the quest result names the

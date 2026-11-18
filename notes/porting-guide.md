@@ -291,7 +291,9 @@ testable alone (the maintainer checks the smithy or one quest).
   model's motion-set fix is a PWLF entry, a compound skill a SKIL entry). A smithy entry
   is listed once its first recipe material (flag byte 2) is owned (GU rule, test 10:39). Models keep their 4U
   numbers (GU did the same, and 4U-only numbers are free). Weapon motion sets (rPlayerWeaponList mGmkMotNo) may need
-  a fix per model (gear_pwl 0x272910). Skills with no GU equivalent: new tree / skill records plus a has-skill hook
+  a fix per model (gear_pwl 0x272910). A material template from another weapon class can miss what the class's code
+  plays on it: a CB blade's animated type-30 material needs two animation entries (issue #45, tools/weapon4u2gu.py).
+  Skills with no GU equivalent: new tree / skill records plus a has-skill hook
   (0xe0da0) that answers yes for the GU skills it combines.
 - **Descriptions.** 4U gear descriptions are not indexed by ID: u16 index tables per part / class in the 4U exe
   (EXP_4U in both gear tools). Find such tables by vote over the gear GU took from 4U (GU text = 4U text).
