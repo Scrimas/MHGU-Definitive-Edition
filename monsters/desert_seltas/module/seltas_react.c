@@ -11,8 +11,9 @@
  * em089_react.c, C), 0x9e994 = 0x938620, [this+0xcac0]+4 = [W+0x8d88]+4 (GU's own case 155 reads it, C). Her own 4U tables
  * are converted by monsters/desert_seltas/tools/react_seltas.py (8-byte ops; 24-byte motion descriptors with float blend /
  * start; 4U's .bss movement data 0x10b6820 from its static initializer 0xd26260). The numbers whose 4U table is the normal
- * Queen's (30 31 42 43 96..105 112 161 169 187 197) play GU's normal-Queen table: GU shortened some of those (30 31 99..102
- * 105 187), and for these the Desert Queen does what GU's normal Queen does (a DEVIATION from 4U's longer tables there).
+ * Queen's (30 31 42 43 96..105 112 161 169 187 197) play GU's normal-Queen table where GU kept 4U's; of those GU rewrote,
+ * 30 / 31 (shortened) and 187 (other motions) play their 4U table (0.1.19, react_seltas.py OWN_4U), and 99..102 / 105
+ * stay GU's: their 4U op-0xfe data has another layout than GU's (not traced; a DEVIATION from 4U's longer tables).
  * Numbers without a case: GU's default, slot 247 (0x76144), as GU's own path does. Multiplayer: every machine runs its
  * reactions as GU's own do. All addresses go through MAIN / FN. */
 #include <stdint.h>
@@ -68,6 +69,8 @@ static const rx_desc D_fdeb24 = {0x000, 0, 0.0f, 0.0f, 0x11, 2, 1, 0, MV_fdeb04}
 static const rx_desc D_fdeb3c = {0x30b, 0, 0.0f, 0.0f, 0x11, 1, 0, 0, 0};
 static const rx_desc D_fdeb54 = {0x305, 0, 2.0f, 0.0f, 0x11, 4, 0, 0, 0};
 static const rx_desc D_fdeb84 = {0x340, 0, 2.0f, 0.0f, 0x11, 1, 0, 0, 0};
+static const rx_desc D_fdeb9c = {0x30d, 0, 0.0f, 0.0f, 0x11, 256, 0, 0, 0};
+static const rx_desc D_fdebb4 = {0x30e, 0, 4.0f, 0.0f, 0x11, 1, 0, 0, 0};
 static const rx_desc D_fdebcc = {0x343, 0, 4.0f, 0.0f, 0x11, 1, 0, 0, 0};
 static const rx_desc D_fdebe4 = {0x013, 0, 2.0f, 0.0f, 0x11, 256, 0, 0, 0};
 static const rx_desc D_fdebfc = {0x308, 0, 10.0f, 0.0f, 0x11, 1, 0, 0, 0};
@@ -90,6 +93,8 @@ static const rx_desc D_fdef0c = {0x311, 0, 4.0f, 0.0f, 0x11, 1, 0, 0, 0};
 static const rx_desc D_fdef24 = {0x33e, 0, 2.0f, 0.0f, 0x11, 1, 0, 0, 0};
 static const rx_desc D_fdef3c = {0x340, 0, 2.0f, 0.0f, 0x11, 1, 0, 0, 0};
 static const rx_desc D_fdef84 = {0x347, 0, 2.0f, 0.0f, 0x11, 1, 0, 0, 0};
+static const rx_desc D_fdef9c = {0x013, 0, 6.0f, 0.0f, 0x0, 4, 0, 0, 0};
+static const rx_desc D_fdefb4 = {0x308, 0, 4.0f, 0.0f, 0x0, 1, 0, 0, 0};
 static const rx_desc D_fdefcc = {0x341, 0, 4.0f, 0.0f, 0x0, 1, 0, 0, 0};
 static const rx_desc D_fdeffc = {0x052, 0, 0.0f, 0.0f, 0x0, 4, 0, 0, 0};
 static const rx_desc D_fdf014 = {0x005, 0, 0.0f, 0.0f, 0x0, 4, 0, 0, 0};
@@ -104,7 +109,9 @@ static const rx_op T_fde274[] = {{0x25, I(0x0)}, {0x0, &D_fdea2c}, {0x3, I(0x12c
 static const rx_op T_fde2cc[] = {{0x0, &D_fdead4}, {0x3, I(0x168)}, {0x0, &D_fdeaa4}, {0x0, &D_fdeaec}, {0xff, I(0x0)}};
 static const rx_op T_fde3b4[] = {{0x4, I(0x80000001)}, {0x5, I(0x1c)}, {0x0, &D_fdeb0c}, {0xb, I(0x12c)}, {0x28, I(0x0)}, {0x27, I(0x0)}, {0x1, &D_fdeb24}, {0x4, I(0x0)}, {0x0, &D_fdeb3c}, {0x3, I(0xf0)}, {0x0, &D_fdeb54}, {0x0, &D_fdeb84}, {0xff, I(0x0)}};
 static const rx_op T_fde41c[] = {{0x4, I(0x80000001)}, {0x5, I(0x1c)}, {0x0, &D_fdeb0c}, {0xb, I(0x12c)}, {0x28, I(0x0)}, {0x27, I(0x0)}, {0x1, &D_fdeb24}, {0x4, I(0x0)}, {0x0, &D_fdeb3c}, {0x0, &D_fdeb84}, {0xff, I(0x0)}};
+static const rx_op T_fde474[] = {{0x0, &D_fdeb9c}, {0xfe, I(0x0)}, {0x0, &D_fdebb4}, {0xfd, I(0x0)}, {0x0, &D_fdebcc}, {0xfd, I(0x0)}, {0x0, &D_fdebe4}, {0xfe, I(0x0)}, {0x0, &D_fdebfc}, {0x0, &D_fdec14}, {0xff, I(0x0)}};
 static const rx_op T_fde494[] = {{0x0, &D_fdebcc}, {0xfd, I(0x0)}, {0x0, &D_fdebe4}, {0xfe, I(0x0)}, {0x0, &D_fdebfc}, {0x0, &D_fdec14}, {0xff, I(0x0)}};
+static const rx_op T_fde4a4[] = {{0x0, &D_fdebe4}, {0xfe, I(0x0)}, {0x0, &D_fdebfc}, {0x0, &D_fdec14}, {0xff, I(0x0)}};
 static const rx_op T_fde4cc[] = {{0x0, &D_fdec2c}, {0x0, &D_fdec14}, {0xff, I(0x0)}};
 static const rx_op T_fde50c[] = {{0x5, I(0x92)}, {0x0, &D_fdec44}, {0x0, &D_fdec5c}, {0x0, &D_fdec8c}, {0xfe, I(0x0)}, {0x0, &D_fdeca4}, {0xff, I(0x0)}};
 static const rx_op T_fde564[] = {{0x0, &D_fdecec}, {0xff, I(0x0)}};
@@ -113,6 +120,7 @@ static const rx_op T_fde5e4[] = {{0x0, &D_fded94}, {0xff, I(0x0)}};
 static const rx_op T_fde68c[] = {{0x6, I(0x0)}, {0x5, I(0x28)}, {0x0, &D_fdee88}, {0x0, &D_fdee70}, {0xfe, I(0x0)}, {0x2e, E_fdeea0}, {0x0, &D_fdeeac}, {0xff, I(0x0)}};
 static const rx_op T_fde6fc[] = {{0x0, &D_fdef24}, {0x3, I(0x258)}, {0x0, &D_fdeedc}, {0x0, &D_fdef3c}, {0x0, &D_fdef0c}, {0xff, I(0x0)}};
 static const rx_op T_fde74c[] = {{0x0, &D_fdef84}, {0xff, I(0x0)}};
+static const rx_op T_fde75c[] = {{0x24, I(0x0)}, {0x3, I(0xb4)}, {0x0, &D_fdef9c}, {0x25, I(0x0)}, {0xfe, I(0x0)}, {0x0, &D_fdefb4}, {0xff, I(0x0)}};
 static const rx_op T_fde794[] = {{0x0, &D_fdefcc}, {0xff, I(0x0)}};
 static const rx_op T_fde7bc[] = {{0x3, I(0x3c)}, {0x0, &D_fdeffc}, {0xfe, I(0x0)}, {0x3, I(0x3c)}, {0x0, &D_fdf014}, {0xfe, I(0x0)}, {0x3, I(0x3c)}, {0x0, &D_fdf02c}, {0xfe, I(0x0)}, {0x0, &D_fdf044}, {0x0, &D_fdf05c}, {0xff, I(0x0)}};
 static const rx_op T_fde7ec[] = {{0x3, I(0x3c)}, {0x0, &D_fdf02c}, {0xfe, I(0x0)}, {0x0, &D_fdf044}, {0x0, &D_fdf05c}, {0xff, I(0x0)}};
@@ -131,8 +139,8 @@ int seltas_dsq_react_c(uint32_t *regs)
     case 20: { uint32_t d = hitDir(self); t = (d == 4 || d == 5) ? T_fde1fc : (d == 2 || d == 3) ? T_fde2cc : T_fde1c4; } break;
     case 27: t = T_fde564; break;
     case 29: t = T_fde494; break;
-    case 30: t = GU_T(0x17e8b70); break;   /* 4U: the normal Queen's table */
-    case 31: t = GU_T(0x17e8b40); break;   /* 4U: the normal Queen's table */
+    case 30: t = T_fde4a4; break;
+    case 31: t = T_fde474; break;
     case 32: t = T_fde50c; break;
     case 37: case 150: t = T_fde41c; flag = 1; break;
     case 42: case 112: t = GU_T(0x17e8b30); break;   /* 4U: the normal Queen's table */
@@ -153,7 +161,7 @@ int seltas_dsq_react_c(uint32_t *regs)
     case 167: t = T_fde6fc; break;
     case 169: case 197: t = GU_T(0x17e8b80); break;   /* 4U: the normal Queen's table */
     case 171: case 173: t = T_fde74c; break;
-    case 187: t = GU_T(0x17e8da0); break;   /* 4U: the normal Queen's table */
+    case 187: t = T_fde75c; break;
     case 188: t = T_fde794; break;
     case 189: t = T_fde7bc; break;
     case 190: t = T_fde7ec; break;

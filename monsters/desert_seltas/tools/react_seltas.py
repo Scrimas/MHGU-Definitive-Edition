@@ -185,11 +185,17 @@ def c_name(a): return 'T_%x' % a
 PTR_OPS = {0x2e: 3, 0x0e: 1}
 
 
+# numbers whose shared 4U table GU rewrote and whose 4U table needs no op-0xfe data (C, 0.1.19, `list` against GU_V0):
+# 30 / 31 shortened (4U's 0x308, 0x30e, 0x343 dropped), 187 other motions: their 4U table. 99..102 / 105 differ too, but
+# 4U's op 0xfe data (0xfdee3c) and GU's (0x17e85f8) have another layout (not traced): they stay GU's (a DEVIATION)
+OWN_4U = {30, 31, 187}
+
+
 def shared():
     """numbers whose 4U em-95 table is the normal Queen's: {n: GU's normal-Queen table}"""
     out = {}
     for n, s95 in EM95.items():
-        if isinstance(s95, int) and EM26.get(n) == s95:
+        if isinstance(s95, int) and EM26.get(n) == s95 and n not in OWN_4U:
             assert n in GU_V0, n
             out[n] = GU_V0[n]
     return out

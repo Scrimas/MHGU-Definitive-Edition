@@ -81,6 +81,9 @@ SOLID_FILL = (127, 127, 127, 255)       # colourless 4U solid effect meshes: ver
 # 1:1 on $Globals.fConstantColor, mrl_anim.CONSTANT_MAP). On 'add' it was lit, its alpha the albedo's, and its 4 entries had lost every track (no
 # mapping), so it never went off. Template: GU em076_00 mat 3 'XfB__m02_add', whose words and parameter block equal em069_00's m03_add except the
 # material type (C), without an animation block (mrl_build.load_template refuses one); the type (m03) comes from the name as for every material.
+# His abdomen overlay 'XfB__m02_add' (mesh group 9; the maintainer's test of 0.1.18: a fog on his lower abdomen that grows with the distance) is
+# that very material: 4U em094's equals em025's byte for byte (CBMaterialConstant, no animation), and Capcom's em076_00 draws it on this template,
+# unlit (C). On 'add' it was lit. Her 'XfB__m02_virus' has the same block (only on her hidden group 50).
 ADD_CONST = ('/nativeNX/arc/enemy/em076_00.arc', 'enemy\\em076\\em076_00\\mod\\em076_00', 3)
 mrl_build.TEMPLATES.setdefault('add_const', ADD_CONST)
 assert mrl_build.TEMPLATES['add_const'] == ADD_CONST
@@ -172,8 +175,8 @@ def textures(e, S, r4, slots, out, gu_tex):
 def model(e, S, rom, gu_tex, notes):
     """the 4U MOD + MRL (+ textures) -> [(path, type, data)], the parsed 4U MOD. Templates (Shrouded Nerscylla's rules): additive -> 'add', 4U
     BSBlendAlpha -> 'blend' with the material's own constants, emissive -> 'unlit', a lit E0 material with a tExtendMap -> 'solid_sphere', alpha-tested
-    -> 'solid_at', else 'solid'; an additive one whose animations drive the 4U constant colour (her underside glow) -> 'add_const' (Capcom's own,
-    ADD_CONST above). Every 4U material animation is converted. MRL before MOD, as in GU's arcs."""
+    -> 'solid_at', else 'solid'; a constant-colour additive one (CBMaterialConstant: his abdomen overlay, her underside glow) -> 'add_const'
+    (Capcom's own, ADD_CONST above). Every 4U material animation is converted. MRL before MOD, as in GU's arcs."""
     src = e.c['mod4u']
     d4, d4m = S[(src, T['MOD'])], S[(src, T['MRL'])]
     m4, r4 = modlib.parse(d4), mrl.read(d4m)
@@ -215,9 +218,9 @@ def model(e, S, rom, gu_tex, notes):
                       if k in (('$Globals', 'fAlbedoColor'), ('CBMaterial', 'fDiffuseColor'), ('$Globals', 'fEmissionColor'))}
             consts[('$Globals', 'fSpecularColor')] = (0.5, 0.5, 0.5)
         ents4 = anims4.get(mm['name'], [])
-        const = key == 'add' and any(mrl_anim.var_name(0x20, t['cb'], t['var'])[0] == 'CBMaterialConstant' for x in ents4 for t in x['tracks'])
+        const = key == 'add' and any(n == 'CBMaterialConstant' for n, _, _ in mm['params'])
         if const:
-            key = 'add_const'              # her underside glow (ADD_CONST above)
+            key = 'add_const'              # Capcom's conversion of 4U's constant-colour overlays, animated or not (ADD_CONST above)
         if ents4:
             std = [v for n, t, v in mm['params'] if t == 1 and n == 'CBMaterialStd']
             if std:                        # a constant-colour material (CBMaterialConstant: the Queen's additive ones) has no Std block to start from

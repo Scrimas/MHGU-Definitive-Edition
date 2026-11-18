@@ -228,6 +228,8 @@ HOOKS = [
     # 0xf962dc: ID 0x14c for a Desert Queen), uEm076_00 slot 152 (stay with the Queen: hers found by em number) and
     # his 6/3 jump out of the sand at her call (0xfd4594: her frame, not his own, as 4U's)
     ('seltas_dsq_call', 0xBE5EC), ('seltas_ds_stay', 0xFC768C), ('seltas_ds_popout', 0xFD4594),
+    # her hold points (seltas_hold.c, 0.1.19): her action dispatcher and GU's twin of 4U 0x798fe0 in her 16/5
+    ('seltas_dsq_hold', 0xF9C8B4), ('seltas_dsq_hold3', 0xF9BAF4),
     ('gear_listed_set', 0x524980), ('gear_listed_get', 0x5249F4),  # the smithy's armor "listed" save bits: a record past their 576 is kept in the mod's store (gear.c)
     ('enemy_drop_log', 0xAC0EC),   # the item drop (shiny), entry: log only, ported monsters (port.c)
     ('dala_dmg_end', 0x98E44),     # enemy damage update 0x97ddc, after the rage add, before the reaction dispatcher

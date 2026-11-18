@@ -52,11 +52,15 @@ ground through GU's Queen shell class 0xf9dc80, which posts 0x128 = em069_00_she
 def, em069_00u id 20 = em069_00_012, the normal Queen's hit effect (4U kind 1's ground effect em026_021). 4U's kind 92
 draws (71, 17) = em095_021 at the ground and at a wall (asserted in check_4u): their copy below has ids 20 / 21 on
 em095_021 (GU's masks), neutral, GU's hit data (as her 0x127 copy). GU's other 0x128 posts (her dig, buried move,
-call, 2/20: list 1 of the def = em069_00c common dust) keep GU's def: environment effects (the user's rule).
-Status (0.1.8; the user asked which attacks give an ailment): a shot record's +0x10 / +0x11 / +0x13 flags and +0x14
-value. Every Desert shot record (uShell012 38..41, uShell001 89 / 90) has +0x10 = 4, value 4 where the species' have
-+0x11 = 8 or 1 or +0x13 = 8, value 0 (C, bytes); all else equal but +0x08 / +0x18 (C). Flag 4 = paralysis (S: the
-same flag on GU Najarala's paralysing attack rows, monsters/shrouded_nerscylla/notes/plan.md, and on Tigerstripe's).
+call, 2/20: list 1 of the def = em069_00c common dust) keep GU's def: environment effects (the contributor's rule).
+Status (0.1.8; the contributor asked which attacks give an ailment): a shot record's +0x10 / +0x11 / +0x13 flags and
++0x14. Every Desert shot record (uShell012 38..41, uShell001 89 / 90) has +0x10 = 4 and +0x14 = 4 where the species'
+have +0x11 = 8 or 1 or +0x13 = 8 and +0x14 = 0 (C, bytes); all else equal but +0x08 / +0x18 (C). +0x10 = 4 = paralysis
+(0.1.19, every GU shell hit entry: only Khezu, Kirin, Congalala, Volvidon and Nakarkos have it, C; their paralysis, S).
+GU's +0x14 is a second status bitfield, not a value (0.1.19, the same survey, C: 0x02 Seregios and Silverwind
+Nargacuga, 0x04 Malfestio alone, 0x10 Nakarkos, 0x20 / 0x40 / 0x80 Mizutsune; S: bleeding, confusion, bubbles), so
+4U's 4 gave every Desert shot Malfestio's confusion (the maintainer's test of 0.1.18). +0x14 stays GU's (0) here;
+4U's meaning of it is not traced (4U's own paralysis records, uShell012 24 / 25 / 29..32, have 0 there).
 The Queen's shot record 1 has none. Their body attacks: 4U's records equal the species' (asserted in
 build_seltas_arc.py), and GU's equal 4U's but for its byte 26 on five of his and its retune bytes 28 / 31 (C).
 """
@@ -76,6 +80,7 @@ U012_FX, U012_HIT, U012_RECT, U012_REC = 0x1027488, 0x10278d8, 0x10290b0, 0x1028
 U001_FX, U001_WALL, U001_GROUND, U001_RECT, U001_REC = 0x1017980, 0x1018140, 0x1017d60, 0x101ae30, 0x1019f30
 ALL = 0xFFFFFFFF
 SAFE = set(range(0x24)) - {0x12, 0x19, 0x1c}       # HDS bytes taken from the 4U record as they are (hds rule)
+GU_STATUS2 = 0x14                                  # but not this one: GU's second status bitfield (docstring "Status")
 
 
 def u32(a): return struct.unpack_from('<I', MEM4, a - BASE4)[0]
@@ -200,14 +205,15 @@ def build_hits(gu_hds, hits, notes):
         assert not same, ('GU hit entry %d is not 4U record %d converted' % (k, src), same)
         diff = [i for i in range(40) if s4[i] != o4[i]]
         assert set(diff) <= SAFE, ('record bytes outside the plain copy', diff)
-        for i in diff:
+        copied = [i for i in diff if i != GU_STATUS2]
+        for i in copied:
             d[16 + 56 * k + i] = o4[i]
-        notes.append('  hit entry %d: 4U record %d -> %d, bytes %s' % (k, src, ours, ' '.join('+%x %02x->%02x' % (i, s4[i], o4[i]) for i in diff)))
+        notes.append('  hit entry %d: 4U record %d -> %d, bytes %s' % (k, src, ours, ' '.join('+%x %02x->%02x' % (i, s4[i], o4[i]) for i in copied)))
     return bytes(d)
 
 
-# the status bytes of a hit record (docstring "Status"): +0x10 / +0x11 / +0x13 flags, +0x14 value (+0x12 is the type
-# GU keeps as & 3, the same in all of them)
+# the status bytes of a hit record (docstring "Status"): +0x10 / +0x11 / +0x13 flags, +0x14 (GU's second status
+# bitfield, kept as GU's) (+0x12 is the type GU keeps as & 3, the same in all of them)
 STATUS_AT = (0x10, 0x11, 0x13, 0x14)
 SPECIES_SHOTS = ((U012_REC, (5, 6, 12, 20)), (U001_REC, (33, 69, 92, 93)))    # the species' shot records (subtypes 6 7 13 24, kinds 36 74 90 91)
 
@@ -223,9 +229,10 @@ def build_status_hits(gu_hds, table, ours, notes):
         e = 16 + 56 * k
         old = tuple(d[e + i] for i in STATUS_AT)
         assert old in species, ('GU hit entry %d carries a status the species\' shots do not' % k, old)
-        for i, v in zip(STATUS_AT, want):
+        new = tuple(o if i == GU_STATUS2 else v for i, o, v in zip(STATUS_AT, old, want))
+        for i, v in zip(STATUS_AT, new):
             d[e + i] = v
-        notes.append('  hit entry %d (GU\'s own): status %s -> 4U record %d\'s %s' % (k, ' '.join('%02x' % v for v in old), ours, ' '.join('%02x' % v for v in want)))
+        notes.append('  hit entry %d (GU\'s own): status %s -> 4U record %d\'s %s' % (k, ' '.join('%02x' % v for v in old), ours, ' '.join('%02x' % v for v in new)))
     return bytes(d)
 
 

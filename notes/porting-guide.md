@@ -667,3 +667,14 @@ Notes: monsters/tigerstripe_zamtrios/notes/ (plan, phase1-variant-map, missing-a
   free one before anything ships; the early draft PR with the IDs (CONTRIBUTING) prevents it. Core 3.0.0 also wants
   package.toml `class` and the Chinese text: `translate.py apply` rewrites the generated tables from what the checkout
   has built, so where not every monster is built, add the keys by hand and check with `translate.py check`.
+- (The maintainer's test of 0.1.18.) A 4U constant-colour additive material (CBMaterialConstant: overlays, glows) goes
+  on Capcom's constant template even without animations; on the lit 'add' template it fogs up with distance (Desert
+  Seltas' abdomen, build_seltas_arc.py ADD_CONST).
+- GU's shell hit entry +0x14 is a second status bitfield (0x02 Seregios, 0x04 Malfestio, 0x10 Nakarkos, 0x20..0x80
+  Mizutsune), not a value: a 4U byte there gives a new GU status (Desert Seltas' shots confused the hunter as
+  Malfestio). Survey every GU entry before trusting an offset's meaning from one monster.
+- Never write a unit's alert state rec+0x2c0 directly: GU's perception 0x7f0cc looks and listens for a hunter only at
+  0, and GU's noticing (0x7ea84 / 0x7e2a4) also picks the target and starts the battle mode.
+- A GU twin may drop a 4U call that edits shared species data at runtime: the Desert Queen's hold points (4U 0x799e24
+  on the em data object's +0xa0 = GU dtbase +0x80, the points a held hunter is put on). Search GU's data files for the
+  4U values (here joint 144 and the 0x8000 rotation) to find the twin of a runtime array.

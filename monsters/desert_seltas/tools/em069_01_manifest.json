@@ -488,7 +488,7 @@
  "notes": [
   "material XfB__E_m00_body: template solid_sphere, type 0, ['em069_01_01_BM', 'em069_01_01_BM+A'], 2 4U animations",
   "material XfB__m01_eye: template unlit, type 1, ['em069_01_01_BM', 'em069_01_01_BM+A'], 2 4U animations",
-  "material XfB__m02_virus: template add, type 2, ['em069_01_01_BM', 'em069_01_01_BM+A']",
+  "material XfB__m02_virus: template add_const, type 2, ['em069_01_01_BM', 'em069_01_01_BM+A']",
   "material XfB__m03_add: template add_const, type 3, ['em069_01_01_BM', 'em069_01_01_BM+A'], 4 4U animations",
   "skeleton: 42 bones equal to GU em069_00's; largest bind position difference 0.0 (bone 200)",
   "parts states: 16 (GU layout), groups dropped (not in em095): [], hidden in base states [0, 8]: [50]",

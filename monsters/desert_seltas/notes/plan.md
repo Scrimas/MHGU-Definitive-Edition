@@ -250,18 +250,24 @@ S = strong, G = guess. 4U addresses: the v1.1 exe (dump/exefs_v11), read 2026-11
 - Shell / code effects GU's where 4U's differ; frenzy (m10818, m10928) left out (GU has none); 4U's night Dunes ->
   GU's Dunes; m10928's frenzy subquest -> her tail subquest; Seltas Z waist resists; recipe substitutes (T.Najarala
   Splasher -> Najarala Ampsounder, D.Mohran Allbrace -> Lrg ElderDragon Bone, S.Queen Concentrate -> D.S.QueenConcentrate);
-  raw / element on GU's balance (weapons4u.gu_scale, as Shrouded Nerscylla's).
+  raw / element on GU's balance (weapons4u.gu_scale, as Shrouded Nerscylla's); her reactions 99..102 / 105 on GU's
+  normal-Queen tables (GU rewrote them; their 4U op-0xfe data has another layout, not traced); a new Desert Seltas
+  without his Queen in his area digs out where he entered (4U's point W+0x218 not traced); his shots' 4U byte +0x14
+  dropped (GU's second status bitfield there, 4U's meaning not traced); a new male waits up to 3600 frames for her
+  pull (4U's timer not found); no discovery sting for him.
 
 ## Open (a test log tells)
 - In-game: the test builds 0.1.1 .. 0.1.17 were played on cores 1.9.0 / 2.0.0 (History, the last on 2026-11-12);
-  0.1.18, the PR's state on core 3.0.0, was not. The items below are the notes of each version; the History says what
-  a test settled. Still open after the 0.1.17 test: her pin (History, the user on 0.1.16 (a); she did not pin in that
-  run), his trail from her back (there, (c)), her fast run and her 4U actions no log has shown (7/21 7/25 7/29 7/34
-  7/50 7/52 7/55 7/56 7/57 7/60 7/66 7/67 7/68 7/77; 7/24 came on 2026-11-12), 4U's respawn delay (not found) and its
-  stun check 0x78968c. Up to 0.1.17 the `dsport:` lines showed each unit's actions, motions, HP and part counters (her
-  16/x lines are her joint attacks with her Desert Seltas, 16/4 the one her group 14 script starts); 0.1.18 keeps only
-  the working hooks' short lines.
-- Desert Seltas' dig effects: the user chose 4U's sand if it is not bright yellow (2026-11-10); 0.1.8 not seen yet.
+  the maintainer played 0.1.18 (the PR's state) and 0.1.19 on core 3.0.0 on 2026-11-18. The items below are the notes of
+  each version; the History says what a test settled. Still open after the 0.1.17 test: her pin (History, the
+  contributor on 0.1.16 (a); she did not pin in that run), his trail from her back (there, (c)), her fast run and her 4U
+  actions no log has shown (7/21 7/25 7/29 7/34 7/50 7/52 7/55 7/56 7/57 7/60 7/66 7/67 7/68 7/77; 7/24 came on
+  2026-11-12), 4U's respawn delay (not found) and its stun check 0x78968c. Up to 0.1.17 the `dsport:` lines showed each
+  unit's actions, motions, HP and part counters (her 16/x lines are her joint attacks with her Desert Seltas, 16/4 the
+  one her group 14 script starts); 0.1.18 keeps only the working hooks' short lines, 0.1.19 their action changes again
+  (seltas_act_log). Her pin with 0.1.19's hold points (seltas_hold.c, `dsport: dsq hold mode 1`) has not been played.
+- Desert Seltas' dig effects: the contributor chose 4U's sand if it is not bright yellow (2026-11-10); 0.1.8 not seen
+  yet.
 - His and her 4U shots (above, "Shots"): ported in 0.1.3, not played. The log shows each swapped post
   (`dsport: ds shot: GU shell 0x13b with their own 4U family`).
 - Her Desert Seltas at 0 % HP on her back (0.1.1 test: he stayed in 7/65 until 27 s after her death, then flew on at
@@ -536,7 +542,24 @@ S = strong, G = guess. 4U addresses: the v1.1 exe (dump/exefs_v11), read 2026-11
   each time a new Desert Seltas entered buried under her (12/1 -> 6/3) and she pulled him out (her 7/72, his 6/4); the
   first one rode her again (7/66) and fired on their own shell families; her reactions 10/7 from her 4U table (4 times);
   the discovery sting cleared 3 times, and no hunter reaction logged while they came out; she was angry for 90 s; her
-  7/24 and her burrow 4/0 / 4/3 once each; no pin (no `pin` line); no error line of the mod. The user (asked about what
-  no log shows): her tail underside glows only in her anger (0.1.17), no black stones any more (0.1.16), and the hunter
-  no longer flinches when a new one comes out (0.1.16). The user's choice: the PR goes with this test, so 0.1.18 is not
-  played on 3.0.0 (the PR text lists what it changes against 0.1.17).
+  7/24 and her burrow 4/0 / 4/3 once each; no pin (no `pin` line); no error line of the mod. The contributor (asked
+  about what no log shows): her tail underside glows only in her anger (0.1.17), no black stones any more (0.1.16), and
+  the hunter no longer flinches when a new one comes out (0.1.16). The contributor's choice: the PR goes with this test,
+  so 0.1.18 is not played on 3.0.0 (the PR text lists what it changes against 0.1.17).
+- 0.1.19 (2026-11-18, the maintainer's review and test of 0.1.18 on core 3.0.0, log 19-42-05, 11374): (1) a fog on his
+  lower abdomen growing with the distance: his 'XfB__m02_add' (mesh group 9) is 4U em025's material byte for byte
+  (CBMaterialConstant, no animation), which Capcom's em076_00 draws on the constant template; it was on the lit 'add'.
+  Now every constant-colour additive material is 'add_const' (build_seltas_arc.py), his and her 'XfB__m02_virus' too.
+  (2) the monster sometimes cannot find the hunter: 0.1.13's alert write 1 at the buried entry skipped GU's noticing
+  (perception 0x7f0cc looks and listens only at alert 0); removed (seltas.c). (5) Malfestio's confusion from his
+  shots: GU's hit entry +0x14 is a second status bitfield (0x04 only on Malfestio's shells); 4U's 4 there is no longer
+  copied (shots_seltas.py GU_STATUS2). (6) the bar to break free of her pin nearly empty: GU dropped 4U's hold-point
+  writes 0x799e24 (modes 0..3 at 7/73, 16/2, 16/5); GU's twin of that array is dtbase +0x80 (em069_00: 4U's mode 0
+  with z -350); ported in seltas_hold.c (hooks 0xF9C8B4, 0xF9BAF4). Review findings: his launch death and his 6/3 on
+  the controlling machine only (EN_CONTROLLED, Dalamadur's rule); every 12/0 entry buried, his Queen found by the slots
+  when the pair names none (12:20 of that log: a restore flew in beside her); her reactions 30 / 31 / 187 on their 4U
+  tables (react_seltas.py OWN_4U); the contributor's German quotes in English. Not changed: (3) actions that loop near
+  the fight's start (a log of each action change, seltas_act_log, kept as Black Gravios', Dalamadur's and Gogmazios'
+  are); (4) hit effects of a front leg on the other one (their skeletons, mirror pairs and body volumes are GU's or
+  4U's, C). The maintainer's test (log 2026-11-18 20:56, quest 11374): (1), (2), (3) and (5) gone; (4) likely the
+  Dual Blades' hunting art (its cheats were on); she did not pin in that run (no 16/2), so (6) is still to be seen.
