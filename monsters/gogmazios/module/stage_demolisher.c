@@ -19,8 +19,8 @@
  *    it sends the gate command 37 = action 54 (fire, quake 9, barrel recoil); effects m19a03_006 (launch), _010
  *    (trail), _007 (impact), explosion attack record 31 (0x9ab120), SE 316.
  *  - the charge: KowareObj frame 0x1cc410: gate action 53 at frame 20 -> m19a03_012, the red lightning between the
- *    cart and the barrel (BOLT_EFL), killed at action 54 frame 195 (0x1cc59c, which also posts m19a03_011 on the
- *    gate and plays SE 322 at frame 20: neither ported).
+ *    cart and the barrel (BOLT_EFL), and SE 322 at (700, 2100, -7300) (CHARGE_SE); the lightning is killed at
+ *    action 54 frame 195 (0x1cc59c, which also posts m19a03_011 on the gate: not ported).
  * Port (user's rule, 2026-10-23 evening: no item, ONE use per quest: 4U's Dense Marcoal is not in the box at the
  * start; an item version through GU's own Marcoal path (kind-29 record, ready 0x5048e8, switch type 5 0x5048fc,
  * camera 0x50491c; notes/stage.md section 15) was built but never reached in a test and is removed):
@@ -170,6 +170,15 @@ static const float k_gate_pos[3] = {0.0f, 2200.0f, -8110.0f};
 #define BOLT_EFL          12u
 #define BOLT_FRAME        20.0f
 #define BOLT_END_FRAME    195.0f
+/* and its sound: 4U 0x1cc58c 0x3127f4(sound, 322, (700, 2100, -7300), the gate's area), a stage-bank SE at a point;
+ * GU's twin 0x4ef334(sound, id, pos, area) (C: GU's uShellPlcom_011 plays its impact 323 with it, 0x467088; manager
+ * through GOT 0x1838be0, as em089_snd.c). 322 = 4U m19a03d big_cannon_fireattribute, one of the requests GU's arena
+ * bank dropped (tools/snd_area.py restore_requests puts them back) */
+typedef void *(*snd_stage_t)(void *mgr, uint32_t id, const float *pos, uint32_t area);
+#define sndStage          FN(snd_stage_t, 0x4ef334)
+#define SND_MGR_PTR       0x1896f5cu
+#define CHARGE_SE         322u
+static const float k_charge_se_pos[3] = {700.0f, 2100.0f, -7300.0f};
 #define KOBJ_SCHED        0x158u      /* its scheduler; +0x34 f32 frame (stage_doors.c) */
 #define SCHED_FRAME       0x34u
 static const float k_zero[3] = {0.0f, 0.0f, 0.0f};
@@ -513,7 +522,11 @@ void stage_demolisher_tick(void)
         s_m.bolt_done = 1;
         s_m.bolt = em089_efx_stage_efl_rot(BOLT_EFL, k_zero, k_zero);
         fx_check(s_m.bolt, "charge m19a03_012", k_zero);
-        logf("gogport: stage demolisher: charge at gate frame %d: m19a03_012 %x", (int32_t)gf, (uint32_t)s_m.bolt);
+        void *snd = *(void **)MAIN(SND_MGR_PTR);
+        float q[4] __attribute__((aligned(16))) = {k_charge_se_pos[0], k_charge_se_pos[1], k_charge_se_pos[2], 0.0f};
+        void *se = snd ? sndStage(snd, CHARGE_SE, q, ARENA_AREA) : 0;
+        logf("gogport: stage demolisher: charge at gate frame %d: m19a03_012 %x, SE %u %x", (int32_t)gf,
+             (uint32_t)s_m.bolt, CHARGE_SE, (uint32_t)se);
     } else if (s_m.bolt && o[KOBJ_ACT] == ACT_FIRE && gf >= BOLT_END_FRAME) {
         if (em089_efx_alive(s_m.bolt)) em089_efx_kill(s_m.bolt);
         s_m.bolt = 0;

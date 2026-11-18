@@ -4,7 +4,8 @@ kind = "monster"
 title = "Gogmazios"
 class = "Elder Dragon"     # its class, GU's name (monsterName 253..267): the installer's subtitle in every language
 version = "1.1.9"       # bump on every published change of this monster's files (data, assets or code); 1.1.9:
-                        # the Demolisher's effects at their points, its prompt icon (issue #6; core 3.0.0)
+                        # the Demolisher's effects at their points, its charge sound, its prompt icon (issue #6;
+                        # core 3.0.0)
 requires_core = "3.0.0"    # oldest core module (exefs) that runs this version: its arena effects' world records
                            # need the module's point posts (em089_efx.c post_full world)
 requires = ["battlequarters"]  # packages it needs besides the core (maps/<name>; later shared utilities)

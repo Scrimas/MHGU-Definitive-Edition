@@ -8,10 +8,12 @@ Per alias area (GU area k <- 4U area, as the arena build maps them: 0 <- m19a00d
     tools/snd4u2gu.py, plus the area sound call (SES), all under the Fortress paths the stage loader asks for
     (sound\\se\\map\\m26d\\m26a0Kd\\snd_m26a0Kd, sound\\call\\map\\m26d\\m26a0Kd, waves ...\\m26a0Kd\\wav\\<4U name>).
     They REPLACE the Fortress area bank / request / call / waves in a0K.arc.
-  - area 2 (arena): only the call is replaced. GU's Fortress a02 bank + request ARE Capcom's conversion of 4U
-    m19a03d (same request IDs 40..61, 304..336, same parameters up to GU tuning; only the big-cannon IDs 300-303,
-    316, 319, 321-323, 333-335 dropped, GU Fortress gimmick IDs added), so they stay (the GU gimmick code uses them).
-    The 4U arena call has no SE emitter at all (one reverb zone), so GU's 13 Fortress ambience emitters (creaks,
+  - area 2 (arena): GU's Fortress a02 bank + request ARE Capcom's conversion of 4U m19a03d (same request IDs
+    40..61, 304..336, same parameters up to GU tuning; only the big-cannon IDs 300-303, 316, 319, 321-323, 333-335
+    dropped, GU Fortress gimmick IDs added), so they stay (the GU gimmick code uses them), with the dropped 4U
+    requests added back (restore_requests): the Demolisher's (gate raise 300-303 from its scheduler, launch 316 and
+    impact 323 from GU's shell uShellPlcom_011, charge 322 from module/stage_demolisher.c). The call is replaced:
+    the 4U arena call has no SE emitter at all (one reverb zone), so GU's 13 Fortress ambience emitters (creaks,
     draft, underpass wind) go away.
 Request volumes are kept as 4U's (--keep-volume): Capcom's a02 conversion does not show the monsters' -2 dB rule.
 
@@ -26,12 +28,12 @@ offset} at 0x10, records:
   Type-1 paths name the area bank; type 3/4 name the stage reverb / EQ file (4U snd_M19d 'REV\\0' v2 presets;
   GU snd_m26d 'REVR' / 'EQUR', different layouts) -> NOT converted: type-3/4 records are dropped (deviation).
 """
-import json, os, struct, sys
+import collections, json, os, struct, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
-import snd4u2gu
+import snd4u2gu, arcpack
 
 U4 = os.path.join(ROOT, 'dump', 'm19_unpacked')
 OUT = os.path.join(ROOT, 'dump', 'converted', 'area_snd')
@@ -39,6 +41,7 @@ OUT_JSON = os.path.join(ROOT, 'dump', 'converted', 'area_snd.json')
 T_SES4, T_SESG = 0x68CD2933, 0x2543B93E
 SES_V4, SES_GU = 0x20120623, 0x20160706
 AREAS = [(0, 'a00', True), (1, 'a01', True), (2, 'a03', False)]     # (GU area, 4U area, replace bank + request)
+GU_AREA_ARC = '/nativeNX/arc/stage/%sd/a%02d.arc'
 
 
 def ses_parse(d, gu):
@@ -121,6 +124,70 @@ def convert_area(k, a4, full, log, u4=U4, s4='m19', sg='m26'):
     return files
 
 
+def restore_requests(k, a4, log, u4=U4, s4='m19', sg='m26'):
+    """GU area k's own bank + request (Capcom's conversion of 4U area a4) with the 4U requests Capcom dropped added
+    back. Request word 7 hi16 = bank group, word 0 byte 2 = key, matched against the group's entries' key {lo, hi,
+    root} (4U entry +12; 4U m19a03d group 5, flags 0x2c = 22 keyed entries 14..35, holds the cannon waves). The
+    dropped requests' entries go into one NEW keyed group at the bank's end with 4U's keys (GU reuses some keys of
+    that group, e.g. 0x15 = its v05_cannon_air where 4U has big_fire_smoke), so GU's records and entries stay as
+    they are; their missing waves are converted (GU's own kept); the requests are convert_area's (4U volume) with
+    this request file's majority tail and header word 7 (an area request's, not snd4u2gu.SRQR_HASH). Returns
+    [(path, type, bytes)]: new waves, bank, request."""
+    T4, TG = snd4u2gu.T4, snd4u2gu.TG
+    _, gents = arcpack.read(snd4u2gu._gu_romfs().read(GU_AREA_ARC % (sg, k)))
+    g = {(p, t): d for p, t, d in gents}
+    gdir = 'sound\\se\\map\\%sd\\%sa%02dd\\' % (sg, sg, k)
+    gbank = gdir + 'snd_%sa%02dd' % (sg, k)
+    bd, rd = g[(gbank, TG['BANK'])], g[(gbank, TG['REQ'])]
+    gb, gr = snd4u2gu.bank_parse(bd), snd4u2gu.reqgu_parse(rd)
+    b4p = os.path.join(u4, s4 + a4, 'sound/se/map/%s/%s%sd/snd_%s%sd' % (s4, s4, a4, s4, a4))
+    b4 = snd4u2gu.bank_parse(open(b4p + '.%08x' % T4['BANK'], 'rb').read())
+    r4 = snd4u2gu.req4_parse(open(b4p + '.%08x' % T4['REQ'], 'rb').read())
+
+    def bank(recs, ents):
+        return (struct.pack('<4s4I', b'SBKR', 4, len(recs), len(ents), gb['x']) +
+                b''.join(struct.pack('<HHII', *r) for r in recs) +
+                b''.join(p.encode('ascii') + b'\0' + struct.pack('<I', t) + a for p, t, a in ents) + gb['tail_raw'])
+    assert bank(gb['recs'], gb['ents']) == bd
+    raw = [rd[0x34 + 132 * i:0x34 + 132 * (i + 1)] for i in range(len(gr['ents']))]
+    ids = [w[0] & 0xFFFF for w in gr['ents']]
+    assert ids == sorted(ids), ids
+
+    def request(ents):
+        out, _ = snd4u2gu.req_build({'ents': []}, {}, [gbank], keep_volume=True, extra=ents)
+        return out[:0x1c] + rd[0x1c:0x20] + out[0x20:]
+    assert request(raw) == rd
+    add = [w for w in r4['ents'] if w[0] & 0xFFFF not in set(ids)]
+    groups = {w[7] >> 16 for w in add}
+    assert len(groups) == 1, groups
+    _, flags, first, x = b4['recs'][groups.pop()]
+    assert not flags & 0x8000, hex(flags)          # a keyed group: flags = 2 * entry count
+    keys = {(w[0] >> 16) & 0xFF for w in add}
+    pick = [e for e in b4['ents'][first:first + flags // 2] if e[2][12] in keys]
+    assert all(a[12] == a[13] for _, _, a in pick) and {a[12] for _, _, a in pick} == keys
+    p4 = 'sound\\se\\map\\%s\\%s%sd\\wave\\' % (s4, s4, a4)
+    rename = lambda p: gdir + 'wav\\' + p[len(p4):]
+    waves = []
+    for p, _, _ in pick:
+        if (rename(p), TG['WAVE']) not in g and rename(p) not in [w[0] for w in waves]:
+            d = open(os.path.join(u4, s4 + a4, p.replace('\\', '/') + '.%08x' % T4['WAVE']), 'rb').read()
+            waves.append((rename(p), TG['WAVE'], snd4u2gu.gu_wave(snd4u2gu.madp_parse(d))))
+    gid = len(gb['recs'])
+    recs = gb['recs'] + [(gid, 2 * len(pick), len(gb['ents']), x)]
+    ents = gb['ents'] + [(rename(p), TG['WAVE'], snd4u2gu.bank_ent_gu(a)) for p, _, a in pick]
+    tail = collections.Counter(e[88:] for e in raw).most_common(1)[0][0]
+    new = []
+    for w in add:
+        w = list(w)
+        w[7] = (gid << 16) | (w[7] & 0xFFFF)
+        new.append(snd4u2gu.req_ent_gu(w, keep_volume=True)[:88] + tail)
+    merged = sorted(raw + new, key=lambda e: struct.unpack_from('<I', e)[0] & 0xFFFF)
+    log.append('  %s -> a%02d: GU bank / request + 4U requests %s (group %d: %s; %d new waves)' % (
+        a4, k, sorted(w[0] & 0xFFFF for w in add), gid, ' '.join(p.split('\\')[-1] for p, _, _ in pick),
+        len(waves)))
+    return waves + [(gbank, TG['BANK'], bank(recs, ents)), (gbank, TG['REQ'], request(merged))]
+
+
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else 'convert'
     if cmd != 'convert':
@@ -128,14 +195,16 @@ def main():
     log = []; manifest = []
     for k, a4, full in AREAS:
         files = convert_area(k, a4, full, log)
+        if not full:
+            files = restore_requests(k, a4, log) + files
         for p, t, d in files:
             fn = os.path.join(OUT, 'a%02d' % k, p.replace('\\', '/') + '.%08x' % t)
             os.makedirs(os.path.dirname(fn), exist_ok=True)
             open(fn, 'wb').write(d)
         manifest.append(dict(
             arc='maps/battlequarters/romfs/nativeNX/arc/stage/m28d/a%02d.arc' % k, source_4u='m19%sd' % a4,
-            remove_types=(['0x79c47b59 (paths sound\\se\\map\\m26d\\m26a%02dd\\...)' % k, '0x15d782fb', '0x1bcc4966']
-                          if full else []) + ['0x2543b93e'],
+            remove_types=(['0x79c47b59 (paths sound\\se\\map\\m26d\\m26a%02dd\\...)' % k] if full else []) +
+                         ['0x15d782fb', '0x1bcc4966', '0x2543b93e'],
             add_in_order=[dict(path=p, type='0x%08x' % t, file=os.path.relpath(
                 os.path.join(OUT, 'a%02d' % k, p.replace('\\', '/') + '.%08x' % t), ROOT)) for p, t, _ in files]))
     json.dump(manifest, open(OUT_JSON, 'w'), indent=1)

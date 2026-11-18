@@ -5,7 +5,8 @@ name = "battlequarters"
 kind = "map"
 title = "Battlequarters"
 version = "1.0.1"          # bump on every published change of this map's files. 1.0.1: supply rockets land on
-                           # its floors (map_com landing points, issue #47)
+                           # its floors (map_com landing points, issue #47); the arena bank has the Demolisher's
+                           # sounds again (tools/snd_area.py restore_requests, issue #6)
 requires_core = "2.0.0"    # oldest core that knows map packages (module/port.c port_installed: a monster whose
                            # map is missing counts as not installed)
 gu_stage = 26              # the GU stage it is an alias of (the Fortress): = allocations.toml

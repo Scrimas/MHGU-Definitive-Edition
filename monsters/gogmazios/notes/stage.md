@@ -924,6 +924,12 @@ wall tops). Pure-black masks of the screenshots: scratchpad mask32/33/34.png (us
   (m19a03_010 entry 6, model qe000_000, 4U's opaque lit material on colourless meshes) white-filled = 2x, a flat
   white disc as Tidal Najarala's scale: RGB 127 = 1.0 for that model only (efl4u2gu SOLID_FILLS; no other em089
   effect draws it). Log: `stage demolisher: <effect> placed at (x, y, z) scale N/1000 (asked x, y, z)`.
+- 2026-11-19, the maintainer's recording of that build: "all perfect visual-wise", "still lacking the sound". Cause
+  (C): GU's arena bank is Capcom's conversion of 4U m19a03d without the big-cannon requests 300-303, 316, 319,
+  321-323, 333-335 (tools/snd_area.py), so the gate's raise (its scheduler's SoundControl: 301, 303, 300, 302), GU's
+  shell (launch 316, impact 323, 0x467074) and the charge played nothing. tools/snd_area.py restore_requests adds
+  them back (their 8 waves, one new keyed group 11 with 4U's keys, GU's records untouched) and stage_demolisher.c
+  plays 4U's charge SE 322 at (700, 2100, -7300) at gate frame 20 (4U 0x1cc58c -> 0x3127f4 = GU 0x4ef334).
 - Deviations: no in-flight hit (4U 2500 type 67 radius 500; GU mode 0 attacks only in the explosion, pl_com_011 has
   no record for it); 4U's impact check on em089 + stage byte +0x1838 not ported; GU's switch motion 0x7df for 4U's
   0x20f; 4U's action-54 frame remap during the re-arm wait not ported.

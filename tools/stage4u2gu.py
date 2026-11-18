@@ -682,8 +682,9 @@ def build_area(area, report):
 # Area sound (sound agent, tools/snd_area.py convert -> AREA_SND_JSON, one entry per arc): a00 / a01 lose the Fortress
 # area SE (waves 0x79c47b59 under sound\se\map\m26d\m26a0Kd\, bank 0x15d782fb, request 0x1bcc4966, call 0x2543b93e
 # sound\call\map\m26d\m26a0Kd) and get the converted 4U m19a00d / m19a01d files under the same paths, in the listed
-# order (waves -> bank -> request -> call), at the place of the first removed entry; a02 swaps only the call (GU's a02
-# bank + request are Capcom's own conversion of 4U m19a03d and the gimmick code uses their IDs).
+# order (waves -> bank -> request -> call), at the place of the first removed entry; a02 keeps GU's waves and gets GU's
+# own bank + request (Capcom's conversion of 4U m19a03d, the gimmick code uses their IDs) with the 4U requests Capcom
+# dropped added back (the Demolisher's; snd_area.py restore_requests) + its new waves, and the 4U call.
 AREA_SND_JSON = os.path.join(ROOT, 'dump', 'converted', 'area_snd.json')
 T_SND = (0x79c47b59, 0x15d782fb, 0x1bcc4966, 0x2543b93e)
 
@@ -703,7 +704,8 @@ def area_sound(area, ents):
         assert len(k) == 1, (area, cp)
         ents = list(ents); ents[k[0]] = (cp, ct, cd)
         return ents, 'call %s replaced (%d B)' % (cp, len(cd))
-    drop = [i for i, (p, t, d) in enumerate(ents) if t in T_SND and p.startswith(mine)]
+    rm = {int(t.split()[0], 16) for t in spec[0]['remove_types']}
+    drop = [i for i, (p, t, d) in enumerate(ents) if t in rm and p.startswith(mine)]
     assert drop, (area, 'no Fortress area sound entries')
     out = [e for i, e in enumerate(ents) if i not in set(drop)]
     at = drop[0]
