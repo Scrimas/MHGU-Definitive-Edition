@@ -26,7 +26,8 @@
  *  - prompt: two GU interaction records (mgr [0x1889ec0], 0x31aa6c / 0x31abac, as st006 0x495924) of kind 11 (the
  *    Dragonator switch: player action 143 = GU's switch action, 4U uses the same switch action body for both);
  *    stage_cannon_ready @0x503b88 answers the 4U ready check when the call comes from the kind-11 interaction
- *    (lr 0x2ed448) and the local hunter stands at a cannon record; the switch action's Dragonator fire 0x503bb0
+ *    (lr 0x2ed448) or its button prompt's icon (lr 0x60eec8: red cross when 0) and the local hunter stands at a
+ *    cannon record; the switch action's Dragonator fire 0x503bb0
  *    (hook owned by stage_gimmick.c, which calls stage_cannon_fire first) fires the cannon instead, and
  *    stage_dragonator_post @0x503a5c skips the Dragonator follow-up for that press.
  *  - projectile: GU's cannonball shell uShellPlcom_009 (shell type 29, the GU Fortress cannon st008's shot, life 120
@@ -105,6 +106,9 @@ typedef void (*shell_post_t)(void *mgr, void *param);
 #define GAME_PTR          0x2126764u
 #define SQUEST_PTR        0x188ad90u
 #define LR_READY_KIND11   0x2ed448u
+/* the button prompt's icon (UI 0x60ec80 jump table, case 12 = record kind 11 at 0x60eeb8): 0 -> the red cross
+ * (0x60f110), else plain (0x60f140); unanswered it asked GU's Fortress Dragonator and crossed ours (issue #6) */
+#define LR_PROMPT_KIND11  0x60eec8u
 #define LR_FIRE_SWITCH    0x2d9514u
 /* the other switch action calling the fire (0x120f6d8, from 0x1207e6c: a second player class, presumably the Prowler):
  * same shape as 0x2d9504, r4 = the acting player, then the local check 0x27bcd0 and the tail call of 0x503a5c */
@@ -356,7 +360,8 @@ int stage_cannon_fire(uint32_t *regs)
 #endif
 }
 
-/* 0x503b88(mgr) Dragonator ready: the kind-11 interaction check of the player (lr 0x2ed448) at a cannon record */
+/* 0x503b88(mgr) Dragonator ready: the kind-11 interaction check of the player (lr 0x2ed448) and its button prompt's
+ * icon (lr 0x60eec8) at a cannon record */
 int stage_cannon_ready_c(uint32_t *regs)
 {
 #ifdef STAGE_CANNONS_OFF
@@ -364,7 +369,8 @@ int stage_cannon_ready_c(uint32_t *regs)
     return 0;
 #else
     static uint32_t s_n;
-    if (regs[LR] - MAIN_BASE != LR_READY_KIND11) return 0;
+    uint32_t lr = regs[LR] - MAIN_BASE;
+    if (lr != LR_READY_KIND11 && lr != LR_PROMPT_KIND11) return 0;
     int pr = em089_pile_ready(local_hunter());   /* the fallen Dragonator spear's record (em089_pile.c, any stage) */
     if (pr >= 0) { regs[R0] = (uint32_t)pr; return 1; }
     if (!stage_alias_active()) return 0;
@@ -373,7 +379,8 @@ int stage_cannon_ready_c(uint32_t *regs)
     int k = hunter_cannon(local_hunter(), LOCAL_MARGIN);   /* the prompt check is the local hunter's */
     if (k < 0) return 0;
     regs[R0] = (uint32_t)cannon_ready(k);
-    if (++s_n <= 6) logf("gogport: stage cannon %u: prompt check -> %u", k + 1u, regs[R0]);
+    if (++s_n <= 6) logf("gogport: stage cannon %u: %s check -> %u", k + 1u,
+                         lr == LR_PROMPT_KIND11 ? "prompt icon" : "prompt", regs[R0]);
     return 1;
 #endif
 }
