@@ -6,26 +6,37 @@ written for players; write the section before `release.py package`.
 
 ## v3.0.0
 **New**
+- Desert Seltas and Desert Seltas Queen, ported by @Rukasu1609, with their MH4U AI and attacks, 6 quests from MH4U
+  (G★1, G★3 and Village★10), their armor and weapons.
 - Your MHGU save stays clean: everything the mod adds (items, gear, jewels, quest clears, monster records) now
   lives in its own files next to it (`mhgu_de_1.bin` to `mhgu_de_3.bin`), so MHGU never meets an item it doesn't
-  know, even without the mod. Your save moves over by itself the first time you save, or when the installer (2.1.0,
-  it updates itself) installs this release: it backs your saves up first. On an emulator the mod also keeps a copy of
+  know, even without the mod. Your save moves over by itself the first time you save, or when the installer (it
+  updates itself) installs this release: it backs your saves up first. On an emulator the mod also keeps a copy of
   your save from before, `system_premigration`. Not tested on a real Switch: back up with JKSV or Checkpoint first.
 - Harvest Tours on Heaven's Mount: MH4U's three tours (Village ★8, Hub ★5, G★3), with MH4U's intruders at MH4U's
   odds. On the Hub ★5 tour an intruder shows up half the time: Rathalos, Deviljho or, rarely, Savage Deviljho, and
   sometimes a second one later, as in MH4U.
 - The installer has a Harvest Tours card: tick it to get every map with tours, even without its monster. A monster
   that needs one of those maps brings its tours too.
+- Everything the mod adds speaks MHGU's two Chinese languages too (Traditional and Simplified): monster names,
+  quests, items, gear and Hunter's Notes. It was in English, since MH4U was never released in Chinese.
+- Ported quests sit among MHGU's quests of their star board, next to the quests of the monster they're based on,
+  instead of at the end of the list.
+- The installer speaks your language (English, French, German, Italian, Spanish and both Chinese), shows each
+  monster's name and class as the game does, and puts itself in the Start Menu (Windows) or your app menu (Linux).
+- The installer runs on ARM too: Windows 11 on ARM and Linux on ARM.
+- For installing by hand, one all-in-one zip holds everything: one download, one extract.
 
 **Fixed**
-- Gathering on Heaven's Mount gives the right items: MH4U's lists, with MHGU's closest item where MHGU lacks one
-  (Heaven's Mount 1.0.1).
-
-## v2.1.0
-**New**
-- The ported monsters have Chinese names in MHGU's two Chinese languages (Traditional and Simplified). They were in
-  English, since MH4U was never released in Chinese.
-- The installer shows each monster's name and class in your language, the same names as in the game.
+- Gathering on Heaven's Mount gives the right items: MH4U's lists, with MHGU's closest item where MHGU lacks one.
+- Supply rockets land where you can reach them on Battlequarters, Speartip Crag and Heaven's Mount.
+- Battlequarters' Demolisher fires as in MH4U: the red lightning while it charges, the fireball at the muzzle, the
+  red shot flying into the arena and its explosion in front of the fixed Dragonator, all with their sounds.
+- The Demolisher's and the floor cannons' button prompts show plain when they're ready, with the red cross when not.
+- Stygian Zinogre's *Advanced: Mega Hunt-a-thon* clears when every monster is down, and its Seltas Queen and Seltas
+  arrive together, as in MH4U.
+- Gogmazios' Charge Blade no longer crashes the game in its draw attacks.
+- Ported village quests stay off the Hunt of the Day until their star is unlocked.
 
 ## v2.0.0
 **New**
