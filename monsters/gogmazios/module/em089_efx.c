@@ -48,6 +48,12 @@ typedef void (*efx_set_rot_t)(void *xf, const float *rot);
 #define REQ_POS        0xc0
 #define REQ_TARGET     0xd0     /* attach model (0x6ff74 fills vt+0x130(owner) only when 0) */
 #define VT_ATTACH      0x130    /* unit slot 76: attach model getter (0x6be88: this+0xfd0, shells too) */
+/* GU's point post (C, Stygian's sz_efx_world, monsters/stygian_zinogre/notes/b5-shells.md 8e): what 0x6ff74 calls
+ * after it has made the monster's model the target; called here without one */
+typedef void *(*unit_efx_post_t)(void *unit, void *pel, uint32_t mode, uint32_t id, void *req, void *tied);
+#define unitEfxPost    FN(unit_efx_post_t, 0x53b500)
+#define EN_PEL_U       0xb624   /* the monster's PEL u */
+#define EN_PEL_SE      0xb628   /* its PEL-tied sounds */
 
 static uint32_t s_log;
 
@@ -99,8 +105,12 @@ static uint32_t ground_flags(void *self)
     return (2u << kind) | 1u;
 }
 
+/* world: no target (GU's point post 0x53b500, for records with the world tail, efl4u2gu PEL_TAIL_WORLD). Through
+ * 0x6ff74 the monster's model becomes the target: the unit setup 0x32aa44 parents the effect to it in transform modes
+ * 0-2 and never writes the world position (node +0x40 only in modes 3 / 4), so a point post there plays at the
+ * monster with his 2.5 scale (C) */
 static void *post_full(void *self, uint32_t id, const float *pos, void *unit, const float *rot, const float *scale,
-                       uint32_t req8)
+                       uint32_t req8, int world)
 {
     uint32_t buf[REQ_SIZE / 4 + 4];
     void *req = (void *)(((uint32_t)buf + 15u) & ~15u);
@@ -145,7 +155,9 @@ static void *post_full(void *self, uint32_t id, const float *pos, void *unit, co
         FIELD(float, req, REQ_POS + 8) = pos[2];
         FIELD(float, req, REQ_POS + 12) = 0.0f;
     }
-    void *eff = efx_post_u(self, EFX_MODE_CODE, id, req);
+    void *eff = world ? unitEfxPost(self, FIELD(void *, self, EN_PEL_U), EFX_MODE_CODE, id, req,
+                                    FIELD(void *, self, EN_PEL_SE))
+                      : efx_post_u(self, EFX_MODE_CODE, id, req);
     efx_req_dtor(req);
     static uint32_t s_n, s_freq;              /* blob drips / splashes are frequent: own small budget */
     int freq = id == 3000 || id == 3001 || (id >= 5100 && id < 5200);
@@ -157,12 +169,12 @@ static void *post_full(void *self, uint32_t id, const float *pos, void *unit, co
 
 static void *post_req(void *self, uint32_t id, const float *pos, void *unit)
 {
-    return post_full(self, id, pos, unit, 0, 0, 0);
+    return post_full(self, id, pos, unit, 0, 0, 0, 0);
 }
 
 void *em089_efx_post_ex(void *self, uint32_t id, const float *pos, const float *rot_deg, const float *scale)
 {
-    return post_full(self, id, pos, 0, rot_deg, scale, 0);
+    return post_full(self, id, pos, 0, rot_deg, scale, 0, 0);
 }
 
 void *em089_efx_post(void *self, uint32_t id) { return post_req(self, id, 0, 0); }
@@ -274,7 +286,7 @@ static void *s016_post(void *owner, void *shell, uint32_t id, uint32_t efx)
     uint32_t pa, ya;
     s016_seg(shell, efx, q, &pa, &ya);
     rot[0] = a16_deg(pa); rot[1] = a16_deg(ya); rot[2] = 0.0f;
-    void *eff = post_full(owner, id, q, 0, rot, 0, 3);
+    void *eff = post_full(owner, id, q, 0, rot, 0, 3, 0);
     static uint32_t s_n;   /* test 5: does the transform carry the owner's 2.5 scale? (record scale is 1.0 now) */
     void *xf = eff ? FIELD(void *, eff, EFX_XF) : 0;
     if (xf && ++s_n <= 12)
@@ -430,7 +442,7 @@ static float s_tail_t;
 
 void em089_efx_tail_break(void *self)
 {
-    s_tail_eff = post_full(self, EM089_EFX_TAIL_BREAK, 0, 0, 0, 0, 0);   /* attach model = owner, joint from record */
+    s_tail_eff = post_full(self, EM089_EFX_TAIL_BREAK, 0, 0, 0, 0, 0, 0);   /* attach model = owner, joint from record */
     s_tail_t = 120.0f;
 }
 
@@ -494,7 +506,8 @@ void em089_efx_roar_blur(void *self)
 /* 4U sEffect scheduler event CreateKowareEft (0xc0afa8): index -> table 0xe06378 (tools/efl4u2gu.py KOWARE_EFL),
  * element mask 1 << KowareEftGroup, at KowareEftPos with KowareEftScale, only when KowareEftAreaNo is the player's
  * area (or 255). GU has no such controller: the stage code posts here; the EFLs ride in em089's arc and PEL
- * (records 6000 + 4 * index + group, 6100 + n for m19a03_NNN), posted on the last em089 seen (world position). */
+ * (records 6000 + 4 * index + group, 6100 + n for m19a03_NNN, world tail), posted through the last em089 seen as
+ * point posts (post_full world: no target; until 2026-11-18 through 0x6ff74, which drew them on Gogmazios). */
 typedef uint32_t (*player_area_t)(void);
 #define playerArea FN(player_area_t, 0x4971c)
 static void *s_efx_owner;
@@ -509,31 +522,36 @@ void *em089_efx_stage_kowareeft(uint32_t index, uint32_t group, const float *pos
         return 0;
     }
     if (area != 255 && area != playerArea()) return 0;   /* 0xc0b140: other area -> nothing */
-    return em089_efx_post_at(s_efx_owner, 6000 + 4 * index + group, pos);
+    return post_full(s_efx_owner, 6000 + 4 * index + group, pos, 0, 0, 0, 0, 1);
 }
 
 void *em089_efx_stage_efl(uint32_t n, const float *pos)
 {
     if (!s_efx_owner || !pos || n >= 14) return 0;
-    return em089_efx_post_at(s_efx_owner, 6100 + n, pos);
+    return post_full(s_efx_owner, 6100 + n, pos, 0, 0, 0, 0, 1);
 }
 
 void *em089_efx_stage_efl_rot(uint32_t n, const float *pos, const float *rot_deg)
 {
     if (!s_efx_owner || !pos || n >= 14) return 0;
-    return post_full(s_efx_owner, 6100 + n, pos, 0, rot_deg, 0, 0);
-}
-
-void *em089_efx_stage_efl_on(uint32_t n, void *unit)
-{
-    if (!s_efx_owner || !unit || n >= 14) return 0;
-    return em089_efx_post_on(s_efx_owner, 6100 + n, unit);
+    return post_full(s_efx_owner, 6100 + n, pos, 0, rot_deg, 0, 0, 1);
 }
 
 void *em089_efx_stage_efl_track(uint32_t n, const float *pos, const float *rot_deg)
 {
     if (!s_efx_owner || !pos || n >= 14) return 0;
-    return post_full(s_efx_owner, 6100 + n, pos, 0, rot_deg, 0, 3);
+    return post_full(s_efx_owner, 6100 + n, pos, 0, rot_deg, 0, 3, 1);
+}
+
+int em089_efx_where(void *eff, float *pos, float *scale)
+{
+    uint8_t *n = em089_efx_alive(eff) ? FIELD(uint8_t *, eff, EFX_XF) : 0;
+    if (!n) return 0;
+    for (int i = 0; i < 3; i++) {
+        pos[i] = FIELD(float, n, 0x40 + 4 * i);
+        scale[i] = FIELD(float, n, 0x60 + 4 * i);
+    }
+    return 1;
 }
 
 void em089_efx_place(void *eff, const float *pos, const float *rot_rad)

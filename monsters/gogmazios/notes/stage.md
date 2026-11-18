@@ -911,6 +911,19 @@ wall tops). Pure-black masks of the screenshots: scratchpad mask32/33/34.png (us
   0..150), then GU's uShellPlcom_011 mode 0 (= Capcom's port of uShell022 kind 9) with 4U's start (0, 2777, -5956),
   pitch 0xf556 (-15 deg = a00 mRot x at frame 150), velocity (0, -1.5, 108) rotated; 4U effects m19a03_006 / 012 /
   007 instead of GU's; action 54 at the launch.
+- 2026-11-18 (issue #6, 4U clip of the fire): the trail was m19a03_012, which is the charge's red lightning (4U
+  effect group 96 index 10, world-positioned elements between the cart and the barrel) drawn around the shell: now
+  m19a03_010 (96/8), and m19a03_012 is posted at the origin at gate action 53 frame 20, killed at action 54 frame 195
+  (4U 0x1cc410 / 0x1cc59c). Not ported: that block's SE 322 at (700, 2100, -7300) and m19a03_011 on the gate, the
+  cart's "Switch_anm" material loop while the Demolisher is usable.
+- 2026-11-18, the maintainer's recording of that build: the launch fireball and the impact drew on Gogmazios, the
+  lightning was not seen, the shot was a huge white ball. Causes: (1, C) every arena effect went through 0x6ff74,
+  which attaches it to the monster's model: his position, frame and 2.5 scale, whatever point it asks (port-checklist
+  "m19a03_007"); m19a03_012 holds world coordinates itself (elements at (700, 2100, -7300) ... around the cart). Now
+  point posts with the world tail (em089_efx.c post_full world, efl4u2gu stage_records). (2, S) the shot's ball
+  (m19a03_010 entry 6, model qe000_000, 4U's opaque lit material on colourless meshes) white-filled = 2x, a flat
+  white disc as Tidal Najarala's scale: RGB 127 = 1.0 for that model only (efl4u2gu SOLID_FILLS; no other em089
+  effect draws it). Log: `stage demolisher: <effect> placed at (x, y, z) scale N/1000 (asked x, y, z)`.
 - Deviations: no in-flight hit (4U 2500 type 67 radius 500; GU mode 0 attacks only in the explosion, pl_com_011 has
   no record for it); 4U's impact check on em089 + stage byte +0x1838 not ported; GU's switch motion 0x7df for 4U's
   0x20f; 4U's action-54 frame remap during the re-arm wait not ported.

@@ -900,9 +900,13 @@ def make_roar_blur(S):
 def stage_records():
     """6000 + 4 * index + group: KowareEft index (2, 11..17) with element mask 1 << group (groups 0..2), scale 1;
     6100 + n: m19a03_NNN (all 14 arena EFLs), mask -1 (the ones outside the KowareEft table are played by 4U
-    gimmick code the alias does not run)."""
+    gimmick code the alias does not run). World tail (GU's point posts, mode 3): 4U posts them at world points, and
+    m19a03_012 holds world coordinates itself (its elements at (700, 2100, -7300) ... around the Demolisher cart,
+    posted at 0 0 0). The attach tail with the monster as target drew them on Gogmazios at his 2.5 scale (C:
+    em089_efx.c post_full; issue #6, Demolisher recording 2026-11-18)."""
     def rec(path, rid, k):
-        return (path, dict(id=rid, joint=-1, k=k, pos=(0.0, 0.0, 0.0), rot=(0.0, 0.0, 0.0), scl=(1.0, 1.0, 1.0)))
+        return (path, dict(id=rid, joint=-1, k=k, pos=(0.0, 0.0, 0.0), rot=(0.0, 0.0, 0.0), scl=(1.0, 1.0, 1.0),
+                           world=True))
     out = [rec(p, 6000 + 4 * i + g, g) for i, p in sorted(KOWARE_EFL.items()) for g in range(3)]
     out += [rec(M19A03_EFL % n, 6100 + n, -1) for n in range(14)]
     return out
@@ -970,12 +974,19 @@ def hide_grey_models(d, d4, log=None, models=None):
     return bytes(out)
 
 
+# The Demolisher shot's ball (m19a03_010 entry 6, the only model unit drawing qe000_000 in em089's set; qe008_025 /
+# 026 name that path for their EAN): 4U's opaque lit material on colourless meshes, white-filled it drew at 2x as a
+# flat white disc (recording 2026-11-18; Tidal Najarala's scale the same, notes/porting-guide.md "Effect models").
+# Vertex RGB 127 = 1.0 = 4U's colourless mesh. The rest of em089's set keeps the shipped white fill.
+SOLID_FILLS = {'effect\\base\\qe\\qe000\\qe000_000': (127, 127, 127, 255)}
+
+
 def em089_spec():
     """Gogmazios' effect set (tools/build_em089_arc.py) for effect_set"""
     return dict(arc=SRC_EM089, stage_unpacked=STAGE_UNPACKED, mef=MEF_PATH, em_efl='effect\\efl\\em\\em089\\',
                 groups=GROUP_EFL, extra=extra_records(), lmts=[(LMT_PATH % i, PSL[i]) for i in range(4)], pel=PEL_U,
                 soil=M19A03_AREA_SOIL, list2=None, models=[TAR_COAT_MODEL], hide_grey_models=HIDE_GREY_MODELS,
-                model_renderer=MODEL_RENDERER_MODELS)
+                model_renderer=MODEL_RENDERER_MODELS, solid_fills=SOLID_FILLS)
 
 
 def em089_set(log):
@@ -990,7 +1001,8 @@ def effect_set(spec, log):
     list), pel (the GU PEL u path), soil (RGBA of the stage's area colour that 4U multiplies in), list2 (None = PEL
     list 2 holds our records too, or (count, record bytes) of a GU PEL's list 2: the GU class posts its own ids),
     optional extra2 [(EFL path, record)] (code posts appended to that GU list 2 only), solid_fill (convert_effect_mod),
-    solid_templates {model path: template key} (convert_model) and intensity (intensity_bake)."""
+    solid_fills {model path: fill} (per model, over solid_fill), solid_templates {model path: template key}
+    (convert_model) and intensity (intensity_bake)."""
     S = sources(spec['arc'], spec['stage_unpacked'])
     mef = mef_records(S[(spec['mef'], T['MEF'])])
     efls = {p for (p, t) in S if t == T['EFL'] and p.startswith(spec['em_efl'])}
@@ -1039,8 +1051,8 @@ def effect_set(spec, log):
             elif t == T['MOD']:
                 mrl4 = S.get((p, T['MRL']))
                 try:
-                    gmod, gmrl, mtex = convert_model(p, S[(p, t)], mrl4, spec.get('solid_fill', (255, 255, 255, 255)),
-                                                     spec.get('solid_templates', {}).get(p))
+                    fill = spec.get('solid_fills', {}).get(p, spec.get('solid_fill', (255, 255, 255, 255)))
+                    gmod, gmrl, mtex = convert_model(p, S[(p, t)], mrl4, fill, spec.get('solid_templates', {}).get(p))
                 except (Exception, SystemExit) as e:
                     log.append('MODEL %s NOT converted: %s' % (p, e)); continue
                 conv['MOD'][p], conv['MRL'][p] = gmod, gmrl

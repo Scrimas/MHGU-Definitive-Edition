@@ -16,8 +16,11 @@
  *    frames of countdown after the fire -> command 38 = action 55 (re-arm) [0x6b9de8..0x6b9e90].
  *  - uShell022 kind 9 (init 0xc75500 / 0xc75904, update 0xc74b78): start = gate model matrix * (0, 0, 2230) + model
  *    position, angles = the model's rotation; launch (0, -1.5, 108) per frame in that frame, gravity -1.8; at launch
- *    it sends the gate command 37 = action 54 (fire, quake 9, barrel recoil); effects m19a03_006 (launch), _012
+ *    it sends the gate command 37 = action 54 (fire, quake 9, barrel recoil); effects m19a03_006 (launch), _010
  *    (trail), _007 (impact), explosion attack record 31 (0x9ab120), SE 316.
+ *  - the charge: KowareObj frame 0x1cc410: gate action 53 at frame 20 -> m19a03_012, the red lightning between the
+ *    cart and the barrel (BOLT_EFL), killed at action 54 frame 195 (0x1cc59c, which also posts m19a03_011 on the
+ *    gate and plays SE 322 at frame 20: neither ported).
  * Port (user's rule, 2026-10-23 evening: no item, ONE use per quest: 4U's Dense Marcoal is not in the box at the
  * start; an item version through GU's own Marcoal path (kind-29 record, ready 0x5048e8, switch type 5 0x5048fc,
  * camera 0x50491c; notes/stage.md section 15) was built but never reached in a test and is removed):
@@ -42,7 +45,7 @@
  *      start = st007 matrix * (0, 65, 2230)).
  *    stage_demolisher_efx @0x466b9c (the shell's effect post, r1 = 0 launch / 1, 2 impact): 4U's effects instead of
  *      pl_com_011's (GU's own cm060 / cm072 / cm073 set, not conversions of 4U's): launch m19a03_006 at the muzzle with
- *      the barrel rotation + m19a03_012 trail on the shell (4U 0xc74e98, handle +0x288) + gate action 54 (4U command
+ *      the barrel rotation + m19a03_010 trail on the shell (4U 0xc74e98, handle +0x288) + gate action 54 (4U command
  *      37, 0xc74e38); impact m19a03_007 at the hit point (0xc75144), trail stopped and kept in +0x15a4 so the shell's
  *      end state (0x466684) waits for it, as GU's own trail.
  * Deviations: no Dense Marcoal (user's rule), one use per quest, no re-arm (4U: 10 min, action 55, QDialog 20); GU's
@@ -157,9 +160,19 @@ static const float k_gate_pos[3] = {0.0f, 2200.0f, -8110.0f};
 #define MUZZLE            2230.0f     /* 0xc75a28 */
 #define VY0               (-1.5f)     /* 0xc74f14 */
 #define VZ0               108.0f      /* 0xc74f18 */
-#define TRAIL_EFL         12u         /* m19a03_012 */
-#define LAUNCH_EFL        6u          /* m19a03_006 */
-#define IMPACT_EFL        7u          /* m19a03_007 */
+/* 4U effect group 96 (table 0xef7e34) = m19a03_001, 002, 003, 004, 006, 007, 008, 009, 010, 011, 012, 013 */
+#define TRAIL_EFL         10u         /* m19a03_010 = 96/8 (0xc74e98); 1.1.8 posted 012, the lightning (issue #6) */
+#define LAUNCH_EFL        6u          /* m19a03_006 = 96/4 */
+#define IMPACT_EFL        7u          /* m19a03_007 = 96/5 */
+/* the charge: 4U KowareObj frame 0x1cc410 (stage 19, mType 22): action 53 at its startFrame (0) + 20 -> 96/10 =
+ * m19a03_012, red lightning between the cart at S and the barrel, elements at world positions (posted at the origin,
+ * flags 0x2100: in any area); action 54 at startFrame (150) + 45 (0x1cc59c) kills it */
+#define BOLT_EFL          12u
+#define BOLT_FRAME        20.0f
+#define BOLT_END_FRAME    195.0f
+#define KOBJ_SCHED        0x158u      /* its scheduler; +0x34 f32 frame (stage_doors.c) */
+#define SCHED_FRAME       0x34u
+static const float k_zero[3] = {0.0f, 0.0f, 0.0f};
 
 static struct {
     uint32_t serial;
@@ -173,6 +186,9 @@ static struct {
     float launch_wait;    /* > 0: the raise has ended, 4U's 20-unit shell wait runs before the post */
     float post_wait;      /* > 0: a shot was posted and its shell not initialised yet */
     void *shell, *trail;
+    uint8_t bolt_done;    /* the charge's lightning posted for this press */
+    void *bolt;
+    struct { void *eff; const char *what; float asked[3]; uint8_t wait; } chk[4];   /* placement read-backs */
     uint16_t act_seen;    /* last gate action / status logged (+1, 0 = none yet; u16: action 255 + 1) */
     uint8_t st_seen;
     uint32_t logs;
@@ -291,6 +307,35 @@ static void post_shot(void *player)
     logf("gogport: stage demolisher: shot posted (uShellPlcom_011 mode 0, owner %x)", (uint32_t)player);
 }
 
+/* where GU put a posted effect, logged a few ticks later (its units are built after the post) */
+static void fx_check(void *eff, const char *what, const float *asked)
+{
+    for (uint32_t i = 0; eff && i < sizeof s_m.chk / sizeof s_m.chk[0]; i++) {
+        if (s_m.chk[i].eff) continue;
+        s_m.chk[i].eff = eff;
+        s_m.chk[i].what = what;
+        s_m.chk[i].wait = 3;
+        for (int k = 0; k < 3; k++) s_m.chk[i].asked[k] = asked[k];
+        return;
+    }
+}
+
+static void fx_checks_tick(void)
+{
+    for (uint32_t i = 0; i < sizeof s_m.chk / sizeof s_m.chk[0]; i++) {
+        if (!s_m.chk[i].eff || --s_m.chk[i].wait) continue;
+        float p[3], sc[3];
+        const float *q = s_m.chk[i].asked;
+        if (em089_efx_where(s_m.chk[i].eff, p, sc))
+            logf("gogport: stage demolisher: %s placed at (%d, %d, %d) scale %d/1000 (asked %d, %d, %d)",
+                 s_m.chk[i].what, (int32_t)p[0], (int32_t)p[1], (int32_t)p[2], (int32_t)(sc[0] * 1000.0f),
+                 (int32_t)q[0], (int32_t)q[1], (int32_t)q[2]);
+        else
+            logf("gogport: stage demolisher: %s gone before its read-back", s_m.chk[i].what);
+        s_m.chk[i].eff = 0;
+    }
+}
+
 static uint32_t rad_ang(float r) { return (uint32_t)(int32_t)(r * 10430.3779f + 0.5f) & 0xffff; }   /* 0xc759b0 */
 static float ang_rad(uint32_t a) { return (float)(a & 0xffff) * (6.28318531f / 65536.0f); }
 
@@ -336,12 +381,15 @@ int stage_demolisher_efx_c(uint32_t *regs)
         /* 4U 0xc74ea4: the trail attached to the shell. Attached here (vt+0x130) it found no shell model and stayed
          * put (test 08:43): posted at the shell and moved onto it every frame (trail_follow) */
         s_m.trail = em089_efx_stage_efl_track(TRAIL_EFL, pos, rot);
+        fx_check(l, "launch m19a03_006", pos);
+        fx_check(s_m.trail, "trail m19a03_010", pos);
         uint8_t *o = gate_kobj();
         if (o) kobj_play(o, ACT_FIRE, 0, 0, 0);        /* 4U command 37 at the launch (0xc74e38) */
-        logf("gogport: stage demolisher: launch at (%d, %d, %d): m19a03_006 %x, trail m19a03_012 %x, gate action %u",
+        logf("gogport: stage demolisher: launch at (%d, %d, %d): m19a03_006 %x, trail m19a03_010 %x, gate action %u",
              (int32_t)pos[0], (int32_t)pos[1], (int32_t)pos[2], (uint32_t)l, (uint32_t)s_m.trail, ACT_FIRE);
     } else {
         void *e = em089_efx_stage_efl(IMPACT_EFL, pos);
+        fx_check(e, "impact m19a03_007", pos);
         if (s_m.trail && em089_efx_alive(s_m.trail)) {
             em089_efx_stop(s_m.trail);
             FIELD(void *, sh, SH_EFX) = s_m.trail;    /* the end state 0x466684 waits until it has faded */
@@ -408,6 +456,7 @@ int stage_demolisher_fire(void *player, int local)
              "frames -> push %d", (uint32_t)CAM6_FRAMES, r);
     }
     kobj_play(o, ACT_RAISE, 0, 0, 0);               /* 4U command 36 */
+    s_m.bolt_done = 0;
     s_m.raise_seen = 0;
     s_m.raise_wait = 0.0f;
     s_m.launch_wait = 0.0f;
@@ -455,6 +504,21 @@ void stage_demolisher_tick(void)
     if (s_m.post_wait > 0.0f && (s_m.post_wait -= dt) <= 0.0f)
         logf("gogport: stage demolisher: posted shot never initialised (%u units)", (uint32_t)ACT_FIRE_DONE);
     trail_follow();
+    fx_checks_tick();
+    /* the charge's lightning (BOLT_*), as 4U 0x1cc410 / 0x1cc59c on the gate's scheduler frame; action 53 plays
+     * frames 0..150, 54 150..400 */
+    uint8_t *sch = FIELD(uint8_t *, o, KOBJ_SCHED);
+    float gf = sch ? FIELD(float, sch, SCHED_FRAME) : -1.0f;
+    if (s_m.raise_seen && !s_m.bolt_done && o[KOBJ_ACT] == ACT_RAISE && gf >= BOLT_FRAME && gf < 150.0f) {
+        s_m.bolt_done = 1;
+        s_m.bolt = em089_efx_stage_efl_rot(BOLT_EFL, k_zero, k_zero);
+        fx_check(s_m.bolt, "charge m19a03_012", k_zero);
+        logf("gogport: stage demolisher: charge at gate frame %d: m19a03_012 %x", (int32_t)gf, (uint32_t)s_m.bolt);
+    } else if (s_m.bolt && o[KOBJ_ACT] == ACT_FIRE && gf >= BOLT_END_FRAME) {
+        if (em089_efx_alive(s_m.bolt)) em089_efx_kill(s_m.bolt);
+        s_m.bolt = 0;
+        logf("gogport: stage demolisher: charge ended at gate frame %d", (int32_t)gf);
+    }
     /* 4U's re-arm (fps * 600 frames after the fire: command 38 = action 55, then QDialog 20) is not run: one use per
      * quest (user's rule 2026-10-23) */
 #endif

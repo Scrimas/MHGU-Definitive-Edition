@@ -3,10 +3,10 @@ name = "gogmazios"
 kind = "monster"
 title = "Gogmazios"
 class = "Elder Dragon"     # its class, GU's name (monsterName 253..267): the installer's subtitle in every language
-version = "1.1.8"       # bump on every published change of this monster's files (data, assets or code); 1.1.8:
-                        # its Chinese text (lang/zh_TW.toml, zh_CN.toml; core 2.1.0)
-requires_core = "1.7.3"    # oldest core module (exefs) that runs this version: the eyelid states (field-3 XFS
-                           # states 1 / 6) need the module that opens the eyes at spawn (issue #11)
+version = "1.1.9"       # bump on every published change of this monster's files (data, assets or code); 1.1.9:
+                        # the Demolisher's effects at their points, its prompt icon (issue #6; core 3.0.0)
+requires_core = "3.0.0"    # oldest core module (exefs) that runs this version: its arena effects' world records
+                           # need the module's point posts (em089_efx.c post_full world)
 requires = ["battlequarters"]  # packages it needs besides the core (maps/<name>; later shared utilities)
 code = "em089"             # C prefix of its module code: em089_register_class(), g_em089_dti (module/build.py)
 

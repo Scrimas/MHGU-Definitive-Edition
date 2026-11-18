@@ -1738,11 +1738,20 @@ Findings (C = code, S = corpus statistics, 1469 4U / 1115 GU EFLs, 7430 GU PEL r
   - [x] Round 3, other stage-effect triggers (call sites sent to the arena-3 agent):
     - m19a03_007 (the Filter one): (a) explosion of the 4U uShell022 subtype-9 projectile at impact (per frame
       0xc74b78 / 0xc75168: m19a03_007 + material + explosion attack 0x9ab120 rec 31; launch m19a03_006 (96/4) once,
-      trail m19a03_012 (96/8) looping, handle +0x288), fired by 4U quest-manager stage-event code (0x6b985c /
-      0x6b9d68; exact scripted trigger not resolved, not the Dragonator spears); (b) hit spark of attacks with hit
-      effect type 39 (attack data +74; hit-spark function 0xbf203c case 39). API added: em089_efx_stage_efl_on(n, unit).
+      trail m19a03_010 (96/8: group 96 = 001..004, 006..013; corrected 2026-11-18) looping, handle +0x288), fired
+      by 4U quest-manager stage-event code (0x6b985c / 0x6b9d68; exact scripted trigger not resolved, not the
+      Dragonator spears); (b) hit spark of attacks with hit effect type 39 (attack data +74; hit-spark function
+      0xbf203c case 39). API added: em089_efx_stage_efl_on(n, unit) (removed 2026-11-18: the stage records became
+      point posts, which attach to nothing; the trail moves with em089_efx_stage_efl_track + em089_efx_place).
+    - 2026-11-18 (issue #6, the maintainer's recording of the Demolisher): every stage post (6000+ KowareEft, 6100+
+      m19a03) played at Gogmazios, at his 2.5 scale: 0x6ff74 makes the monster's model the target, and with the attach
+      tail (mode 2) the unit setup 0x32aa44 parents the effect to it and never writes the world position (node +0x40
+      only in modes 3 / 4, C). Now world tail (efl4u2gu stage_records world, PEL_TAIL_WORLD = mode 3) and GU's point
+      post 0x53b500 without a target (em089_efx.c post_full world, as Stygian's sz_efx_world).
     - e04 (m19a03_001 at (0, 1270, -5100), frames 3935 / 13445, likely the a04 wall) and e08 (m19a03_008 at frame 2)
-      are gimmick-scheduler driven; m19a03d-col tint not representable. No other trigger for m19a03_005/010/011/013.
+      are gimmick-scheduler driven; m19a03d-col tint not representable. 2026-11-18 (issue #6): KowareObj frame
+      0x1cc410 posts m19a03_012 (96/10, the Demolisher charge's red lightning) at gate action 53 frame 20 and, at
+      action 54 frame 195, m19a03_011 (96/9) on the gate; no trigger found for m19a03_005 / 013.
   - Round 3 arc: rebuilt under the lock (06:40), em089_files.inc byte-identical, effects 84 entries (+ em089_roarblur),
     PEL 144 records (+ 3200, 4236, 4253). Module 120704 B, 0 warnings.
 - Not done / deviations: unit +0x18 bits 12-15 kept (4U draw field, GU semantics differ), EAN flag 0, effect

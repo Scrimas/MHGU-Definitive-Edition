@@ -368,8 +368,13 @@ testable alone (the maintainer checks the smithy or one quest).
   the def. Appended at the arc's end, those kinds had no effect, hit data or offset, with no error and a valid shell handle: log
   the effect handle of every kind, not of the first.
 - **Effect models (Tidal Najarala).** Vertex RGB 127 = 1.0, so a colourless solid mesh filled white draws at 2x, a flat white
-  block (tools/efl4u2gu.py solid_fill; the shipped sets keep white, their grey chunks are hidden). Where GU has Capcom's
-  conversion of a sibling of the 4U model, take its material (solid_templates).
+  block (tools/efl4u2gu.py solid_fill; the shipped sets keep white, their grey chunks are hidden; solid_fills sets it per
+  model, as for the Demolisher's shot). Where GU has Capcom's conversion of a sibling of the 4U model, take its material
+  (solid_templates).
+- **A post through the monster plays at the monster (Gogmazios' stage effects, Stygian Zinogre).** GU's 0x6ff74 makes the
+  monster's model the target, and an attach-tail record (transform modes 0-2) is parented to it: his position and scale,
+  whatever point the request names. An effect at a world point needs the world tail (efl4u2gu world, PEL_TAIL_WORLD) and
+  GU's point post 0x53b500 with no target (em057_01_efx.c sz_efx_world, em089_efx.c post_full world).
 - **Map a shell's effects by 4U's state table, not by a guess from the names.** uShell015's 0x102a938 has flight, planted, rattle,
   blast and gone per species, and an EFL's mask 2 came only in a special state (S: frenzy): GU's class posts both masks for
   Najarala, so that look drew over the plain one. Read what ends a shell per species as well: a rattle blast can be Najarala's alone.

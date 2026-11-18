@@ -60,7 +60,7 @@ void em089_efx_tail_break(void *self);
 
 /* Battlequarters stage effects (for stage code; posted on the last em089 that ran a frame, 0 if none):
  * 4U scheduler event CreateKowareEft(index) of an "Effect" scheduler with KowareEftGroup = group (0..2),
- * KowareEftPos = pos (world), KowareEftAreaNo = area (255 = any). Indices: 2 qe016_003, 11 m19a03_000,
+ * KowareEftPos = pos (world), KowareEftAreaNo = area (255 = any). All are point posts (no target). Indices: 2 qe016_003, 11 m19a03_000,
  * 12..17 m19a03_001 / 002 / 003 / 004 / 008 / 009. m19a03d-e01 / e02 / e03 (breakables k01 / k02 / k03, groups 0 /
  * 1 / 2): 11 at frames 10 and 20, 2 at 201 and 226; e04: 12 at 3935 and 13445; e05 / e06: 2 at 201 / 226 (group 1);
  * e08: 16 at frame 2. KowareEftColor / JimenType are not representable (GU PEL has no tint / material input). */
@@ -69,16 +69,14 @@ void *em089_efx_stage_kowareeft(uint32_t index, uint32_t group, const float *pos
 void *em089_efx_stage_efl(uint32_t n, const float *pos);
 /* same with a rotation (degrees x, y, z: 4U request rotation, e.g. the Demolisher launch along the barrel) */
 void *em089_efx_stage_efl_rot(uint32_t n, const float *pos, const float *rot_deg);
-/* same, attached to a unit (follows it; the unit must outlive the effect: em089_efx_stop, then wait until
- * !em089_efx_alive before the unit dies, as em089_shell.c does). 4U uShell022 subtype 9 (quest-fired arena projectile,
- * per frame 0xc74b78): m19a03_006 at launch, m19a03_012 trail (looping, handle +0x288), m19a03_007 at impact. */
-void *em089_efx_stage_efl_on(uint32_t n, void *unit);
-/* same at a position, as GU's moving beam (req+8 = 3), to be moved every frame with em089_efx_place: for units
- * without a model (GU uShellPlcom_011 mode 0, 4U uShell022 kind 9: the attach above found no model, test
+/* same, as GU's moving beam (req+8 = 3), to be moved every frame with em089_efx_place: 4U uShell022 kind 9's trail
+ * m19a03_010 (looping, 4U handle +0x288) on GU uShellPlcom_011 mode 0, which has no model to attach to (test
  * 2026-10-24 08:43 "never saw it move, wrong initial location") */
 void *em089_efx_stage_efl_track(uint32_t n, const float *pos, const float *rot_deg);
 /* move a live effect: world position, rotation in radians (x, y, z) or 0 */
 void em089_efx_place(void *eff, const float *pos, const float *rot_rad);
+/* where GU placed a live effect: its transform node's position and scale (1 = alive) */
+int em089_efx_where(void *eff, float *pos, float *scale);
 
 /* 4U uEm089 slot 75 (0x8c3ca0) = GU object slot 168 (vt+0x2a0, per-frame joint-override hook after the motion
  * update, called from the enemy update 0xae1f4; Rajang 0xde5f80 and em0xx 0xd53f64 use it the same way with the
