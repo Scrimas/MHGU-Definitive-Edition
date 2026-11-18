@@ -9,7 +9,8 @@ version = "0.1.19"      # bump on every published change of this package's files
                         # template (no fog), no Malfestio confusion from their shots (GU's hit entry +0x14), the new
                         # male notices the hunter (no alert write), always enters buried, her hold points for her pin
                         # and launch (seltas_hold.c), her 4U reactions 30 / 31 / 187, his launch death and 6/3 on the
-                        # controlling machine only, a log of their action changes; 0.1.18:
+                        # controlling machine only, a log of their action changes, his dttune's +0xc8 block with
+                        # its end record (tools/dt_convert.py 'gap' had stopped at his HP word); 0.1.18:
                         # on main's core 3.0.0: their Chinese text (lang/zh_TW.toml, zh_CN.toml), the Queen's m10924
                         # on quest 11374 (Heaven's Mount's tours took 11372), the test logs left out; 0.1.17:
                         # her underside glow 'XfB__m03_add' on Capcom's constant template of the same 4U material

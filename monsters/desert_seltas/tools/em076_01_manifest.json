@@ -554,7 +554,7 @@
   "  PSL anim 34 slot 0: MEF id 1100 has no PEL record (not in the MEF)",
   "  PEL effect\\pel\\em\\em076_01u: 41 records (list 1) + 9 GU records (list 2); PSL x5 from LMT event group 2",
   "em094 sound: 61 waves (61 used by the bank), bank 14 groups / 150 entries, request 283 entries (20 common-bank entries from GU em076_00, 0 converted, + 16 more of its common-bank requests), sound call 40628 B",
-  "dttune: em094 on GU em076_00's layout (1194 B, GU 1218 B) + 31 of GU's 31 retuned bytes (0 left out: its own bytes there); base HP 2500 (GU's species 2000)",
+  "dttune: em094 on GU em076_00's layout (1218 B, GU 1218 B) + 31 of GU's 31 retuned bytes (0 left out: its own bytes there); base HP 2500 (GU's species 2000)",
   "dtbase: em094 on GU's layout, 3 bytes its own, 0 of GU's retunes kept, 0 left out",
   "bodydata: em094's 21 records (the species 19); GU's retunes of the species' records [(0, 0), (4, 6), (5, 7), (6, 8), (7, 9), (8, 10), (9, 11), (10, 12), (11, 13), (12, 14), (13, 15), (14, 16), (15, 17), (16, 18), (17, 19), (18, 20)] taken (species -> ours), left out (its own record there) [1, 2]",
   "routes: 4U stage 18 (night Dunes) differs from 17 for em094 (hop-1 links 17 [(3, 4), (4, 5), (4, 10), (7, 10)], 18 [(3, 4), (3, 7), (4, 5), (4, 10), (7, 10)]); stage 17 taken",

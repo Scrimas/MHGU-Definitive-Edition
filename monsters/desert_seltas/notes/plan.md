@@ -563,3 +563,6 @@ S = strong, G = guess. 4U addresses: the v1.1 exe (dump/exefs_v11), read 2026-11
   are); (4) hit effects of a front leg on the other one (their skeletons, mirror pairs and body volumes are GU's or
   4U's, C). The maintainer's test (log 2026-11-18 20:56, quest 11374): (1), (2), (3) and (5) gone; (4) likely the
   Dual Blades' hunting art (its cheats were on); she did not pin in that run (no 16/2), so (6) is still to be seen.
+  After it: his dttune +0xc8 (etd word 29, 24-byte records) has its sixth record, the 0xffffffff end, again: 1218 B,
+  GU em076_00's size (was 1194). tools/dt_convert.py's 'gap' took every etd header word inside the file for a block
+  start, and his HP word 4 (2500) lies inside that block; it now reads only words 5..34, the block pointers (C).

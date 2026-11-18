@@ -29,7 +29,7 @@ SCALARS = {
                0xEC: ('emd', 0x14), 0xF0: ('etd', 0x9C)},
 }
 # blocks: object pointer field -> (4U file, header word, size rule, count field, element size)
-#   size rule: int = copy that many bytes; 'gap' = up to the next header pointer
+#   size rule: int = copy that many bytes; 'gap' = up to the next header pointer (etd: ETD_PTRS)
 BLOCKS = {
     'dtbase': {0x70: ('emd', 13, 32, None, 0),   # 39/40
                0x74: ('emd', 38, 64, None, 0),   # 22/40
@@ -53,6 +53,10 @@ BLOCKS = {
                0xB8: ('etd', 25, 14, None, 0),   # 32/40 (first 14 bytes of the 4U block)
                0xC8: ('etd', 29, 'gap', 0xFF, 24)},  # 23/40 exact, GU size == 4U gap: the 24-byte part table
 }
+# etd header words that hold block pointers (C, all 107 4U etd files: each is 0 or a pointer into the file). Word 4 is
+# the HP, 35..39 are scalars and 40.. already the part table at 0xa0: their values can fall inside the file (em040,
+# em094, em107: the HP after word 29's block, which cut the block's terminator record off), so 'gap' ignores them.
+ETD_PTRS = range(5, 35)
 # record tables (opt-in, build --sensor): object pointer field -> (4U file, header word, 4U record size, count field,
 # GU record size); the 4U records end at an s32 0xffff. 0x78 = the sensor ("eye") table GU 0x71144 reads at index
 # ai+0x249 (sensor 0xc3144: near radius = auto notice): GU record = the 4U record with two u16 (eye angle offsets, 0 in
@@ -223,7 +227,7 @@ def convert(kind, donor_bytes, d4, log=None, records=False, keep_ranges=False):
                 continue
             p = ptrs[w]
             if rule == 'gap':
-                n = min([q for q in ptrs.values() if q > p] + [len(u)]) - p
+                n = min([q for v, q in ptrs.items() if q > p and (fk != 'etd' or v in ETD_PTRS)] + [len(u)]) - p
             else:
                 n = rule
             if cnt is not None:

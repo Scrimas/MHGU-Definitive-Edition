@@ -443,7 +443,7 @@
   "em005_01 material XfBA_E0__m50_wing: template solid_sphere, type 50, {'tAlbedoMap': 'em005_01_01_BM', 'tSpecularMap': 'em005_01_01_BM+A', 'tSphereMap': 'em005_01_03_BM'}",
   "em005_01_tail material XfB__E_m00_tail: template solid_sphere, type 0, {'tAlbedoMap': 'em005_01_01_BM', 'tSpecularMap': 'em005_01_01_BM+A', 'tSphereMap': 'em005_01_03_BM'}",
   "parts states: 21 (GU layout), groups dropped (not in em041): [19], hidden at spawn: [50]",
-  "dttune: GU em005_00 + 51 bytes of 4U em040 -> em041 differences before the ranges at +0x18e (50 were em040's in GU); GU's own ranges (+0x18e..+0x1e2) and bytes ['0xa', '0xb'] kept; tail = em041 conversion (1068 bytes)",
+  "dttune: GU em005_00 + 50 bytes of 4U em040 -> em041 differences before the ranges at +0x18e (50 were em040's in GU); GU's own ranges (+0x18e..+0x1e2) and bytes ['0xa', '0xb'] kept; tail = em041 conversion (1068 bytes)",
   "dttune +0x358 (4U etd word 24, not converted by dt_convert): 4 bytes set to em041's, 6 scaled from GU's retune",
   "AI table: 4U em040_cmd for em 41 (op-0x46 blocks reduced; em 41 differs from em 40 in ['g0 s2', 'g1 s39', 'g1 s65', 'g1 s66', 'g1 s67', 'g1 s68', 'g1 s69', 'g1 s70', 'g1 s71', 'g1 s72', 'g1 s73']), GU's versions of ['g0 s0', 'g0 s1', 'g0 s4', 'g20 s0'], GU's group [16], GU extra entries appended (['g0 s22..s22', 'g1 s74..s94'])",
   "AI table: GU's appended selector g0 s22 calls our 4U versions of g1 [6, 7, 8, 11, 12, 21, 23, 47, 50]",
