@@ -52,7 +52,7 @@ Confidence: **C** confirmed in code / data, **S** strong, **G** guess.
   (body + tail: textures, MRL on GU templates, 'solid_sphere' with em041_03_BM as GU's own em005_00 binds it), the
   parts XFS (GU states minus group 19, group 50 hidden) and the dttune; everything else is GU Gravios' (em005_00 paths
   and file IDs, area data incl. map 12).
-- dttune (C): GU em005_00's = the dt_convert of 4U em040 at 50 of the 51 bytes where em040 and em041 differ; ours
+- dttune (C): GU em005_00's = the dt_convert of 4U em040 at all 50 bytes where em040 and em041 differ; ours
   takes em041's values there. Since core 1.7.3 dt_convert writes the 4U AI distance ranges (etd words 10 / 11, issue
   #11) at +0x18e: em040's and em041's are equal (2 rows, no offsets), GU keeps its own there (the "retunes" seen at
   +0x1b0 under 1.7.2), and past them GU's file ends with the em041 conversion's tail.

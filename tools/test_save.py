@@ -94,12 +94,12 @@ def fnv(h, data):
 
 
 def check_store(b):
-    """the store test_lessee leaves: one record of the test lessee (em 0x65)"""
+    """the store test_lessee leaves: version 2, migration level 0, one record of the test lessee (em 0x65)"""
     bad = []
-    magic, version, n, word, zero = struct.unpack_from('<IHHII', b, 0)
-    if (magic, version, n, zero) != (0x5334484D, 1, 1, 0):
-        bad.append('header %x %d %d %d' % (magic, version, n, zero))
-    if word != fnv(fnv(2166136261, b[4:8]), b[16:16 + 12 * n]):
+    magic, version, n, word, level = struct.unpack_from('<IHHII', b, 0)
+    if (magic, version, n, level) != (0x5334484D, 2, 1, 0):
+        bad.append('header %x %d %d %d' % (magic, version, n, level))
+    if word != fnv(fnv(fnv(2166136261, b[4:8]), b[12:16]), b[16:16 + 12 * n]):
         bad.append('check word %x' % word)
     rec = struct.unpack_from('<6H', b, 16)
     if rec != (0x65, 4, 1, 1100, 1300, 0):

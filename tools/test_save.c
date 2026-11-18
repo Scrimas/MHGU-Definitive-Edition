@@ -172,7 +172,9 @@ static void store_build(uint32_t n, uint16_t em0, uint16_t version)   /* a valid
         FIELD(uint16_t, r, 8) = 1100;
         FIELD(uint16_t, r, 10) = 0;
     }
-    FIELD(uint32_t, b, 8) = fnv(fnv(2166136261u, b + 4, 4), b + 16, 12 * n);
+    uint32_t h = fnv(2166136261u, b + 4, 4);
+    if (version >= 2) h = fnv(h, b + 12, 4);   /* the migration level (save.c store_check_word) */
+    FIELD(uint32_t, b, 8) = fnv(h, b + 16, 12 * n);
 }
 
 /* a character of v1.8.0 hunting its monsters with fixed slots: no byte of the character is written by save.c */
@@ -334,13 +336,13 @@ int test_damaged(void)
     CHECK(gu_writer(109) == 0, "damaged: hooks answer, nothing recorded");
     CHECK(changed_outside(0, 0) == 0, "damaged: no byte changed");
     fresh();
-    store_build(3, 0x65, 2);
+    store_build(3, 0x65, 3);
     snapshot();
     quest(99001);
     save_slot_tally(LESSEE, g_quest);
     gu_tally(109, 1, 0, 1000);
-    CHECK(gu_writer(109) == 0, "version 2: hooks answer, nothing recorded");
-    CHECK(changed_outside(0, 0) == 0, "version 2: no byte changed");
+    CHECK(gu_writer(109) == 0, "version 3: hooks answer, nothing recorded");
+    CHECK(changed_outside(0, 0) == 0, "version 3: no byte changed");
     return g_fails;
 }
 
@@ -349,7 +351,7 @@ int test_full(void)
 {
     int r;
     fresh();
-    store_build(232, 0x2000, 1);
+    store_build(232, 0x2000, 2);
     snapshot();
     quest(99001);
     save_slot_tally(LESSEE, g_quest);
@@ -486,7 +488,7 @@ int test_bits(void)
     save_bits_set(0xf001, 0);
     CHECK(!save_bits_get(0xf001, 0) && changed_outside(0, 0) == 0, "not a store: left alone");
     fresh();                                /* a full store */
-    store_build(232, 0x2000, 1);
+    store_build(232, 0x2000, 2);
     snapshot();
     save_bits_set(0xf001, 0);
     CHECK(!save_bits_get(0xf001, 0) && changed_outside(0, 0) == 0, "full: dropped, no byte changed");

@@ -541,9 +541,10 @@ def range_rows(em):
 def dttune(gu, notes):
     """GU em005_00's dttune with 4U em041's values where tools/dt_convert.py gives em040 != em041 (C, 2026-11-01).
     The conversions write the 4U range rows + offsets (RANGE_WORDS) at R; before R they line up with GU's file: GU's is
-    the em040 conversion at 50 of the 51 differing bytes (the 51st, +0x0f = 17, is the record count GU shares with
-    em041's layout). GU keeps its own ranges there (not 4U's rows; em040's and em041's are equal, so they do not tell
-    Black Gravios apart), and after them GU's file ends with the em041 conversion's tail (its 17-record block)."""
+    the em040 conversion at all 50 differing bytes (before 2026-11-18 a 51st, the count +0x0f, was dt_convert's: its
+    'gap' cut em040's 17-record block at the HP word, to 14). GU keeps its own ranges there (not 4U's rows; em040's and
+    em041's are equal, so they do not tell Black Gravios apart), and after them GU's file ends with the em041
+    conversion's tail (its 17-record block)."""
     c40 = open(os.path.join(DT_DIR, 'dt_em040', 'dttune.bin'), 'rb').read()
     c41 = open(os.path.join(DT_DIR, 'dt_em041', 'dttune.bin'), 'rb').read()
     (rows, offs), r41 = range_rows('em040'), range_rows('em041')
