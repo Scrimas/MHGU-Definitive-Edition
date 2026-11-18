@@ -4,7 +4,8 @@ MHGU Definitive Edition (MH4U Port before 2.0.0) adds Monster Hunter 4 Ultimate 
 weapons and skills) to Monster Hunter Generations Ultimate (Switch, v1.4). Everything is **added**; no GU monster,
 quest or item is replaced.
 Ported so far: Gogmazios, Dalamadur / Shah Dalamadur, Tigerstripe Zamtrios, Stygian Zinogre, Black Gravios, Monoblos,
-Tidal Najarala, Shrouded Nerscylla. In progress: the Magnet Spike weapon class from MHF-ZZ.
+Tidal Najarala, Shrouded Nerscylla, Desert Seltas / Desert Seltas Queen. In progress: the Magnet Spike weapon class from
+MHF-ZZ.
 
 **No game data is in git.** Every asset and every table holding 4U text or records is rebuilt locally from your own
 4U / GU dumps by the converters in `tools/` and `monsters/<name>/tools/`.

@@ -1,7 +1,7 @@
 <h1 align="center" style="text-align: center">MHGU Definitive Edition</h1>
 <p align="center" style="text-align: center"><b>Monster Hunter 4 Ultimate monsters in Monster Hunter Generations Ultimate (Switch, v1.4)</b></p>
 <p align="center" style="text-align: center"><a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/Scrimas/MHGU-Definitive-Edition?label=installer" alt="Installer"></a> <a href="https://github.com/Scrimas/MHGU-Definitive-Edition-Packages/releases/latest"><img src="https://img.shields.io/github/v/release/Scrimas/MHGU-Definitive-Edition-Packages?label=release" alt="Release"></a> <a href="https://github.com/Scrimas/MHGU-Definitive-Edition-Packages/releases"><img src="https://img.shields.io/github/downloads/Scrimas/MHGU-Definitive-Edition-Packages/total" alt="Downloads"></a> <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue" alt="License: GPL-3.0-or-later"></a> <img src="https://img.shields.io/badge/MHGU-Switch%20v1.4-c0392b" alt="MHGU v1.4"> <img src="https://img.shields.io/badge/runs%20on-Ryujinx%20%7C%20yuzu%20%7C%20Eden-555" alt="Runs on Ryujinx, yuzu, Eden"></p>
-<p align="center" style="text-align: center"><a href="#monsters-and-quests"><img src=".github/icons/Gogmazios.png" width="72" alt="Gogmazios" title="Gogmazios"></a> <a href="#monsters-and-quests"><img src=".github/icons/Dalamadur.png" width="72" alt="Dalamadur" title="Dalamadur"></a> <a href="#monsters-and-quests"><img src=".github/icons/Dalamadur_Tail.png" width="72" alt="Dalamadur (tail)" title="Dalamadur (tail)"></a> <a href="#monsters-and-quests"><img src=".github/icons/Shah_Dalamadur.png" width="72" alt="Shah Dalamadur" title="Shah Dalamadur"></a> <a href="#monsters-and-quests"><img src=".github/icons/Shah_Dalamadur_Tail.png" width="72" alt="Shah Dalamadur (tail)" title="Shah Dalamadur (tail)"></a> <a href="#monsters-and-quests"><img src=".github/icons/Tigerstripe_Zamtrios.png" width="72" alt="Tigerstripe Zamtrios" title="Tigerstripe Zamtrios"></a> <a href="#monsters-and-quests"><img src=".github/icons/Stygian_Zinogre.png" width="72" alt="Stygian Zinogre" title="Stygian Zinogre"></a> <a href="#monsters-and-quests"><img src=".github/icons/Black_Gravios.png" width="72" alt="Black Gravios" title="Black Gravios"></a> <a href="#monsters-and-quests"><img src=".github/icons/Monoblos.png" width="72" alt="Monoblos" title="Monoblos"></a> <a href="#monsters-and-quests"><img src=".github/icons/Tidal_Najarala.png" width="72" alt="Tidal Najarala" title="Tidal Najarala"></a> <a href="#monsters-and-quests"><img src=".github/icons/Shrouded_Nerscylla.png" width="72" alt="Shrouded Nerscylla" title="Shrouded Nerscylla"></a></p>
+<p align="center" style="text-align: center"><a href="#monsters-and-quests"><img src=".github/icons/Gogmazios.png" width="72" alt="Gogmazios" title="Gogmazios"></a> <a href="#monsters-and-quests"><img src=".github/icons/Dalamadur.png" width="72" alt="Dalamadur" title="Dalamadur"></a> <a href="#monsters-and-quests"><img src=".github/icons/Dalamadur_Tail.png" width="72" alt="Dalamadur (tail)" title="Dalamadur (tail)"></a> <a href="#monsters-and-quests"><img src=".github/icons/Shah_Dalamadur.png" width="72" alt="Shah Dalamadur" title="Shah Dalamadur"></a> <a href="#monsters-and-quests"><img src=".github/icons/Shah_Dalamadur_Tail.png" width="72" alt="Shah Dalamadur (tail)" title="Shah Dalamadur (tail)"></a> <a href="#monsters-and-quests"><img src=".github/icons/Tigerstripe_Zamtrios.png" width="72" alt="Tigerstripe Zamtrios" title="Tigerstripe Zamtrios"></a> <a href="#monsters-and-quests"><img src=".github/icons/Stygian_Zinogre.png" width="72" alt="Stygian Zinogre" title="Stygian Zinogre"></a> <a href="#monsters-and-quests"><img src=".github/icons/Black_Gravios.png" width="72" alt="Black Gravios" title="Black Gravios"></a> <a href="#monsters-and-quests"><img src=".github/icons/Monoblos.png" width="72" alt="Monoblos" title="Monoblos"></a> <a href="#monsters-and-quests"><img src=".github/icons/Tidal_Najarala.png" width="72" alt="Tidal Najarala" title="Tidal Najarala"></a> <a href="#monsters-and-quests"><img src=".github/icons/Shrouded_Nerscylla.png" width="72" alt="Shrouded Nerscylla" title="Shrouded Nerscylla"></a> <a href="#monsters-and-quests"><img src=".github/icons/Desert_Seltas.png" width="72" alt="Desert Seltas" title="Desert Seltas"></a> <a href="#monsters-and-quests"><img src=".github/icons/Desert_Seltas_Queen.png" width="72" alt="Desert Seltas Queen" title="Desert Seltas Queen"></a></p>
 <p align="center" style="text-align: center"><a href="#monsters-and-quests">Monsters</a> · <a href="#install">Install</a> · <a href="#how-it-works">How it works</a> · <a href="#contributing">Contributing</a> · <a href="#roadmap">Roadmap</a></p>
 
 This is not a reskin. The mod injects its own code into MHGU, so each ported monster runs its MH4U behaviour, traced
@@ -14,16 +14,17 @@ as they are.
 
 ## Monsters and quests
 
-| Monster                            | Quests                      | Arena          |
-| ---------------------------------- | --------------------------- | -------------- |
-| **Gogmazios**                      | 2 · G★4                     | Battlequarters |
-| **Dalamadur** / **Shah Dalamadur** | 6 · HR★7, G★4              | Speartip Crag  |
-| **Tigerstripe Zamtrios**           | 1 · G★3                     | –              |
-| **Stygian Zinogre**                | 11 · HR★7, G★4, Village★10 | Heaven's Mount |
-| **Black Gravios**                  | 8 · HR★7, G★4, Village★10  | –              |
-| **Monoblos**                       | 6 · HR★7, G★4, Village★10  | –              |
-| **Tidal Najarala**                 | 2 · G★3, G★4               | –              |
-| **Shrouded Nerscylla**             | 3 · G★3, Village★10        | –              |
+| Monster                                     | Quests                      | Arena          |
+| ------------------------------------------- | --------------------------- | -------------- |
+| **Gogmazios**                               | 2 · G★4                     | Battlequarters |
+| **Dalamadur** / **Shah Dalamadur**          | 6 · HR★7, G★4              | Speartip Crag  |
+| **Tigerstripe Zamtrios**                    | 1 · G★3                     | –              |
+| **Stygian Zinogre**                         | 11 · HR★7, G★4, Village★10 | Heaven's Mount |
+| **Black Gravios**                           | 8 · HR★7, G★4, Village★10  | –              |
+| **Monoblos**                                | 6 · HR★7, G★4, Village★10  | –              |
+| **Tidal Najarala**                          | 2 · G★3, G★4               | –              |
+| **Shrouded Nerscylla**                      | 3 · G★3, Village★10        | –              |
+| **Desert Seltas** / **Desert Seltas Queen** | 6 · G★1, G★3, Village★10   | –              |
 
 Quests are on the Hub quest board (Village quests on the village board). Ranks follow MH4U: each quest sits where its
 monster's MH4U rank falls among MHGU's quests of the same species.
@@ -46,6 +47,9 @@ monster's MH4U rank falls among MHGU's quests of the same species.
   Village★10 *Skiff Competition* · *The Hero and the Sandy Spear* · *Bad Hair Day: Monoblos*
 - **Tidal Najarala:** G★3 *Serpent Serenade* · G★4 *Advanced: Rhapsody in Rime*
 - **Shrouded Nerscylla:** G★3 *Course Correction* · *Advanced: Spider Study* · Village★10 *Shrouded in Mystery*
+- **Desert Seltas:** G★1 *Sculptural Seltas* · *Netting Neopterons* · *Advanced: Bug-Be-Gone* · Village★10
+  *Wasteland Warrior*
+- **Desert Seltas Queen:** G★3 *Pestering Pest* · *Advanced: Escaped Convicts*
 
 </details>
 
@@ -134,8 +138,8 @@ Subject to change, not ordered
 - [x] Monoblos
 - [x] Tidal Najarala
 - [x] Shrouded Nerscylla
+- [x] Desert Seltas Queen & Desert Seltas
 - [ ] Magnet Spike (MHF-ZZ weapon class), in progress as of Oct 29, 2026
-- [ ] Desert Seltas Queen & Desert Seltas
 - [ ] G-rank Crimson Fatalis
 - [ ] White Monoblos
 - [ ] Pink Rathian
@@ -158,7 +162,8 @@ Subject to change, not ordered
 - [@jM5557](https://github.com/jM5557), for adding support to Yuzu, Eden and other Yuzu-based emulators
 - [@Rukasu1609](https://github.com/Rukasu1609), for the Black Gravios ([PR #12](https://github.com/Scrimas/MHGU-Definitive-Edition/pull/12)),
   Monoblos ([PR #17](https://github.com/Scrimas/MHGU-Definitive-Edition/pull/17)), Tidal Najarala and Shrouded Nerscylla
-  ([PR #23](https://github.com/Scrimas/MHGU-Definitive-Edition/pull/23)) ports
+  ([PR #23](https://github.com/Scrimas/MHGU-Definitive-Edition/pull/23)), Desert Seltas and Desert Seltas Queen
+  ([PR #39](https://github.com/Scrimas/MHGU-Definitive-Edition/pull/39)) ports
 
 ## License
 
