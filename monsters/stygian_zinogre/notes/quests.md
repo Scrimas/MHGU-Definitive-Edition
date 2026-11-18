@@ -202,3 +202,12 @@ extdata); m10603's output is byte-identical to before the rewrite (cmp). C unles
   Bnahabra are left out (DEVIATION). 4U's per-record count (3..5) has no GU field: one GU record each (G: GU
   respawns small monsters; m10930 needs 8 Ioprey kills from 4 spots).
 - Waves: GU has no wave lists; the bosses are listed in 4U's wave order and GU spawns them in record order (S).
+- Issue #44 (2026-11-18, the reporter's log): 10776 spawned its four bosses one at a time and never cleared.
+  - Spawn (C): a hunt-all quest spawns by questData +0xB2, the boss spawn type (mhgen_editor.js mBossRushType),
+    a row of GU's table 0x162a680 (9 rows of bosses per wave, read by the quest start 0x3adbcc). Row 0 (1, 1, 1,
+    1, 1) was the template q10742's; 4U m10607's waves 1, 1, 2 are row 2, as GU's Seltas pair quest q10634
+    (Seltas Queen and Seltas together). The builder takes the row from 4U's waves (SPAWN_TYPES).
+  - Clear (C): the tally 0x3a75c8 marks a hunt-all slot killed (objective +0xf2 bit) only when the slot's ID
+    (quest+0x12d8 + 16 i, the questData boss record) is the killed one. Slot 0 held the stand-in 0x39, Stygian dies
+    as 0x139. The core hook hunt_all_slot (module/main.c) also counts a slot whose stand-in is swapped to the killed
+    ID. The same fix covers Black Gravios' 10782 (slot 0 = 0x5).

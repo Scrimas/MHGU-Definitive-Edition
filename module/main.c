@@ -182,6 +182,30 @@ int stats_add_c(uint32_t *regs)
     return 0;
 }
 
+/* 0x3a7bd8, in the same tally's "hunt all large monsters" branch (objective state bit 0x1000), after its five
+ * compares: a boss slot (quest+0x12d8 + 16 i: u16 ID, u8 +2 = 0 to count; filled at spawn by 0x3aa104 from the
+ * questData boss record) gets kill bit i of the objective's +0xf2 when its ID is the killed one (r4). A ported
+ * monster's slot holds its stand-in, never the ID it dies as, so its quest never cleared (issue #44: 10776, slot 0
+ * 0x39, Stygian dies as 0x139); this counts the swapped ID too. The objective (r8) is not saved: every unfinished
+ * hunt-all objective gets the bits, as GU's loop gives each of them the same ones. r5 = the quest. */
+int hunt_all_slot_c(uint32_t *regs)
+{
+    uint8_t *quest = (uint8_t *)regs[R5];
+    uint32_t killed = regs[R4] & 0xffff, bits = 0;
+    for (int i = 0; i < 5; i++) {
+        uint16_t s = FIELD(uint16_t, quest, 0x12d8 + 16 * i);
+        if (s && s != killed && !FIELD(uint8_t, quest, 0x12da + 16 * i) && (standin_swap(s) & 0xffff) == killed)
+            bits |= 1u << i;
+    }
+    if (!bits) return 0;
+    for (int k = 0; k < 3; k++) {       /* the objectives, 12 B each: GU's loop takes this branch for these states */
+        uint32_t st = FIELD(uint32_t, quest, 0xec + 12 * k);
+        if ((st & 0x1040) == 0x1000 && (st & 9) != 9) FIELD(uint16_t, quest, 0xf2 + 12 * k) |= (uint16_t)bits;
+    }
+    logf("mhgu-de: hunt-all quest %u: %x killed, slot bits %x (its stand-in)", port_quest_id(), killed, bits);
+    return 0;
+}
+
 /* 0x55bda4(mgr, id) -> monsterName GMD entry, = 0x50b64(id) (entry k = registry index k). Entry 137 already
  * starts the GMD's second list (Rathian), so a ported index reads its name_entry (an unused 'dummy' entry that
  * items.c renames in the loaded GMD), and a save slot leased for a quest its lessee's (the quest result names the

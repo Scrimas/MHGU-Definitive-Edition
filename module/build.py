@@ -76,6 +76,7 @@ HOOKS = [
     ('file_id', 0x152960),     # (_, fileId) -> resource: serves the monsters' file IDs (port.c, data file FILE)
     ('gear_pwl', 0x272910),    # rPlayerWeaponList load exit: Gogma HBG / SA motion sets (gear.c)
     ('stats_add', 0x3A75FC),   # quest-end tally: index from 0x50b64 (obj+0x114/0x116+index*8, no bound)
+    ('hunt_all_slot', 0x3A7BD8),  # same tally, hunt-all branch: a slot naming a stand-in counts its monster (main.c)
     ('stats_hunted', 0x3A3930),  # reads the same array (lost in a comment by 0815499, restored 2026-10-26)
     ('size_data', 0x6880C),    # em_size_scale_data cached (r0): the save slots' size records = the monsters' (main.c)
     ('save_hunts', 0x523104),    # save hunts + captures by ID (bound 136): 0x59 -> its save slot 0x1064 (save.c)
