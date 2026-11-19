@@ -4,7 +4,10 @@ name = "desert_seltas"
 kind = "monster"
 title = "Desert Seltas"
 class = "Neopteron"        # its class, GU's name (monsterName 253..267): the installer's subtitle in every language
-version = "0.1.19"      # bump on every published change of this package's files (data, assets or code); 0.1.19:
+version = "0.1.20"      # bump on every published change of this package's files (data, assets or code); 0.1.20:
+                        # their quest HP rows (issue #49, tools/build_seltas_quest.py): 11374 his 89 (was 81: his 4U
+                        # row over the Seltas' in 4U's G2 Queen hunt), 11373 her 56 / his 64 (were 50 / 71: two-boss
+                        # against two-boss, GU's q1011003); 0.1.19:
                         # the maintainer's review and test of 0.1.18: his abdomen overlay on Capcom's constant
                         # template (no fog), no Malfestio confusion from their shots (GU's hit entry +0x14), the new
                         # male notices the hunter (no alert write), always enters buried, her hold points for her pin

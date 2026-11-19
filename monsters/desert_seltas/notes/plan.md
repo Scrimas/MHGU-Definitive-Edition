@@ -568,3 +568,15 @@ S = strong, G = guess. 4U addresses: the v1.1 exe (dump/exefs_v11), read 2026-11
   After it: his dttune +0xc8 (etd word 29, 24-byte records) has its sixth record, the 0xffffffff end, again: 1218 B,
   GU em076_00's size (was 1194). tools/dt_convert.py's 'gap' took every etd header word inside the file for a block
   start, and his HP word 4 (2500) lies inside that block; it now reads only words 5..34, the block pointers (C).
+- 0.1.20 (2026-11-20, issue #49: "Desert Seltas Queen much weaker than the original counterpart"; the reporter's 4U
+  7150 is a database's generic G x1.30 on her base HP, not a quest row): quest HP = base HP (dttune +0x64: hers 5500,
+  his 2500, GU's Queen 5200, Seltas 2000) x the HP column of the quest's em_nando_tbl row. Checked in both games (C):
+  her Seltas is no second boss in either, GU's Queen and Seltas hunts sit at GU's one-boss rows (q11305's 71 = the
+  median of GU's 47 G3 one-boss hub hunts; 6, 7 and 14 stars likewise), 4U's at 4U's (m10911 / m10924: 61, the row of
+  every 4U G2 one-boss hunt); the Cephadrome of 11373 is a second boss in both (4U m10928 / m10919: 42, every 4U G2
+  two-boss hunt's first row). 11374: her row 71 stays (4U 61 = m10911's 61; 12265 HP, GU's Queen 11596), his 81 -> 89
+  (his 4U 42 over the Seltas' 36 in m10911; 6375 -> 7375 HP). 11373 (the maintainer: two-boss against two-boss): 4U
+  m10928 over m10919 (both 1.0) on GU's two-boss G3 Queen hunt q1011003, her 50 -> 56 (8800 -> 9790 HP; GU's Queen
+  there 9256; her 50 was below every GU G3 two-boss hub hunt's first boss, 54..84), his 71 -> 64 (5575 -> 5050 HP;
+  GU's Seltas there 4040). Against 0.1.19 only those three HP bytes of the two questData files differ (and the data
+  files' version). Not played.

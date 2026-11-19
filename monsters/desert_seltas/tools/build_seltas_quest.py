@@ -46,9 +46,16 @@ Sources (C unless marked):
                    11138   DS = q11103's first Seltas (59 / 85 / 84); Rajang = GU's G1 intruder Rajang, q11108 (71 / 94 / 86)
                    11139   DS as 11138, HP by his 4U row here over m10805's (Shrouded Nerscylla's double-hunt rule)
                    11140   Seltas and DS = GU's own G1 double Seltas hunt q11103, its two records in spawn order
-                   11374   q11305's Queen (71 / 92 / 86) and her Seltas (81 / 94 / 86, restore 5: GU's form of 4U's count 99)
-                   11373   Cephadrome = GU's G3 multi-monster Cephadrome q11360 (49 / 93 / 86); Queen and DS as 11374, HP by
-                           their 4U rows here over m10924's
+                   11374   q11305's Queen (71 / 92 / 86) and her Seltas (81 / 94 / 86, restore 5: GU's form of 4U's count 99);
+                           his HP by his 4U row here over the Seltas' in 4U's G2 Queen hunt m10911 (42 / 36: row 89), hers
+                           stays (61 = m10911's 61). Her Seltas is no second boss in either game (C, issue #49): GU's Queen
+                           and Seltas hunts sit at GU's one-boss rows (q11305's 71 = the median of GU's 47 G3 one-boss hub
+                           hunts), 4U's at 4U's (m10911, m10924: 61, the row of every 4U G2 one-boss hunt)
+                   11373   Cephadrome = GU's G3 multi-monster Cephadrome q11360 (49 / 93 / 86); Queen and DS as 11374, their
+                           HP two-boss against two-boss (the Cephadrome is a second boss in both games): their 4U rows here
+                           over 4U's two-boss G2 Queen hunt m10919 (42 / 36, both 1.0; 42 = every 4U G2 two-boss hunt's
+                           first row) on the HP rows of GU's two-boss G3 Queen hunt q1011003 (Queen 56, Seltas 64). Before
+                           (issue #49): over m10924, her row 50, below every GU G3 two-boss hub hunt's first boss (54..84)
   Partners       the real Seltas (11140), Rajang and Cephadrome are GU's own monsters. Desert Seltas is named by his stand-in
                  (allocations.toml standin_id 0x4c; in 11140, where a real Seltas is, standin_alt 0x45), the Queen by 0x45,
                  swapped at spawn by module/main.c (in the Queen's quests DS through guest_in).
@@ -120,7 +127,8 @@ REM_EMPTY = struct.pack('<fI', 1.0, 1) + bytes(176)     # GU's rem_000000 (184 B
 # Quests: owner entry and k = index in its allocations.toml quests; num = 4U quest; tpl = GU template (tpl_stage: its stage
 # when re-staged); supp_tpl = the GU hub quest whose box replaces the template's; rows = per boss in spawn order, the intruder
 # last: (GU quest, GU ID[, nth record of it]) whose record gives rows / restore / difficulty / size table / stamina; ratio = per
-# boss index: (4U quest, its stat block) whose 4U HP row the HP is scaled against (none: GU's rows as they are); sub =
+# boss index: (4U quest, its stat block[, GU quest]) whose 4U HP row the HP is scaled against (none: GU's rows as they are),
+# on the HP row of that GU quest's record of the boss's GU ID (default: the rows record's); sub =
 # ('break', 4U em, GU code) | ('deliver', 4U item) | ('slay', 4U small em) | ('like', 4U quest, 4U em, GU code): that quest's
 # 4U subquest and text instead of one GU has no state for; sub_money = the GU quest whose sub money fields are taken
 QUESTS = [
@@ -130,10 +138,10 @@ QUESTS = [
          ratio={0: (10805, 0)}, sub=('slay', 73), sub_money=11105),
     dict(owner='desert_seltas', k=3, num=10818, tpl=11127, rows=[(11103, 0x4c, 0), (11103, 0x4c, 1)], sub=('deliver', 822)),
     dict(owner='desert_seltas_queen', k=0, num=10924, tpl=11305, tpl_stage=101, supp_tpl=11327,
-         rows=[(11305, 0x45), (11305, 0x4c)], sub=('break', 95, 4)),
+         rows=[(11305, 0x45), (11305, 0x4c)], ratio={1: (10911, 1)}, sub=('break', 95, 4)),
     dict(owner='desert_seltas_queen', k=1, num=10928, tpl=11306, tpl_stage=2, supp_tpl=11352,
-         rows=[(11360, 0x11), (11305, 0x45), (11305, 0x4c)], ratio={1: (10924, 0), 2: (10924, 1)}, sub=('like', 10924, 95, 4),
-         sub_money=11305),
+         rows=[(11360, 0x11), (11305, 0x45), (11305, 0x4c)], ratio={1: (10919, 1, 1011003), 2: (10919, 2, 1011003)},
+         sub=('like', 10924, 95, 4), sub_money=11305),
 ]
 _SETS = {}           # setEmMain name -> data over every quest built: one content per name, as GU's
 
@@ -453,10 +461,11 @@ def build(R, exe, nando, gu_item, names, zmap, out, spec, hp_table=None):
         assert (b['count'] == COMPANION) == (base[3] > 1), (m4, b['em'], 'restore count against the 4U count', base)
         hp, note = base[4], ''
         if i in spec.get('ratio', {}):
-            rq, ri = spec['ratio'][i]
+            rq, ri, *gq = spec['ratio'][i]
+            hp_base = gu_record(R, gq[0], row[1])[4] if gq else base[4]
             r = hp_4u(exe, stats_block(q4, b['block'])[1]) / hp_4u(exe, stats_block(quest_4u(rq), ri)[1])
-            hp = hp_row(nando, base[4], r)
-            note = ' (HP row %d x %.3f, against 4U m%05d)' % (base[4], r, rq)
+            hp = hp_row(nando, hp_base, r)
+            note = ' (HP row %d%s x %.3f, against 4U m%05d)' % (hp_base, ' of GU q%d' % gq[0] if gq else '', r, rq)
         if hp_table is not None and b['em'] in (94, 95): hp = hp_table
         size = stats_block(q4, b['block'])[0] or 100
         recs[b['slot']] = struct.pack('<HBBBBBBBHBB', named, 0, 0, base[3], hp, base[5], base[6], base[7], size, base[9],
