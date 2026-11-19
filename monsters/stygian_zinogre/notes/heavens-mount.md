@@ -41,15 +41,23 @@ layout without colour, as tools/efl4u2gu EFX_4U; m05a02d -sky00 / -river), snd4u
 m05a08d's bank, written 0 as before), sbc.parse / convert_4u (m05a01d-a-cam: two BVHs, no grid: AABBs rebuilt by the
 game rule, 1 x 1 grid, first BVH kept, G).
 
-## 3. Monster route data (Stygian's area files, build_em057_01_arc.py alias_routes)
-- GU Zinogre's own map-24 records describe the Ruined Pinnacle graph. They are rebuilt from the 4U area graph (SIS
-  exits, made two-way: 4 -> 3 is a one-way drop for hunters): 1 [2 3 5], 2 [1 6], 3 [1 4 5 8], 4 [3 5 6 8],
-  5 [1 3 4 6], 6 [2 4 5 7], 7 [6], 8 [3 4] (C). area_select: every neighbour, equal shares, Status 0 only (G: GU's
-  Status-4 rows have no 4U source); area_link kinds 1 / 2 / 4 = BFS hop counts (G for kind 4). Area 4 (the vine
-  climb) is taken out (build_em057_01_arc.py HUNTER_ONLY): no 4U monster enters it (user 2026-10-28; test 2026-10-28
-  he jumped from 6 into 4 and looped there) -> 3 [1 5 8], 6 [2 5 7], 8 [3]. area_eat / map_info
-  stay Zinogre's. Only these two files of em057_01.arc changed (cmp of the 813 entries).
-- 4U keeps no route data (its AI walks on SIS + collision, S); no GU monster roams this graph.
+## 3. Monster route data (Stygian's area files, build_em057_01_arc.py heavens_mount_plan)
+- Since issue #8 (2026-11-19): area_link, area_select and the map_info block of map 24 come from 4U em049's own
+  stage-5 data through monsters/desert_seltas/tools/routes_seltas.py (C): his areas 1 / 5 / 6 / 7 (emd word 15), hops
+  1-5, 5-6, 6-7 and a one-way 7 -> 5 (word 14), stay timers (word 17), next areas by the area he came from
+  (em048_cmd g0 s1, stage-5 case: 1 -> 5; 5 from 1 -> 6, from 6 -> 1; 6 from 5 -> 7, from 7 -> 5; 7 -> 5), sleep 7 /
+  eat 6 (uEm048 slot 66 0x8589c8), no prey. area_eat stays Zinogre's map-24 record. Only these three files of
+  em057_01.arc changed (cmp of the 813 entries).
+- Before: a guessed graph of every hunter exit with equal shares, and the Ruined Pinnacle's eating areas 1 / 7 (prey
+  mask 4) and stay timers. He could enter area 6 from area 2, where a straight walk to the north or east exit crosses
+  the central rock (issue #8: stuck in area 6; S), and tired, he went to eat in areas 1 / 7 (issue #8: stood at an
+  entrance; S).
+- DEVIATION: 4U's 7 -> 5 has no exit point on the alias (its exits are the SIS exits), so he goes 7 -> 6 -> 5.
+- Open: the alias ships GU's empty way_point form, so GU's route follower walks straight to the exit edge (no detour
+  around obstacles); from about 40 % of area 6's floor that line still crosses a wall (offline estimate). 4U em049
+  also has per-area points (emd word 18: area 6 has 16 around the central rock) and patrol routes (word 7, 3-B
+  node entries, areas 1 / 5 / 7); GU reads such points from area_patrol (field 44, record mIndex 127 for script targets,
+  0xc5290), which this port does not build.
 
 ## 4. Deviations and guesses
 - DEVIATION: GU area 9 exists (GU's files) with no 4U counterpart; unreachable (S).

@@ -108,7 +108,8 @@ uint32_t sz_ground_flags(uint32_t kind)         /* 4U 0xc074b8..0xc07524 */
     return (kind < 6 ? 2u << kind : 2u) | 1u;
 }
 
-void *sz_efx_world(void *self, uint32_t id, const float *pos, const float *rot, uint32_t ground)
+/* point post of PEL u list `list` record `id` (the record needs the world tail, efl4u2gu PEL_TAIL_WORLD) */
+static void *efx_point(void *self, uint32_t list, uint32_t id, const float *pos, const float *rot, uint32_t ground)
 {
     uint32_t buf[REQ_SIZE / 4 + 4];
     void *req = (void *)(((uint32_t)buf + 15u) & ~15u), *eff;
@@ -127,9 +128,14 @@ void *sz_efx_world(void *self, uint32_t id, const float *pos, const float *rot, 
         FIELD(uint32_t, req, REQ_FIELDS) |= 0x80000u;
         FIELD(uint32_t, req, REQ_GROUND) = ground;
     }
-    eff = unitEfxPost(self, FIELD(void *, self, PEL_U_OBJ), 2, id, req, FIELD(void *, self, PEL_SE_OBJ));
+    eff = unitEfxPost(self, FIELD(void *, self, PEL_U_OBJ), list, id, req, FIELD(void *, self, PEL_SE_OBJ));
     efx_req_dtor(req);
     return eff;
+}
+
+void *sz_efx_world(void *self, uint32_t id, const float *pos, const float *rot, uint32_t ground)
+{
+    return efx_point(self, 2, id, pos, rot, ground);
 }
 
 /* 4U 0xc08698 with request +0x5c = a shell (an effect that rides the shell): GU shells' own request (0x4a1d34, as
@@ -293,10 +299,140 @@ typedef float (*groundRay_t)(void *mgr, const float *from, const float *to, uint
 #define COLL_MGR     (*(void **)MAIN(0x21270e0)) /* its manager [*0x10574fc] */
 #define REC_GROUND_Y 0x5b4
 
+/* MEF byte 0 of Stygian's own records (4U em049_1, = build_em057_01_arc.py MEF_B0; C): 4U's motion-effect queue
+ * 0x391a60 posts a record with b0 != 0 only when bit b0 of its unit's mask (enemy: this+0xca8, the bits its action
+ * handlers set every frame, cleared after the frame's posts 0x393524) is set; the 1000-range records have b0 0. GU
+ * keeps that per-action state as one number, EN_MOVECLASS (bit k -> k, cleared every frame 0x6f5a4), set by the
+ * twins of every 4U handler that sets a bit (2026-11-19: 4U uEm048 bits 1-7 / 9 in 23 handlers; GU's kept ones store
+ * the same numbers, e.g. 7/109 efbb04 = 4U 0x84f138: 1 while charged; the ported ones in em057_01_mv_*.c), but its PSL /
+ * PEL carry no such condition, so the PSL hook applies 4U's rule (issue #8: the uncharged tail swipe 7/109 posted
+ * the charged bolts 3030, the back slam 0x227 both 3000 (b0 6, uncharged) and 3001 (b0 7, charged)). */
+static const uint16_t s_mef_b0[][2] = {
+    {3000, 6}, {3001, 7}, {3019, 2}, {3020, 3}, {3021, 3}, {3022, 3}, {3023, 4}, {3027, 4}, {3028, 4},
+    {3029, 1}, {3030, 1}, {3031, 1}, {3033, 1}, {3040, 9}, {3041, 9},
+};
+
+static uint32_t mef_b0(uint32_t id)
+{
+    for (uint32_t i = 0; i < sizeof s_mef_b0 / sizeof s_mef_b0[0]; i++)
+        if (s_mef_b0[i][0] == id) return s_mef_b0[i][1];
+    return 0;
+}
+
+/* Ground records on a joint (C, 4U 0x392130 + 0xc4838c, read 2026-11-19): MEF flag 2 (ground) -> effect +0x274 bit
+ * 0, flag 4 -> bit 2. With both on a joint record, the effect's per-frame slot 6 puts it at the joint's world position
+ * plus the monster's rotation applied to the record offset, y = the ground under the monster (owner type 3 = enemy:
+ * W+0x624 = GU rec+0x5b4, S), rotation = the monster's angles + the record's (degrees), of which MEF flag 0x40 / 0x80
+ * / 0x100 keeps only x / y / z; the ground flag keeps that running every frame (0xc47eac: state 3). The records
+ * (= build_em057_01_arc.py GROUND_JOINT): Zinogre's em048_0 dust on the feet, chin and tail and the tail swipe's
+ * em048_008 (14, joint 143, heading only), and Stygian's charged bolts 3029 (charge run 0x219, joint 2) and 3030
+ * (tail swipe 0x21a, joint 1). GU's PSL post attaches them to the model (efl4u2gu PEL_TAIL: placed once at the joint,
+ * in its frame and at its height; issue #8 tests 2026-11-19: the bolts "don't render at the correct position", the
+ * tail swipe's effect "vertically instead of horizontally"), so the hook posts them itself at 4U's point (their
+ * list-1 records carry the world tail, no joint, offset or rotation) and em057_01_ground_fx_frame moves them every
+ * frame with GU's live setters (as Gogmazios' em089_efx.c). The offset turns as 4U's front point 0x858130, Ry(yaw)
+ * Rx(pitch) Rz(roll) (S: the owner matrix's order is not read). Not ported: the monster's size (4U: the scale of its
+ * world matrix, also on the effect through MEF flag 0x20). */
+typedef void (*efx_set_pos_t)(void *eff, const float *pos, int32_t k);
+#define efx_set_pos  FN(efx_set_pos_t, 0x32a45c)   /* writes the node's position */
+typedef void (*efx_set_rot_t)(void *xf, const float *rot);
+#define efx_set_rot  FN(efx_set_rot_t, 0x8a7dc4)   /* node rotation (x, y, z) in radians */
+
+static const struct {
+    uint16_t id, flags;                         /* the 4U record's id and MEF flags */
+    uint8_t joint;
+    float off[3], rot[3];                       /* its offset and rotation (degrees) */
+} k_gjoint[] = {
+    {0, 0x226, 40, {-100.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+    {1, 0x226, 13, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+    {2, 0x226, 9, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+    {3, 0x226, 201, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+    {4, 0x226, 201, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+    {11, 0x226, 90, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+    {12, 0x226, 80, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+    {14, 0x2a6, 143, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+    {23, 0x226, 50, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+    {24, 0x226, 40, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}},
+    {3029, 0x226, 2, {0.0f, 0.0f, 360.0f}, {0.0f, 0.0f, 0.0f}},
+    {3030, 0x226, 1, {1.0f, 0.0f, 130.0f}, {10.0f, 0.0f, 0.0f}},
+};
+
+static struct {
+    void *self, *eff;
+    uint32_t row;
+} s_gjoint[16];                                 /* full: the effect stays where it was posted */
+
+static void gjoint_place(void *self, uint32_t row, float *pos, float *rot)
+{
+    const uint8_t *rec = REC(self);
+    const float *o = k_gjoint[row].off;
+    uint32_t f = k_gjoint[row].flags;
+    float a[3], s[3], c[3], x, y;
+    for (int i = 0; i < 3; i++) {
+        a[i] = (float)(RU(rec, REC_ANGLES + 4 * i) & 0xffff) * 0x1.921fb6p-14f;
+        s[i] = sinf_gu(a[i]);
+        c[i] = cosf_gu(a[i]);
+    }
+    x = o[0] * c[2] - o[1] * s[2];              /* Rz(roll) */
+    y = o[0] * s[2] + o[1] * c[2];
+    float v[3] = {x, 0.0f, y * s[0] + o[2] * c[0]};   /* Rx(pitch); its y is the ground's */
+    rot_y(v, RU(rec, REC_ANGLES + 4));
+    jointPos(self, k_gjoint[row].joint, pos);
+    pos[0] += v[0];
+    pos[1] = RF(rec, REC_GROUND_Y);
+    pos[2] += v[2];
+    pos[3] = 0.0f;
+    for (int i = 0; i < 3; i++) rot[i] = a[i] + k_gjoint[row].rot[i] * 0.017453293f;
+    if (f & 0x40) rot[1] = rot[2] = 0.0f;       /* 4U +0x274 0x80 / 0x100 / 0x200 (0x392130) */
+    if (f & 0x80) rot[2] = rot[0] = 0.0f;
+    if (f & 0x100) rot[1] = rot[0] = 0.0f;
+    rot[3] = 0.0f;
+}
+
+void em057_01_ground_fx_frame(void *self)
+{
+    for (uint32_t i = 0; i < sizeof s_gjoint / sizeof s_gjoint[0]; i++) {
+        float p[4] __attribute__((aligned(16))), r[4] __attribute__((aligned(16)));
+        void *eff = s_gjoint[i].eff, *xf;
+        if (s_gjoint[i].self != self) continue;
+        if (!sz_efx_alive(eff)) {
+            s_gjoint[i].self = s_gjoint[i].eff = 0;
+            continue;
+        }
+        gjoint_place(self, s_gjoint[i].row, p, r);
+        efx_set_pos(eff, p, 0);
+        xf = FIELD(void *, eff, EFX_NODE);
+        if (xf) efx_set_rot(xf, r);
+    }
+}
+
+static void *gjoint_post(void *self, uint32_t list, uint32_t row, uint32_t ground)
+{
+    float p[4], r[4];
+    void *eff;
+    gjoint_place(self, row, p, r);
+    eff = efx_point(self, list, k_gjoint[row].id, p, r, ground);
+    for (uint32_t i = 0; eff && i < sizeof s_gjoint / sizeof s_gjoint[0]; i++) {
+        if (s_gjoint[i].self && sz_efx_alive(s_gjoint[i].eff)) continue;
+        s_gjoint[i].self = self;
+        s_gjoint[i].eff = eff;
+        s_gjoint[i].row = row;
+        break;
+    }
+    return eff;
+}
+
 int em057_01_psl_c(uint32_t *regs)
 {
     void *self = (void *)regs[R0], *req = (void *)regs[8];
     if (!self || !req || FIELD(uint16_t, self, EN_ID) != STYGIAN_ZINOGRE_EM_ID) return 0;
+    /* PSL entry data = {u32 mask, u16 ids[32], u32 kinds[32], ..} (tools/efl4u2gu.py build_psl), slot = regs[3] */
+    const uint8_t *ent = (const uint8_t *)regs[2];
+    uint32_t id = ent && regs[3] < 32 ? FIELD(uint16_t, ent, 4 + 2 * regs[3]) : 0, b0 = mef_b0(id);
+    if (b0 && FIELD(uint8_t, self, EN_MOVECLASS) != b0) {
+        regs[R0] = 0;                                   /* no effect, GU's own "no record" result */
+        return 1;
+    }
     uint8_t *rec = REC(self);
     uint32_t out[16] = { 0 };
     uint8_t hit = 0;
@@ -305,7 +441,13 @@ int em057_01_psl_c(uint32_t *regs)
     float to[4] = { from[0], gy - 300.0f, from[2], 0.0f };
     void *mgr = COLL_MGR;
     if (mgr) groundRay(mgr, from, to, FIELD(uint8_t, self, EN_AREA), &hit, out, 64);
+    uint32_t kind = sz_effect_c094e8(self, hit ? out[2] : 0, 0x391e3c);
+    for (uint32_t row = 0; row < sizeof k_gjoint / sizeof k_gjoint[0]; row++) {
+        if (k_gjoint[row].id != id) continue;
+        regs[R0] = (uint32_t)gjoint_post(self, regs[R1], row, sz_ground_flags(kind));
+        return 1;
+    }
     FIELD(uint32_t, req, REQ_FIELDS) |= 0x80000u;
-    FIELD(uint32_t, req, REQ_GROUND) = sz_ground_flags(sz_effect_c094e8(self, hit ? out[2] : 0, 0x391e3c));
+    FIELD(uint32_t, req, REQ_GROUND) = sz_ground_flags(kind);
     return 0;
 }

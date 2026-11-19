@@ -1,7 +1,8 @@
 /* em057_01_diag.c: Stygian Zinogre diagnostics (logs, prefix "szport:").
  *
  * Hook 0xf03620 = uEm057_00 vtable slot 125, the action dispatcher (= 4U slot 44, every frame). It also runs 4U's
- * aura controller (em057_01_efx_frame, em057_01_efx.c), 4U vt77's paw-slam ground hit (em057_01_slam_fx_frame,
+ * aura controller (em057_01_efx_frame, em057_01_efx.c), the ground bolts' 4U placement (em057_01_ground_fx_frame,
+ * em057_01_efx.c), 4U vt77's paw-slam ground hit (em057_01_slam_fx_frame,
  * em057_01_mv_d.c) and orb events (em057_01_orb_event_frame, em057_01_posts.c) and
  * Stygian's own actions: em057_01_moves_run (em057_01_moves.c) decides on every call whether GU's dispatch is
  * skipped (return 1). Logs: for the first Zinogre
@@ -30,6 +31,7 @@ int em057_01_act_c(uint32_t *regs)
     void *self = (void *)regs[R0];
     if (FIELD(uint16_t, self, EN_ID) != STYGIAN_ZINOGRE_EM_ID) return 0;
     em057_01_efx_frame(self);
+    em057_01_ground_fx_frame(self);
     em057_01_slam_fx_frame(self);
     em057_01_orb_event_frame(self);
     em057_01_vt77_frame(self);

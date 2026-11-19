@@ -635,6 +635,14 @@ def pel_colour(path, rid, S=None, soil=M19A03_AREA_SOIL, code=None):
 # records with the local-space flag (MEF bit 0). Ground-flag and joint -1 records keep PEL_TAIL (mode 2, placed where
 # posted; the ground flag's y tracking has no GU tail: a deviation).
 MEF_LOCAL, MEF_GROUND = 1, 2
+# MEF flag 4 = the rotation source (C, 2026-11-19): 4U 0x392130 copies it to effect +0x274 bit 2, and 0xc4838c then
+# turns the effect with the monster's body (its Euler angles), without it with the joint's own matrix; flags 0x40 /
+# 0x80 / 0x100 keep only x / y / z of that rotation. GU's port of that code (0x31d92c) reads the PEL record's +0x38:
+# 0 = the joint's matrix, 1 = the target model (the body), 2 = the request's base; +0x3c 0 / 1 / 2 / 3 = x / y / z
+# / all. Capcom's Zinogre follows it (GU em057_00u 260 = 4U em048_1 2031, flags 0x221: +0x38 0; 560 / 561 = em048_0
+# 21 / 22, 0x225: 1). PEL_TAIL_LOCAL / PEL_TAIL_PREV key +0x38 on MEF_LOCAL instead (opt-in fix: effect_set
+# mef_rotation; for records with an axis mask the GU mask's branch is not confirmed, so those keep the old byte).
+MEF_BODY, MEF_ROT_MASKS = 4, 0x1c0
 # Capcom's tail for a 4U joint record with the local-space flag: GU em057_00u list-1 records 560 / 561 = 4U em048_0
 # ids 21 / 22 (em048_004 on joint 2, flags 0x225), the one such pair in Capcom's conversion of Zinogre (C; asserted
 # by build_em057_01_arc.py); = PEL_TAIL_PREV with +0x38 1 (mode 1), +0x3a 0, +0x86 1 (+0x48 = the mask pel_record
@@ -651,13 +659,14 @@ def mef_follows(r):
     return 'flags' in r and r['joint'] >= 0 and not r['flags'] & MEF_GROUND
 
 
-def pel_record(path, r, S=None, soil=M19A03_AREA_SOIL, motion=False):
+def pel_record(path, r, S=None, soil=M19A03_AREA_SOIL, motion=False, mef_rotation=False):
     """r: a MEF record dict; optional keys for code posts of other monsters (ids are per PEL, so they do not go
     through em089's id rules): follow (bool, else pel_follows(id)), world (bool: posted at a point with no target,
     PEL_TAIL_WORLD), colour (RGBA bytes, else CODE_COLOUR), once (bool: a follow record that plays once, +0x38 1,
     +0x3a 0 = GU em057_00u records 90 / 120, the charge change; PEL_TAIL_PREV's +0x3a 1 restarts the effect each time
     it ends until stopped: Stygian's discharge pulsed every 1-2 s, issue #8 test). motion: the record of a motion
-    sequence list (PEL list 1): MEF records follow the 4U rule (mef_follows)."""
+    sequence list (PEL list 1): MEF records follow the 4U rule (mef_follows); mef_rotation: their rotation source
+    from MEF_BODY (see MEF_BODY)."""
     st = bytearray(160)
     struct.pack_into('<4f', st, 0x00, *r['pos'], 0.0)
     struct.pack_into('<4f', st, 0x10, *r['rot'], 0.0)
@@ -667,6 +676,8 @@ def pel_record(path, r, S=None, soil=M19A03_AREA_SOIL, motion=False):
         st[0x34:] = PEL_TAIL_WORLD
     elif motion and 'follow' not in r and mef_follows(r):
         st[0x34:] = PEL_TAIL_LOCAL if r['flags'] & MEF_LOCAL else PEL_TAIL_PREV
+        if mef_rotation and not r['flags'] & MEF_ROT_MASKS:
+            st[0x38] = 1 if r['flags'] & MEF_BODY else 0
     else:
         st[0x34:] = PEL_TAIL_PREV if r.get('follow', pel_follows(r['id'])) else PEL_TAIL
     if r.get('once'):
@@ -683,11 +694,11 @@ def pel_record(path, r, S=None, soil=M19A03_AREA_SOIL, motion=False):
     return bytes([len(p)]) + p + b'\x01\x00' + bytes(st)
 
 
-def build_pel(recs, S=None, soil=M19A03_AREA_SOIL, list2=None):
+def build_pel(recs, S=None, soil=M19A03_AREA_SOIL, list2=None, mef_rotation=False):
     """recs: [(efl path, mef record)] -> PEL v15: list 0 empty, list 1 = all records (motion sequences, PSL kind 4),
     list 2 (code posts) = all records too, or list2 = (count, record bytes) of another PEL (pel_lists). Only list 1
     takes the MEF follow rule (mef_follows): 4U applies the MEF flags to motion-sequence posts (0x391b50)."""
-    body = b''.join(pel_record(p, r, S, soil, motion=True) for p, r in recs)
+    body = b''.join(pel_record(p, r, S, soil, motion=True, mef_rotation=mef_rotation) for p, r in recs)
     n2, body2 = list2 if list2 is not None else (len(recs), b''.join(pel_record(p, r, S, soil) for p, r in recs))
     return b'PEL\0' + struct.pack('<II', 15, 0) + struct.pack('<I', len(recs)) + body + \
         struct.pack('<I', n2) + body2
@@ -1002,9 +1013,15 @@ def effect_set(spec, log):
     list 2 holds our records too, or (count, record bytes) of a GU PEL's list 2: the GU class posts its own ids),
     optional extra2 [(EFL path, record)] (code posts appended to that GU list 2 only), solid_fill (convert_effect_mod),
     solid_fills {model path: fill} (per model, over solid_fill), solid_templates {model path: template key}
-    (convert_model) and intensity (intensity_bake)."""
+    (convert_model), intensity (intensity_bake), world (ids of the MEF / extra records the port's code posts at a
+    point it computes itself: GU's world tail, no joint, offset or rotation) and mef_rotation (list 1's joint records
+    take their rotation source from MEF_BODY)."""
     S = sources(spec['arc'], spec['stage_unpacked'])
-    mef = mef_records(S[(spec['mef'], T['MEF'])])
+    world = spec.get('world', ())
+
+    def placed(r):
+        return dict(r, world=True, joint=-1, pos=(0.0, 0.0, 0.0), rot=(0.0, 0.0, 0.0)) if r['id'] in world else r
+    mef = [placed(r) for r in mef_records(S[(spec['mef'], T['MEF'])])]
     efls = {p for (p, t) in S if t == T['EFL'] and p.startswith(spec['em_efl'])}
     pel_recs = []
     for r in mef:
@@ -1018,7 +1035,7 @@ def effect_set(spec, log):
     for path, r in spec['extra']:
         assert (path, T['EFL']) in S and r['id'] not in {q['id'] for _, q in pel_recs}, (path, r['id'])
         efls.add(path)
-        pel_recs.append((path, r))
+        pel_recs.append((path, placed(r)))
     extra2 = spec.get('extra2', [])           # code posts appended to a GU list 2 (spec['list2'])
     for path, r in extra2:
         assert spec['list2'] is not None and (path, T['EFL']) in S, (path, r['id'])
@@ -1077,7 +1094,7 @@ def effect_set(spec, log):
     if extra2:
         n2, body2 = list2
         list2 = (n2 + len(extra2), body2 + b''.join(pel_record(p, r, S, spec['soil']) for p, r in extra2))
-    out[(spec['pel'], T['PEL'])] = build_pel(pel_recs, S, spec['soil'], list2)
+    out[(spec['pel'], T['PEL'])] = build_pel(pel_recs, S, spec['soil'], list2, spec.get('mef_rotation', False))
     known = {r['id'] for _, r in pel_recs}
     for lmt, psl in spec['lmts']:
         out[(psl, T['PSL'])] = build_psl(S[(lmt, T['LMT'])], known, log)

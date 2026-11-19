@@ -154,6 +154,8 @@ void sz_unmapped_94c980(void *self, uint32_t site);
 uint32_t sz_rest_w4u(void *self, uint32_t field, uint32_t site);
 /* em057_01_efx.c: 4U's aura controller 0x322f18 (one looping aura for the rage / charge state), every frame */
 void em057_01_efx_frame(void *self);
+/* em057_01_efx.c: 4U's per-frame placement of his ground records on a joint (the charged bolts 3029 / 3030) */
+void em057_01_ground_fx_frame(void *self);
 /* em057_01_efx.c: 4U 0xc08628-style point post of PEL u list-2 record `id` (no attach: 0x53b500), rotation = euler
  * radians or 0, ground = sz_ground_flags(kind) or 0 (the record's); returns the effect or 0 */
 void *sz_efx_world(void *self, uint32_t id, const float *pos, const float *rot, uint32_t ground);

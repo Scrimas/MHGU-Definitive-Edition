@@ -325,8 +325,13 @@ testable alone (the maintainer checks the smithy or one quest).
 - **Blended materials.** A 4U BSBlendAlpha material is not additive: template 'blend' (mrl_build), with the 4U material's
   own emission / diffuse / specular. A material whose animations the class starts (rage veins) needs that class code ported
   and should start in the first frame of its resting animation, or it shows all the time. Look at the texture and the
-  animation list of every BA material. Among the shipped ports only Stygian's 'XfBAN__IW_0__m00_effect_' is one (shipped
-  additive through 'add'; not re-checked, scan of 2026-11-05).
+  animation list of every BA material. Among the earlier ports only Stygian's 'XfBAN__IW_0__m00_effect_' is one (shipped
+  additive through 'add' until issue #8, 2026-11-19: now 'blend' with its 4U constants, its 4U DSZTest and its autoplay
+  UV scroll). A 4U per-vertex alpha (N.w) on such a mesh has no GU counterpart on monster models (only GU's effect
+  models blend by vertex alpha, through the EflEmu functions): the panes lose their soft tips.
+- **Constant-colour multipliers.** A 4U material's static CBMaterialConstant fMaterialConstantBase (Stygian's lights:
+  1.2) goes to $Globals.fConstantColor (Capcom's mapping, mrl_anim.CONSTANT_MAP), not only its animated tracks: the
+  template's 1.0 drew Stygian's body marks a sixth dimmer (issue #8).
 - **Shiny drops.** Same mechanic in both games, by single moments per monster, not by damage: monsters/monoblos/notes/
   plan.md "Shiny drops". The table comes with the hagi tool; the triggers do not come by themselves when a handler is
   ported (grep the 4U class for 0x911f58 and for op 24 in its reaction tables).
@@ -462,6 +467,22 @@ Stop it with `ryutest.sh stop` (matches the cmdline: the gui process's /proc exe
   and other head effects stayed where they started (maintainer: "spawned on the ground for all ported monsters").
   efl4u2gu.py mef_follows: in PEL list 1, joint records without the ground flag take PEL_TAIL_LOCAL (MEF bit 0, the
   units' local space; Capcom's tail for Zinogre's 0x225 joint records) or PEL_TAIL_PREV; list 2 is unchanged.
+- **Ground records on a joint have no GU tail (Stygian Zinogre, 2026-11-19):** with the ground flag and MEF bit 2 on
+  a joint record, 4U puts the effect at the joint's world position plus the monster's rotation applied to the record
+  offset, y on the ground under the monster, every frame (0xc4838c; MEF -> effect flags at 0x392130). PEL_TAIL places
+  it once at the joint, in the joint's frame and at its height (his charged bolts appeared off their spot, the tail
+  swipe's em048_008 stood up instead of lying flat). Stygian's PSL hook posts such records itself as world posts and
+  moves them every frame (em057_01_efx.c k_gjoint; their records: efl4u2gu effect_set `world`). Other ports' ground
+  joint records (mostly step dust on the feet) still use PEL_TAIL.
+- **The rotation source is MEF flag 4, not the local flag (2026-11-19):** 4U turns a joint record with the body
+  when MEF flag 4 is set, else with the joint's own matrix (0xc4838c); GU's PEL record +0x38 picks the same thing
+  (0x31d92c: 0 joint, 1 body, 2 base; +0x3c keeps x / y / z / all = 4U flags 0x40 / 0x80 / 0x100), as Capcom's
+  Zinogre records show. efl4u2gu's PEL_TAIL_LOCAL / PREV set +0x38 from the local flag: Stygian's tail lightning
+  (0x221) stood up. efl4u2gu effect_set mef_rotation applies the 4U rule (Stygian only so far; other ports have 10-20
+  such records each, roars excluded because of their axis mask).
+- **MEF byte 0 gates the post (2026-11-19):** 4U posts a b0 != 0 record only while the action handler sets bit b0 of
+  this+0xca8; GU keeps that as one number (EN_MOVECLASS, the same per handler) and never tests it for PSL posts. A port
+  whose records carry b0 needs the test in its PSL hook (Stygian: the uncharged tail swipe drew the charged bolts).
 - **Effect reference model:** a pos-only post through the monster uses the monster's attach model as reference: its
   2.5 scale and its height leak into the effect. GU shells post their own effects with the shell as target (flags 3)
   and keep the shell alive until the effect is dead (em089_shell.c pattern).

@@ -373,3 +373,36 @@ dump/scratch/stygian-session/phase0-notes.md. C = confirmed in code/data, S = st
 7. **Heaven's Mount:** stage alias of a GU field (areas, collision, gathering, map UI, lighting rule), then its
    three quests.
 8. **Release** on the user's OK.
+
+## Issue #8 backlog (2026-11-19)
+- Heaven's Mount area data from 4U em049 stage 5 (notes/heavens-mount.md section 3); hull over the charged spikes on
+  'blend' with its 4U constants, DSZTest and autoplay UV scroll (DEVIATION: no vertex-alpha fade at the pane tips, GU has
+  none on monster materials); body-mark lights at 4U's constant colour 1.2 (build_em057_01_arc.py model()).
+- DEVIATION (the maintainer's choice): when a tired Stygian goes to eat stays GU's hunger engine (Zinogre's area_eat
+  stamina chances), as Monoblos. 4U decides it in 0x942358 (stamina floats W+884, timers, rest flags), which GU replaced;
+  the class's own tired branches are ported (leap 0x84a59c motion 0x20d, rush 0x84b548 stop speed 0.75), and the charge
+  gain while tired is 4U's (rows by HP ratio and W+0x797e, no tired test, C). So the hungry animation 1/22 twice in a row,
+  the tired lunge and an eat after the hunger ended (issue #8) follow GU's timing.
+- Test 2026-11-19 (Ryujinx, Heaven's Mount G4, 11 min, charged from 5:20): one area move 6 -> 7, no stall (walked
+  straight to the exit point in 10 s); body marks bright as in 4U; hull dark red smoke but "I can see the individual
+  cells" (the pane tips, the vertex-alpha DEVIATION above: no GU material in the whole romfs takes alpha from a second
+  map or UV, FTransparencyMap is unused); bolts on the tail swipe "not at the correct position / time", back slam
+  unsure. Every motion post saw ground kind 0. Log: the uncharged tail swipe 7/109 posted the charged bolts 3030.
+- Charged bolts (em057_01_efx.c, after that test): the PSL hook applies MEF b0 (4U posts a b0 record only while its
+  handler sets that bit of this+0xca8 = GU EN_MOVECLASS; 3030 b0 1 = 7/109 charged, GU efbb04 = 4U 0x84f138) and
+  posts the ground records on a joint (3029 charge run, 3030 tail swipe) at 4U's point every frame: joint position +
+  the monster's rotation on the offset, y on the ground (0xc4838c), as world posts. Not ported: the monster's size in
+  that offset and on the effect (4U world-matrix scale).
+- Test 2026-11-19 #2: bolts, back slam and b0 all good; "the tail swipe does the effect vertically instead of
+  horizontally" (charged 7/210, motion 0x21e frame 82: em048_0 record 14 = em048_008 on joint 143, MEF 0x2a6, ground
+  + body rotation + heading only). Same rule, so every em048_0 / em049_1 ground record on a joint (step / chin / tail
+  dust 1-4 11 12 23 24, 14, 3029, 3030) now takes it (build_em057_01_arc.py GROUND_JOINT).
+- Test #3: "Swipe effect is still vertical", game paused after it: 7/0, motion 0x20f (frame 130: 3031 = em049_012 on
+  the tail joint 140, MEF 0x221, charged). Cause (C): PEL record +0x38 is GU's rotation source (0x31d92c: 0 joint
+  matrix, 1 body, 2 base) and 4U's is MEF flag 4 (0xc4838c); efl4u2gu keyed +0x38 on the local flag, so 3031 turned
+  with his body. Capcom: 2031's twin (GU em057_00u 260) has +0x38 0. Fixed for Stygian (efl4u2gu effect_set
+  mef_rotation): 3031 / 3033 joint, 42 43 1003 1015 3026 body; records with an axis mask (roars 0x281 etc.) unchanged.
+- Test #4: "All perfect" (the tail lightning, the charge-run bolts placed at 4U's point only while charged, the dust
+  through the ground placement). The test logging (area-move walk, effect posts) is removed. Still a DEVIATION: the
+  hull's pane tips (no vertex alpha), the hunger engine; follow-ups: the first move 6 -> 7 (routes_seltas Status 4
+  reading), the 4U rotation rule for the other ports (mef_rotation).

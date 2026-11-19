@@ -33,7 +33,9 @@ notes/phase1-variant-map.md). The source facts are in notes/phase1-assets.md.
       cmd_tbl\\em057_01_cmdtbl             4U em048_cmd for em 49 in GU's language (cmdtbl(): op-0x46 em switches
                                            reduced to their em-49 bodies, GU's area-move scripts, GU's extra entries)
       area_link / area_eat / map_info /    GU em057_00's (maps 1 4 6 14 23 24) + GU Brachydios' (em063_00) map 12
-      area_select / area_patrol \\em057_01  records (Volcanic Hollow, his 4U quests' stage 15: area_files())
+      area_select / area_patrol \\em057_01  records (Volcanic Hollow, his 4U quests' stage 15: area_files()); map 24
+                                           (Heaven's Mount) area_link / area_select / map_info from 4U em049 stage 5
+                                           (heavens_mount_plan, monsters/desert_seltas/tools/routes_seltas.py)
   shared, GU em057_00 (original paths + file IDs): sound triggers (PTS), PEL c, GU's shell families (rows 247 / 248,
       which GU's class preloads for variant 1 too: notes/b5-shells.md 2a), hitsize, bodydata,
       dtbase, dtbparts (4U em048 and em049 give the same data: notes/phase1-assets.md 4), dou mou ka.
@@ -52,6 +54,8 @@ sys.path.insert(0, paths.GU_PY)
 from romfs import RomFS
 import alloc, arcpack, ctr, efl4u2gu, emc, emdata4u, lcm4u2gu, lmt, mod as modlib, mod4u2gu, mrl, mrl_anim, \
     mrl_build, portdata, snd4u2gu, tex, xfs
+sys.path.insert(0, os.path.join(ROOT, 'monsters', 'desert_seltas', 'tools'))
+import routes_seltas as routes                      # 4U area behaviour -> GU area files (Heaven's Mount)
 
 NAME = 'stygian_zinogre'
 ALLOC = alloc.monster(NAME)
@@ -122,23 +126,24 @@ SHELL_FILE_ID = 0x108db          # the def (module: Stygian's shell request) = F
 AREA_FIELDS = {40: 'area_link', 41: 'area_eat', 42: 'map_info', 43: 'area_select', 44: 'area_patrol'}
 AREA_DONOR = ('/nativeNX/arc/enemy/em063_00.arc', 'em063_00', 12)
 MAP_INFO_HEAD, MAP_INFO_BLOCK = 12, 86
-# Heaven's Mount (his quests m10607 m10930 m11010) runs on GU map 24 = the alias of the Ruined Pinnacle with 4U m05's
-# geometry and area numbers (tools/build_heavens_mount.py). Zinogre's own map-24 records describe the Ruined
-# Pinnacle's area graph, so area_link (hop distances, kinds 1 / 2 / 4) and area_select (next areas) of map 24 are
-# rebuilt from the 4U area graph: the exits of the 4U area info (SIS section 1, target byte +17) between areas 1..8
-# (the camp is never a target, as GU's rows 0). No GU monster roams this graph, and 4U keeps no route data of its own
-# (its AI walks on SIS + collision, S), so: area_select = every 4U neighbour with an equal share (Status 0 only;
-# GU's Status 4 "weakened" rows have no 4U source, G), area_link kinds 1 / 2 / 4 = the BFS hop count (G for kind 4,
-# whose GU rows are a sparser subgraph); GU area 9 (no 4U area) keeps a self-only row. area_eat and the map_info block
-# stay Zinogre's (per-map stamina / stay values, not area-graph data).
+# Heaven's Mount (his quests m10607 m10930 m11010, each spawning him in area 6) runs on GU map 24 = the alias of the
+# Ruined Pinnacle with 4U m05's geometry and area numbers (maps/heavens_mount). Zinogre's own map-24 records are the
+# Ruined Pinnacle's: he roamed every hunter exit (into area 6 from the south, where his straight walk to the next exit
+# can run into the central rock, S) and, tired, went to eat in its eating areas 1 / 7 for a prey Heaven's Mount lacks
+# (issue #8, S). So area_link, area_select and the map_info block of map 24 come from 4U em049's own stage-5 data, read
+# and written by monsters/desert_seltas/tools/routes_seltas.py (formats in its docstring, C): his areas 1 / 5 / 6 / 7
+# (emd word 15), hops (word 14), stay timers (word 17), next areas by the area he came from (em048_cmd g0 s1, stage-5
+# case), sleep area 7 / eating area 6 (uEm048 slot 66 0x8589c8: the weakened move 0x93e0ac to 7, the hunger move
+# 0x942358 to 6), no prey. A 4U hop needs an exit point on the alias, whose exits are the 4U SIS exits made two-way
+# (maps/heavens_mount point_pos_4u): 4U's one-way hop 7 -> 5 has none, so he goes 7 -> 6 -> 5 (DEVIATION). area_eat
+# keeps Zinogre's map-24 record (stamina chances, not area data).
 AREA_ALIAS = (24, os.path.join(ROOT, 'dump/romfs/loc/data/m05.arc'), 'm05', 9)   # GU map, 4U stage arc, 4U areas
-# Heaven's Mount area 4 (the vine climb) is out of the monsters' graph: no 4U monster goes there (user, 2026-10-28; test
-# 2026-10-28: with it, he jumped from 6 into 4 and looped there), so it is no Next area and keeps a self-only row
-HUNTER_ONLY = {4}
+HM_STAGE, HM_SLEEP, HM_EAT = 5, [7], [6]
 
 
 def alias_graph():
-    """4U Heaven's Mount area graph {area: sorted neighbours} (areas 1..), from the SIS exits of m05.arc (C)"""
+    """4U Heaven's Mount exits {area: sorted neighbours} (areas 1..), from the SIS exits of m05.arc (C), made two-way
+    as the alias' point_pos gives them exit points"""
     sys.path.insert(0, paths.GU_PY)
     import sis
     _, ents = arcpack.read(open(AREA_ALIAS[1], 'rb').read())
@@ -153,63 +158,22 @@ def alias_graph():
     for a in list(g):
         for b in g[a]:
             if a not in g[b]: g[b] = sorted(g[b] + [a])
-    return {a: [b for b in ns if b and b not in HUNTER_ONLY] for a, ns in g.items() if a and a not in HUNTER_ONLY}
+    return {a: [b for b in ns if b] for a, ns in g.items() if a}
 
 
-def alias_routes(kind, data, notes):
-    """area_link / area_select with their map-AREA_ALIAS[0] records rebuilt from alias_graph()"""
-    import copy
-    m = AREA_ALIAS[0]
-    g = alias_graph()
-    dist = {}
-    for a in g:                                   # BFS hop counts over areas 1..8
-        d, fr = {a: 0}, [a]
-        while fr:
-            nx = []
-            for x in fr:
-                for y in g[x]:
-                    if y not in d: d[y] = d[x] + 1; nx.append(y)
-            fr = nx
-        dist[a] = d
-    root = xfs.parse(data)
-    arr = root['RouteFindDataResource']['mpArray']
-    arr = arr if isinstance(arr, list) else [arr]
-    mine = [o for o in arr if o['mMapNo'] == m]
-    if kind == 'area_link':
-        assert {o['mKind'] for o in mine} == {1, 2, 4}, [o['mKind'] for o in mine]
-        for o in mine:
-            rows = o['mAreaSelDataArray']['mpArray']
-            for r, row in enumerate(rows):
-                for c in range(1, 13):
-                    row['A%02d' % c] = (dist[r].get(c, 255) if r in dist else (0 if c == r else 255))
-        new = arr
-        what = 'kinds 1 / 2 / 4 = 4U hop counts'
-    else:
-        tpl = copy.deepcopy(mine[0])
-        e0 = tpl['mAreaSelDataArray']['mpArray']
-        e0 = copy.deepcopy(e0[0] if isinstance(e0, list) else e0)
-        recs = []
-        for a, ns in sorted(g.items()):
-            r = copy.deepcopy(tpl)
-            r['mAreaNo'] = a
-            e = copy.deepcopy(e0)
-            ns = ns[:4]
-            share = [100 // len(ns) + (1 if i < 100 % len(ns) else 0) for i in range(len(ns))]
-            e.update(Status=0, RouteNo=0, Param=0, BackArea=255)
-            for i in range(4):
-                e['Next%dArea' % (i + 1)] = ns[i] if i < len(ns) else 255
-                e['Next%dRand' % (i + 1)] = share[i] if i < len(ns) else 255
-            r['mAreaSelDataArray']['mpArray'] = e
-            recs.append(r)
-        at = arr.index(mine[0])
-        new = [o for o in arr[:at] if o['mMapNo'] != m] + recs + [o for o in arr[at:] if o['mMapNo'] != m]
-        what = 'areas %s' % {a: ns[:4] for a, ns in sorted(g.items())}
-    root['RouteFindDataResource']['mpArray'] = new
-    out = xfs.build(data, root)
-    assert xfs.build(out, xfs.parse(out)) == out
-    notes.append('area data %s map %d: %d Ruined Pinnacle record(s) -> 4U Heaven\'s Mount graph (%s)' % (
-        kind, m, len(mine), what))
-    return out
+def heavens_mount_plan(scripts):
+    """routes_seltas' map plan of 4U em049's stage 5 on the alias (scripts: 4U em048_cmd reduced to em 49)"""
+    e = routes.emd_stage('em049', HM_STAGE)
+    areas = sorted(e['stay'])
+    adj = {a: [b for b, v in enumerate(e['dist'][a]) if v == 1 and b != a] for a in areas}
+    exits = alias_graph()
+    links = {a: [b for b in adj[a] if b in exits[a]] for a in areas}
+    assert all(set(routes.hops(links, a)) == set(areas) for a in areas), ('his areas are not connected on the alias',
+                                                                          links)
+    where, route = routes.routing(scripts, HM_STAGE)
+    return [dict(stage=HM_STAGE, map=AREA_ALIAS[0], areas=areas, adj=adj, links=links,
+                 hops={a: routes.hops(links, a) for a in areas}, dist=e['dist'], route=route, timers=e['timers'],
+                 where=where, stay=areas, sleep=HM_SLEEP, eat=HM_EAT)]
 EXTRA_ORDER = ['shell01']        # own files without a manifest field, IDs after the fields' (append only)
 CODE_4U = os.path.join(ROOT, 'dump/exefs_v11/code.bin')     # MH4U v1.1 code, loaded at 0x100000
 CODE_4U_BASE = 0x100000
@@ -268,6 +232,20 @@ SHELL_FX = [   # (id, 4U group, element, k, joint, follow, 4U post)
 # follow records posted once with no handle (4U 0x856f0c keeps none): GU's one-shot follow tail (efl4u2gu pel_record
 # once = GU's own charge-change records 90 / 120); the looping tail replayed the discharge every 1-2 s (issue #8 test)
 SHELL_FX_ONCE = (3202, 3205)
+# MEF byte 0 of em049_1's records = em057_01_efx.c s_mef_b0 (4U posts a b0 record only while bit b0 of this+0xca8 is
+# set; GU twin EN_MOVECLASS); asserted against the 4U MEF
+MEF_B0 = {3000: 6, 3001: 7, 3019: 2, 3020: 3, 3021: 3, 3022: 3, 3023: 4, 3027: 4, 3028: 4, 3029: 1, 3030: 1, 3031: 1,
+          3033: 1, 3040: 9, 3041: 9}
+# the ground records on a joint of em048_0 (Zinogre's, shipped in em049.arc) and em049_1 (MEF flags 2 + 4: 4U
+# 0xc4838c keeps them at the joint, on the ground, turned with the body, every frame; issue #8: his charged bolts off
+# their spot, the tail swipe's em048_008 standing up) -> id: (joint, offset, rotation in degrees, MEF flags) =
+# em057_01_efx.c k_gjoint, which posts them at that point itself: their list-1 records take GU's world tail with no
+# joint, offset or rotation (efl4u2gu effect_set world), as GU's own world code posts
+Z = (0.0, 0.0, 0.0)
+GROUND_JOINT = {0: (40, (-100.0, 0.0, 0.0), Z, 0x226), 1: (13, Z, Z, 0x226), 2: (9, Z, Z, 0x226),
+                3: (201, Z, Z, 0x226), 4: (201, Z, Z, 0x226), 11: (90, Z, Z, 0x226), 12: (80, Z, Z, 0x226),
+                14: (143, Z, Z, 0x2a6), 23: (50, Z, Z, 0x226), 24: (40, Z, Z, 0x226),
+                3029: (2, (0.0, 0.0, 360.0), Z, 0x226), 3030: (1, (1.0, 0.0, 130.0), (10.0, 0.0, 0.0), 0x226)}
 # the 4U request ids of the shells' and effect posts' sounds (notes/b5-shells.md 1): asserted in our converted request,
 # own bank (word 21 = 0): 205 vt77 hit, 210 / 213 charge change, 215 / 216 / 224 orb, 217 / 218 pillar, 226 blast
 SHELL_SOUNDS = (205, 210, 213, 215, 216, 217, 218, 224, 226)
@@ -327,10 +305,17 @@ def textures(S, r4, slots, out, gu_tex, spec_type=1):
 
 def model(S, rom, src_name, dst_name, gu_tex, notes):
     """one em049 MOD + MRL (+ the textures it is the first to use) -> [(path, type, data)], the parsed 4U MOD.
-    Templates as build_em089_arc.py: blended -> 'add', normal-mapped -> 'solid_nm', emissive (4U CBMaterialStd
+    Templates as build_em089_arc.py: additive -> 'add', normal-mapped -> 'solid_nm', emissive (4U CBMaterialStd
     emission > 0, diffuse 0) -> 'unlit', else 'solid'; alpha-tested (MRL w7 bit 24 on BSSolid) -> 'solid_at' / 'tar'
-    (with a normal map). Every 4U material animation is converted (constants = the 4U material's own for the
-    variables its tracks drive); none autoplays: 4U picks them from code (names unknown hashes: notes/phase1-assets.md).
+    (with a normal map). 4U BSBlendAlpha -> 'blend' with the 4U material's own constants, starting in the first frame
+    of its first animation (the later ports' rule, notes/porting-guide.md "Blended materials"): his only one is the
+    hull over the charged spikes, 'XfBAN__IW_0__m00_effect_' (dark red texture, noise in its alpha, emission 1,
+    diffuse 0), which went through the lit additive 'add' until issue #8 (pale ghost hull, the reporter: the flaming
+    dracoenergy is missing). Its 4U vertex alpha (N.w: the panes fade toward their tips) has no GU counterpart on a
+    monster mesh (only GU's effect models blend by vertex alpha, through the EflEmu functions): DEVIATION, hard tips.
+    Every 4U material animation is converted (constants = the 4U material's own for the variables its tracks drive),
+    with 4U's autoplay flag (bit 1, as tools/stage4u2gu.py): only the hull's UV scroll has it; 4U picks the others
+    from code (names unknown hashes: notes/phase1-assets.md).
     MRL before MOD, as in GU's arcs: a model fetches its materials by path while it loads."""
     d4 = S[(P4 + 'mod\\' + src_name, T['MOD'])]
     d4m = S[(P4 + 'mod\\' + src_name, T['MRL'])]
@@ -355,7 +340,7 @@ def model(S, rom, src_name, dst_name, gu_tex, notes):
             slots[slot] = tex_index[path]
         std = struct.unpack_from('<8f', mm['block'], 0x60)       # emission rgba, diffuse rgba
         emissive = max(std[0:3]) > 0 and max(std[4:7]) == 0
-        key = 'add' if 'BSAddAlpha' in states or 'BSBlendAlpha' in states else \
+        key = 'blend' if 'BSBlendAlpha' in states else 'add' if 'BSAddAlpha' in states else \
               ('solid_nm' if 'tNormalMap' in slots else 'unlit' if emissive else 'solid')
         if 'IAFilter2' in states:
             key = 'light'           # the body-mark lights: see LIGHT_TEMPLATE (issue #8, muted glow)
@@ -373,8 +358,25 @@ def model(S, rom, src_name, dst_name, gu_tex, notes):
             anim_vars = mrl_anim.animated_targets(ents4)
             consts.update({k: v for k, v in mrl_anim.static_constants(mm['block'][std_off:], 1.0).items()
                            if k in anim_vars})
-            extra['anim'] = mrl_anim.build(mrl_anim.gu_entries(ents4, mrl_build.cb_words(rom, key)))
-        mats.append((mname, key, slots, [s for s in states if s.startswith('RS')], consts, extra))
+            ge = mrl_anim.gu_entries(ents4, mrl_build.cb_words(rom, key))
+            for g, e in zip(ge, ents4):
+                g['flags'] |= e['flags'] & mrl_anim.FLAG_AUTOPLAY
+            extra['anim'] = mrl_anim.build(ge)
+        own_states = [s for s in states if s.startswith('RS')]
+        if key == 'blend':
+            std_off = [v for n, t, v in mm['params'] if t == 1 and n == 'CBMaterialStd'][0]
+            consts.update(mrl_anim.static_constants(mm['block'][std_off:], 1.0))
+            if ents4:
+                consts.update(mrl_anim.solid_constants(ents4[0]))
+            # the hull is 4U DSZTest (no depth write: a see-through shell); the template writes depth
+            own_states += [s for s in states if s.startswith('DS')]
+        cst = [v for n, t, v in mm['params'] if t == 1 and n == 'CBMaterialConstant']
+        if key == 'light' and cst:
+            # 4U's constant colour over the albedo (fMaterialConstantBase: 1.2 on both lights) -> $Globals.fConstantColor,
+            # Capcom's mapping (mrl_anim.CONSTANT_MAP); the template's 1.0 left the marks a sixth dimmer (issue #8)
+            fo = mrl.cb_layout(0x20, 'CBMaterialConstant')['fMaterialConstantBase'][0]
+            consts[('$Globals', 'fConstantColor')] = struct.unpack_from('<4f', mm['block'], cst[0] + 4 * fo)
+        mats.append((mname, key, slots, own_states, consts, extra))
         notes.append('%s material %s: template %s, type %d, %s, 4U specular mask type %d%s' % (
             dst_name, mname, key, extra['mtype'], sorted(p.split('\\')[-1] for p in gp.values()), spec_type,
             ', %d 4U animations' % len(ents4) if ents4 else ''))
@@ -482,6 +484,11 @@ def effects(S, gu_pel_u, code, notes):
     groups.update({g: 'effect\\efl\\qe\\qe%03d\\qe%03d_%%03d' % (g, g) for g in (0, 6, 8, 13)})
     own = efl4u2gu.mef_records(S[('effect\\mef\\em\\em049_1', efl4u2gu.T['MEF'])])
     assert all(r['grp'] == 49 for r in own), 'em049_1 names another EFL group'
+    assert {r['id']: r['b0'] for r in own if r['b0']} == MEF_B0, 'em049_1 b0 bytes: update em057_01_efx.c s_mef_b0'
+    shared = efl4u2gu.mef_records(S[('effect\\mef\\em\\em048_0', efl4u2gu.T['MEF'])])
+    gj = {r['id']: (r['joint'], r['pos'], r['rot'], r['flags']) for r in shared + own
+          if r['joint'] >= 0 and r['flags'] & 6 == 6}
+    assert gj == GROUND_JOINT, ('ground records on a joint: update em057_01_efx.c k_gjoint', gj)
     list2 = efl4u2gu.pel_lists(gu_pel_u)[2]
     assert gu_world_tail() == efl4u2gu.PEL_TAIL_WORLD, "GU's world code-post tail (em001_00u record 31) changed"
     assert gu_local_tail(gu_pel_u) == efl4u2gu.PEL_TAIL_LOCAL, "Capcom's local joint tail (em057_00u record 560)"
@@ -497,7 +504,8 @@ def effects(S, gu_pel_u, code, notes):
     spec = dict(arc=SRC_4U, stage_unpacked=[], mef='effect\\mef\\em\\em048_0', em_efl='effect\\efl\\em\\em049\\',
                 groups=groups, extra=[(groups[49] % r['file'], r) for r in own],
                 lmts=[(P48 + 'mot\\em048_%d' % b, PSL % b) for b in BANKS], pel=PEL_U, soil=arena_soil(notes),
-                list2=list2, extra2=extra2, hide_grey_models='chunks')   # issue #6 white debris (efl4u2gu.CHUNK_MODELS)
+                list2=list2, extra2=extra2, hide_grey_models='chunks',   # issue #6 white debris (efl4u2gu.CHUNK_MODELS)
+                world=set(GROUND_JOINT), mef_rotation=True)   # issue #8: 3031 on the tail joint turned with the body
     log = []
     out = efl4u2gu.effect_set(spec, log)
     lists = efl4u2gu.pel_lists(out[(PEL_U, efl4u2gu.T['PEL'])])
@@ -799,10 +807,14 @@ def dttune(gu, notes):
     return bytes(out)
 
 
-def area_files(rom, gfile, gtype, notes):
-    """{field: (our path, type, data)}: GU em057_00's area files + the donor's map-12 records (AREA_DONOR)"""
+def area_files(rom, gfile, gtype, scripts, notes):
+    """{field: (our path, type, data)}: GU em057_00's area files + the donor's map-12 records (AREA_DONOR), map 24
+    (Heaven's Mount) from 4U em049 (heavens_mount_plan)"""
     _, dents = arcpack.read(rom.read(AREA_DONOR[0]))
     m = AREA_DONOR[2]
+    hm = heavens_mount_plan(scripts)
+    from_4u = {'area_link': routes.area_link_file, 'area_select': routes.area_select_file,
+               'map_info': routes.map_info_file}
     out = {}
     for k, kind in AREA_FIELDS.items():
         dsrc = [d for p, t, d in dents if p == 'enemy\\%s\\%s' % (kind, AREA_DONOR[1]) and t == gtype[k]]
@@ -831,8 +843,8 @@ def area_files(rom, gfile, gtype, notes):
             back = [o for o in xfs.walk(xfs.parse(data)) if 'mMapNo' in o]
             assert xfs.build(data, xfs.parse(data)) == data and back == arr[:at] + mine + arr[at:], ('merge', kind)
             added = len(mine)
-            if kind in ('area_link', 'area_select'):
-                data = alias_routes(kind, data, notes)
+        if kind in from_4u:
+            data = from_4u[kind](data, rom, hm, notes)
         out[k] = ('enemy\\%s\\em057_01' % kind, gtype[k], data)
         notes.append('area data %s: GU em057_00 + %s map %d (%d record%s)' % (kind, AREA_DONOR[1], m, added,
                                                                           '' if added == 1 else 's'))
@@ -898,8 +910,10 @@ def main():
         path, typ = 'enemy\\hagi\\hagi_s%d_em057_01' % (k - 46), ghash[fileid_entry(img, gman[k])][1]
         ents.append((path, typ, data))
         own[k] = (path, typ)
+    lens = img[EMC_LEN_TABLE:EMC_LEN_TABLE + EMC_LEN_COUNT]
+    scripts = [[emc_em_only(s, 49, lens) for s in g] for g in emc.parse(S[(P48 + 'data\\em048_cmd', T['EMC'])])[1]]
     for k, (path, typ, data) in area_files(rom, gfile, {k: ghash[fileid_entry(img, gman[k])][1]
-                                                        for k in AREA_FIELDS}, notes).items():
+                                                        for k in AREA_FIELDS}, scripts, notes).items():
         ents.append((path, typ, data))
         own[k] = (path, typ)
 
