@@ -133,6 +133,10 @@ pairs where possible (tools/dt_vote.py, dt_map.py, snd4u2gu.py selftest), then a
   `00 cat num`.
 - Framework callees: `tools/apimap.py` / `apialign.py` map 4U helpers to GU through Rathian. Record fields:
   `tools/fieldmap.py`. Results so far: notes/api-map.md and module/game.h (each define notes its 4U address).
+- Searches (CONTRIBUTING.md, Analysis tools): `tools/sym.py` names an address, `tools/xref.py` lists a field's readers
+  and writers, an em number's compares and a function's callers in either exe, `tools/aiclosure.py` the native actions
+  each AI table starts (4U's, GU's, the port's). A GU class that hosts the variant: `tools/variants_gu.py CLASS` lists
+  its variant / ID tests, those followed by a return (EXIT) and the shell posts they skip (lessons from Desert Seltas).
 
 ### Phase 2: assets -> arc
 | asset | tool | notes |
@@ -150,6 +154,9 @@ pairs where possible (tools/dt_vote.py, dt_map.py, snd4u2gu.py selftest), then a
 - The arc builder's rules: only one agent rebuilds the arc at a time (`ARC LOCK:` line in the monster's checklist),
   and its file table (FILE section) may only GAIN entries (keep existing file IDs stable, inside its file_ids range).
 - Check the model scale (Gogmazios 2.5, dtbase +0x15). Joint matrices include it.
+- Effects, after a build: `tools/fxaudit.py` checks PEL list 1 against the 4U MEF records (tails, +0x38 rotation,
+  ground joint records, b0 gates; `--ports` for every port), `tools/fxsheet.py` draws one EFL's textures and colours
+  beside its 4U source, `tools/arcdiff.py` shows what a rebuild changed in an arc, field by field.
 
 ### Phase 3: register the class
 - Add the monster to allocations.toml (next registry index, its pools' next free values; `tools/alloc.py` checks)
@@ -212,6 +219,9 @@ pairs where possible (tools/dt_vote.py, dt_map.py, snd4u2gu.py selftest), then a
 - Quest stats: use the monster's OWN 4U quest rows (em_nando_tbl, GU file 0xde1a, 141 x 32 B {HP, attack, defense,
   status x5}; the 4U copy is at 0xf3a330). Pick the GU row whose values equal the 4U row's.
 - Logs: `logf("gogport: ...")` with a per-site budget. Every port-only guess gets a log line, so a test answers it.
+- Before a test build: `python3 tools/fncheck.py` after new FN() typedefs (an argument register the GU function reads
+  that the typedef never fills) and `python3 tools/hookcheck.py` after new hooks (displaced pairs, flags, branches into
+  site + 4). Both exit 1 on a finding.
 
 ### Phase 5: quest, arena, UI
 - Quest: tools/build_gog_quest.py (G-rank Hub extra quest 11491 via the quest_group_fix / quest_unlocked hooks).
@@ -390,6 +400,7 @@ testable alone (the maintainer checks the smithy or one quest).
   the soil baked in it can be white in 4U and grey in GU (efl4u2gu spec `intensity`, opt-in; the shipped sets stay as they are). MEF flag bit
   1 puts the effect on the owner's ground every frame, GU's tail places it at the joint, inside the body: a world record with the point from a
   hook on the PSL post (monsters/tidal_najarala/module/em068_01_fx.c). The grey chunks hidden on brown stages are snow on a white one.
+  `tools/fxsheet.py ... --4u ...` shows each unit's Intensity and colour words beside 4U's.
 - **GU's common dust cm202_* holds a set per ground, and 0x100 is the snow set (Tidal Najarala).** Sets by element ground word: 0x22 / 0x2 plain, 0x54
   water, 0x4, 0x8 lava, 0x80 dark, 0x100 white; Capcom bakes 0x100 into the records of monsters of snow. A port on snow can play GU's file with that
   set instead of 4U's dust, with GU's stage tint in the record (tools/build_em068_01_arc.py SNOW_EFL). The ground attribute does not tell snow (word 0 on the
@@ -432,8 +443,10 @@ testable alone (the maintainer checks the smithy or one quest).
    `GOG_DEFINES=... GOG_MOD_ROOT=$HOME/.config/Ryujinx/mods python3 module/build.py install` (exefs + every data
    file + the assets of PORT_ASSETS = comma-separated names, default all, `none` = none) into the mod folder
    "MHGU Definitive Edition".
-3. The maintainer plays and closes. Read the log with `python3 monsters/gogmazios/tools/gogreport.py` (extend it for the
-   new monster's lines; core lines start with `mhgu-de:`) and ask only about visuals.
+3. The maintainer plays and closes. Read the log with `python3 tools/logreport.py` (any port: crash, errors, cheats,
+   core `mhgu-de:` lines, action starts, absent motions, frozen-AI gaps; prefixes and action-start formats come from
+   the module source, `--port PREFIX` for one prefix) and ask only about visuals. The port-specific reports stay for
+   their own sections (monsters/gogmazios/tools/gogreport.py, monsters/tigerstripe_zamtrios/tools/tzreport.py).
 4. Uninstall: `rm -rf ~/.config/Ryujinx/mods/contents/0100770008dd8000/"MHGU Definitive Edition"`.
 Automated smoke runs without the maintainer: tools/ryutest.sh. `build.py install` without GOG_MOD_ROOT installs into the
 isolated ryuroot/; `ryutest.sh gui` boots it windowed on hidden workspace 10 (headless `run` aborts ~1.5 s in) and
@@ -446,7 +459,7 @@ Stop it with `ryutest.sh stop` (matches the cmdline: the gui process's /proc exe
   prototype leaves out still reaches GU, as whatever s0..s15 held. GU 0x72708 (timer up) is t += this+28 * s0, and
   every GU caller loads s0 = 1.0; Dalamadur's call without it ran its placement timer at a random rate (2026-10-26:
   "stays in one place far too long after flinches"). Read the callee's first instructions for vldr / vmul of s0..s3
-  before writing the typedef.
+  before writing the typedef; `tools/fncheck.py` does that for every FN() of the module.
 - **Trace every end condition before calling a report "4U behaviour".** The "permanent puddle" was a missing
   attack-window kill (shell +0x16d), not 4U data. The maintainer checked a 4U video.
 - **Heights:** the rest pair raises y before the hover motion (root track y 720 x scale 2.5 = 1800). A monster
@@ -473,16 +486,19 @@ Stop it with `ryutest.sh stop` (matches the cmdline: the gui process's /proc exe
   it once at the joint, in the joint's frame and at its height (his charged bolts appeared off their spot, the tail
   swipe's em048_008 stood up instead of lying flat). Stygian's PSL hook posts such records itself as world posts and
   moves them every frame (em057_01_efx.c k_gjoint; their records: efl4u2gu effect_set `world`). Other ports' ground
-  joint records (mostly step dust on the feet) still use PEL_TAIL.
+  joint records (mostly step dust on the feet) still use PEL_TAIL (`tools/fxaudit.py --ports`, GROUND).
 - **The rotation source is MEF flag 4, not the local flag (2026-11-19):** 4U turns a joint record with the body
   when MEF flag 4 is set, else with the joint's own matrix (0xc4838c); GU's PEL record +0x38 picks the same thing
   (0x31d92c: 0 joint, 1 body, 2 base; +0x3c keeps x / y / z / all = 4U flags 0x40 / 0x80 / 0x100), as Capcom's
   Zinogre records show. efl4u2gu's PEL_TAIL_LOCAL / PREV set +0x38 from the local flag: Stygian's tail lightning
-  (0x221) stood up. efl4u2gu effect_set mef_rotation applies the 4U rule (Stygian only so far; other ports have 10-20
-  such records each, roars excluded because of their axis mask).
+  (0x221) stood up. efl4u2gu effect_set mef_rotation applies the 4U rule (Stygian only so far). In the other ports
+  the rule would change +0x38 of 4 to 21 records each (`tools/fxaudit.py --ports`, ROT: changed / checked; records
+  with an axis mask, roars among them, are not judged).
 - **MEF byte 0 gates the post (2026-11-19):** 4U posts a b0 != 0 record only while the action handler sets bit b0 of
   this+0xca8; GU keeps that as one number (EN_MOVECLASS, the same per handler) and never tests it for PSL posts. A port
   whose records carry b0 needs the test in its PSL hook (Stygian: the uncharged tail swipe drew the charged bolts).
+  `tools/fxaudit.py --ports` lists per port the b0 records that no module table named *b0* gates (only Stygian and
+  Black Gravios have such tables; a gate written another way is not seen).
 - **Effect reference model:** a pos-only post through the monster uses the monster's attach model as reference: its
   2.5 scale and its height leak into the effect. GU shells post their own effects with the shell as target (flags 3)
   and keep the shell alive until the effect is dead (em089_shell.c pattern).
@@ -492,7 +508,7 @@ Stop it with `ryutest.sh stop` (matches the cmdline: the gui process's /proc exe
   gained one triangle stretched to the next mesh's first vertex: the stage's "black / distorted triangles" survived
   three wrong fixes (keyless tracks, lit flags, torch glow). Compare converted files with GU's own byte layout,
   not only with the source data (check_model compared against 4U and passed).
-- **Hooks:** check the two displaced instructions and that nothing branches to the second one.
+- **Hooks:** check the two displaced instructions and that nothing branches to the second one (`tools/hookcheck.py`).
 - **Registry:** every per-index table without a bounds check must hold the new entry, or the game reads garbage
   (Kushala's icon and duplicate entries were early symptoms).
 - **Stage UI / gimmicks** use per-stage tables and offsets. When the alias swaps the art, swap the records too.
@@ -500,7 +516,7 @@ Stop it with `ryutest.sh stop` (matches the cmdline: the gui process's /proc exe
   and from hits not connecting.
 - **"Written, never read" flags:** a monster's own code may not read a work byte that COMMON 4U code does. em089
   work+0xed was skipped as unread; the shared item drop (0x930bdc) reads it to choose the One-shot Binder table.
-  Search the whole 4U exe for readers before dropping a write.
+  Search the whole 4U exe for readers before dropping a write (`tools/xref.py 4u field 0xed` lists 0x930bdc's).
 - **Death needs the GU end:** a GU death table ends with op 7 then 0xff; without op 7 the reaction never hands the
   monster to 12/255 and the quest never ends (tests 10:01 / 10:13).
 - **Version of the data:** the 4U EUR v1.1 update ships only text archives (core_*.arc), identical in every string
@@ -512,7 +528,8 @@ Stop it with `ryutest.sh stop` (matches the cmdline: the gui process's /proc exe
   Gogmazios' fallen Dragonator spear into a pile bunker (kind-36 record, stage timeline, player-owned hit); GU's
   port of the class dropped them, and an earlier stage survey called the pile "unreachable" because it never
   looked there. Grep generic 4U classes (cut objects, uStageGimmick, shells) for the monster's em ID before
-  calling a feature unreachable, and ask the maintainer what the thing does in 4U.
+  calling a feature unreachable (`tools/xref.py 4u em N`: every compare of the em byte), and ask the maintainer what
+  the thing does in 4U.
 - **Online damage:** GU sends no damage packets. Every machine runs every attack against its own monster copy, but
   only the controlling machine (enemy+0x7420) applies HP / break / sever (0x97ddc) and ships them in the action
   message. So a gimmick hit must exist on the controller: spawn it on every machine from the replayed press (one
@@ -602,36 +619,41 @@ Notes: monsters/tigerstripe_zamtrios/notes/ (plan, phase1-variant-map, missing-a
   exactly: case blocks share tails (`mov r1, #0; b <the next case's tail>`), some categories switch inline in slot 125,
   and GU starts motions through more calls than one (0xb058c picks one of three by angle). A first reading that missed
   these took six of the Queen's actions for GU stubs; GU runs all of them (monsters/desert_seltas/notes/plan.md).
+  `tools/aiclosure.py` gives each table's actions; GU's dispatch is still read by hand.
 - The closure of the AI table is not all: the engine requests categories 10 / 11 (reactions, death) itself. GU's Seltas
   Queen keeps the normal Queen's reaction switch and returns at once for any variant (`ldrb [this+0xb5f5]; cmp #0;
   popne`), so the Desert Queen froze in her first flinch until her death (test 2026-11-09). Scan the GU class for every
-  variant read followed by a return, and compare each 4U species switch in categories 10 / 11 case by case (4U 0x79463c:
-  em 95's 46 numbers with her own motions; module seltas_react.c, tools/react_seltas.py).
+  variant read followed by a return (`tools/variants_gu.py CLASS`, EXIT), and compare each 4U species switch in
+  categories 10 / 11 case by case (4U 0x79463c: em 95's 46 numbers with her own motions; module seltas_react.c,
+  tools/react_seltas.py).
 - A kept variant test can stand right before a shell post and skip it: GU's Seltas class posts nothing for variant 1 at
   five shot sites where 4U posts the Desert Seltas' own subtypes (uShell012 56..59 for the Seltas' 6 / 7 / 13 / 24,
   uShell001 117 / 118 for 36 / 74), the Queen's class at one (7/56, her uShell001 92). An
   attack that plays without its projectile is the sign (the contributor: "spit attacks without spit effects"). List
   every 4U shell post with the species test before it and look at GU's twin of each, not only at its attack indexes.
+  `tools/variants_gu.py` lists GU's side: the class's posts and the variant tests that skip them (5 and 1 here).
 - A subspecies' own shot when its parent can share the quest: GU caches a shell family's def per shell id for every
   monster (0x48c388; all 412 ids are taken), so new kinds or a changed def under GU's path would reach the parent too
   (Desert Seltas' 11140 has a normal Seltas). Desert Seltas 0.1.3's way: copies of GU's defs under its own paths, on its
   own PELs (GU's list-2 records of the ids the kinds post, on its 4U EFLs) and hit data, found by file ID (FILE IDs after
   the manifest's), and swapped into the shell request's cache read for its own posts only (0x48c5e4, back at the exit
   0x48c54c: module/seltas_shots.c, tools/shots_seltas.py). A hook pair whose second instruction is conditional (movne)
-  cannot be displaced: the trampoline's own cmp changes the flags first.
+  cannot be displaced: the trampoline's own cmp changes the flags first (`tools/hookcheck.py` checks it).
 - GU may renumber a subspecies' attack records: GU's Seltas Queen records 47 / 51 are 4U's Desert Seltas Queen 69 / 70
   (up to GU's retune bytes) and GU posts them for her. Compare record bytes, not indexes, before calling a post missing.
 - A pair of monsters may find each other by the full 16-bit ID (`ldrh [+0xb5f0]`, variant byte included) where 4U went by
   species: GU's Seltas Queen calls ID 0x4c to her area (0xbe5ec, from her slot 9 and her call) and the Seltas stays with
   ID 0x45 (slot 152), so the Desert pair (0x145 / 0x14c) lived apart (test: same area 210 of 720 s). Search both classes
-  for ID compares and ID arguments, not only for variant reads (module seltas_pair.c).
+  for ID compares and ID arguments, not only for variant reads (module seltas_pair.c): `tools/variants_gu.py` (ID
+  reads), `tools/xref.py gu em N` (compares), `tools/xref.py gu calls 0xbe5ec` (r1 = 0x4c from her class).
 - Code that only a variant runs was never played in GU and can hold GU's own slip: the buried Desert Seltas waits for
   his Queen's motion 0x465 past frame 328, and GU asks the frame of his own motion (301 frames: never), 4U his partner's.
   Compare such handlers register by register with 4U, even where both call the same functions.
-- Find the actions only the subspecies' 4U table starts (`00 cat num` in each table, the parent's and GU's too) and
-  test those first: GU kept their code but no GU table reaches it. The Desert Queen's launch (16/4, only em095_cmd)
-  sends her male into 7/67, a flight whose handler ends no action in either game; in the 0.1.4 test he hung in it until
-  the quest ended, and GU had also dropped its crash blast and launch effect (4U posts there that GU calls around).
+- Find the actions only the subspecies' 4U table starts (`00 cat num` in each table, the parent's and GU's too:
+  `tools/aiclosure.py`, its only / lacks lists) and test those first: GU kept their code but no GU table reaches it.
+  The Desert Queen's launch (16/4, only em095_cmd) sends her male into 7/67, a flight whose handler ends no action in
+  either game; in the 0.1.4 test he hung in it until the quest ended, and GU had also dropped its crash blast and
+  launch effect (4U posts there that GU calls around).
   A log of the handler's step byte, its timers and the action that follows (seltas.c flight_log) for the parent species
   too shows what ends it in GU's own play. A handler that ends no action can mean the monster is meant to die there:
   the launched Desert Seltas shatters in 4U (wiki), and both games zero his corpse time after the flight; read the
@@ -640,6 +662,7 @@ Notes: monsters/tigerstripe_zamtrios/notes/ (plan, phase1-variant-map, missing-a
   a colour block) as RGB lerps in its PEL list-2 records (Seltas shots: sand aa9650 / green 788c46 at factor 1.0). On
   a subspecies' own 4U EFL without a colour block that tint is wrong (the Desert Seltas' spit on her back came out
   green): check efl_colour_block of both 4U EFLs and neutralise the copied record (white at factor 0) where 4U has none.
+  `tools/fxsheet.py` prints both: an EFL's colour block and the colour fields of the PEL records naming it.
 - A GU shell can post a second shell of its own: GU's Seltas shell class posts a ground splash (0x13a) at each ground
   hit, where 4U's uShell001 draws its ground effect itself. A swap of the shot's family misses it (Desert Seltas 0.1.6:
   the shots' own colours fixed, the green puddle stayed). List every shell id the parent's class AND its shell classes
@@ -691,7 +714,7 @@ Notes: monsters/tigerstripe_zamtrios/notes/ (plan, phase1-variant-map, missing-a
 - Capcom rebuilt some shot effects for GU: em076_00_001 has a second set (element mask 2) for the shots the Seltas
   fires from the Queen's back (shell37 kinds 6-8), whose trail unit has node +0x70 = 150, where 4U uses one set for both
   (its subtypes 6 and 13 share mask 1). When one kind of a subspecies' shot looks wrong, compare the parent's GU EFL
-  with its 4U source first (the Desert Seltas' trail from her back: open, plan.md).
+  with its 4U source first (the Desert Seltas' trail from her back: open, plan.md; `tools/fxsheet.py ... --4u ...`).
 - Compare names against every GU string of the table, not only the records a check reads: GU's own "Battalion
   Strafer" (Machine Strafer's final form) and "Seltas Fortitude" carry 4U's names in all five languages, so her two
   lines take Monoblos' " (4U)" label (gear_weapons_seltas.py LABEL_4U).

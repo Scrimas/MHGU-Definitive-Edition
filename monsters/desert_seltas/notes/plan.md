@@ -38,7 +38,9 @@ S = strong, G = guess. 4U addresses: the v1.1 exe (dump/exefs_v11), read 2026-11
   Ported 0.1.2 (module/seltas_react.c, tables from tools/react_seltas.py): an entry hook runs em 95's switch; the 19
   numbers whose 4U table is the normal Queen's play GU's normal-Queen table (GU shortened 30 31 99..102 105 187 there:
   a DEVIATION, she does what GU's normal Queen does). Other early variant returns in GU's Queen class (scan of every
-  `ldrb [this+0xb5f5]`): 0xf8af44 (variant 3 only) and 0xf8d0a8 (an AI condition, stage 9 / 10 only). Desert Seltas:
+  `ldrb [this+0xb5f5]`): 0xf8d0a8 (an AI condition, stage 9 / 10 only). (2026-11-19: 0xf8af44, listed here as
+  "variant 3 only", is not hers: it is in uEm068_00 (Najarala) slot 130 0xf8ab20, variant read 0xf8af48, `cmp r0, #3`
+  and a return for any other variant, C: tools/variants_gu.py uEm068_00, tools/sym.py gu 0xf8af44.) Desert Seltas:
   4U's Seltas class 0x785b58 has no species test in its reactions and GU's 0xfdb3b8 none either (C).
 - Shots (open): GU kept the species tests around the Desert Seltas' shell posts but posts nothing for variant 1 in
   0xfd5010 0xfd5e58 (shell 0x13b) and the second shot of 0xfd7c78 (shell 0x139) (`ldrb [this+0xb5f5]; cmp #0; bne`

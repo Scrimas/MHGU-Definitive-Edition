@@ -150,6 +150,36 @@ python3 tools/ghidra_names.py apply     # after new names land in the code or no
   (they may come from engine classes further down). It renames only functions that still have Ghidra's own names,
   and lists every skip in `dump/ghidra_names/*.applied.txt`. Rate a define (C) once it is checked, then re-run.
 
+## Analysis tools (optional)
+
+Read-only scripts over what `tools/setup.py` makes in `dump/`. None changes the build or what ships; only fxsheet
+writes files (PNGs, by default into `dump/fxsheet/`). Each file's docstring gives its options and what it cannot see.
+
+```sh
+# ports
+python3 tools/fncheck.py                         # FN() typedefs vs the argument registers the GU callee reads
+python3 tools/xref.py {4u|gu} field OFF          # every load / store of a field offset, by function
+python3 tools/xref.py {4u|gu} em N               # compares of em number N with the em-ID field (4U W+0x1c0)
+python3 tools/xref.py {4u|gu} calls ADDR         # every bl / b to ADDR, with the constant arguments set before it
+python3 tools/variants_gu.py CLASS               # a GU class's variant / ID reads, variant returns, shell posts
+python3 tools/aiclosure.py TABLE TABLE ...       # native actions each AI table starts (TABLE: arc path or gu:NAME)
+# effects
+python3 tools/fxaudit.py --ports                 # every port's motion effects (PEL list 1) vs their 4U MEF records
+python3 tools/fxsheet.py ARC EFL_PATH [--4u ARC4U EFL_PATH4U]   # one EFL's textures and colours, 4U beside GU
+python3 tools/arcdiff.py A B                     # two arcs (files or GU RomFS paths), PEL records field by field
+# bugs
+python3 tools/logreport.py [LOG] [--port PREFIX] # any port's Ryujinx log (default: the newest)
+python3 tools/hookcheck.py                       # every hook / patch site vs GU main
+python3 tools/sym.py {gu|4u} ADDR ...            # name an address: function, offset, repo names, vtable slots
+```
+
+fncheck (MISSING) and hookcheck (PROBLEM) exit 1 on a finding; `fxaudit.py 4U_ARC GU_ARC` audits one arc.
+
+These tools find the code and data shapes they know. A hit is solid; an empty result means "none found this way",
+not "absent". Count a clean scan as one clue, never as proof, before calling something "4U behaviour" or "not there":
+a stage survey once called Gogmazios' pile bunker unreachable because it never looked in the class that holds it
+(`notes/porting-guide.md`, "Monster gimmicks hide in generic classes").
+
 ## Workflow
 
 1. Open or pick an **issue** for the change, and say you are on it.
