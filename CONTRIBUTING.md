@@ -128,6 +128,28 @@ It reads the mod's releases from MHGU-Definitive-Edition-Packages and its own fr
 `MHGU_DE_RELEASES=<folder>` points it at a local release instead (a `releases.json` in the GitHub API's shape, see
 `installer/README.md`), to test a release before it is published.
 
+## Ghidra projects (optional)
+
+To read 4U and GU code as C, `tools/ghidra_names.py` builds headless [Ghidra](https://ghidra-sre.org) projects of
+both games' code (after `tools/setup.py`) and puts every name the repo knows into them. It needs Ghidra 12.1 or newer
+and the JDK Ghidra asks for: `ghidra-analyzeHeadless` on PATH (NixOS), otherwise set `GHIDRA_HEADLESS` to Ghidra's
+`support/analyzeHeadless` (Windows: `support\analyzeHeadless.bat`).
+
+```sh
+python3 tools/ghidra_names.py project   # once: dump/gu/ghidra and dump/mh4u_ghidra (about 30 minutes)
+python3 tools/ghidra_names.py apply     # after new names land in the code or notes (seconds)
+```
+
+- `project` seeds the function starts Ghidra's auto-analysis misses in these stripped C++ binaries (vtable and
+  table-only functions): GU from `tools/gulib` (`asm.starts()`), 4U from every `push {.., lr}` of `dump/mh4u.asm`.
+  That gives about 64,000 GU and 33,000 4U functions, against about 40,000 and 26,000 without seeds.
+- `apply` names what is confirmed: the `FN(...)` / `MAIN(...)` defines of `module/game.h` not marked S / W / guess,
+  other files' defines rated (C) on their line, their 4U counterparts where `notes/api-map.md` rates the pair C, and
+  the monster classes' vtables (`uEm057_00_vt125`, `uEm057_00_ctor`, ...). Everything else it knows becomes a
+  comment: unconfirmed defines ("mhgu-de code calls this NAME"), the mod's hook sites, the base vtables' functions
+  (they may come from engine classes further down). It renames only functions that still have Ghidra's own names,
+  and lists every skip in `dump/ghidra_names/*.applied.txt`. Rate a define (C) once it is checked, then re-run.
+
 ## Workflow
 
 1. Open or pick an **issue** for the change, and say you are on it.
