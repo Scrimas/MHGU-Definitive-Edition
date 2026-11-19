@@ -169,6 +169,7 @@ python3 tools/aiclosure.py TABLE TABLE ...       # native actions each AI table 
 python3 tools/fxaudit.py --ports                 # every port's motion effects (PEL list 1) vs their 4U MEF records
 python3 tools/fxsheet.py ARC EFL_PATH [--4u ARC4U EFL_PATH4U]   # one EFL's textures and colours, 4U beside GU
 python3 tools/arcdiff.py A B                     # two arcs (files or GU RomFS paths), PEL records field by field
+python3 tools/gate4u.py ENTRY|all [--actions]    # the 4U actions that let each MEF b0 record play, per port
 # bugs
 python3 tools/logreport.py [LOG] [--port PREFIX] # any port's Ryujinx log (default: the newest)
 python3 tools/hookcheck.py                       # every hook / patch site vs GU main

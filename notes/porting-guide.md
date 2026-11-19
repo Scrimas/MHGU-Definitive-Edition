@@ -498,7 +498,9 @@ Stop it with `ryutest.sh stop` (matches the cmdline: the gui process's /proc exe
   this+0xca8; GU keeps that as one number (EN_MOVECLASS, the same per handler) and never tests it for PSL posts. A port
   whose records carry b0 needs the test in its PSL hook (Stygian: the uncharged tail swipe drew the charged bolts).
   `tools/fxaudit.py --ports` lists per port the b0 records that no module table named *b0* gates (only Stygian and
-  Black Gravios have such tables; a gate written another way is not seen).
+  Black Gravios have such tables; a gate written another way is not seen). `tools/gate4u.py ENTRY` reads 4U's
+  dispatcher for every action and says, per record, in which actions 4U sets its bit always, sometimes or never: the
+  "never" rows are the effects GU shows and 4U does not (read the 4U code of each before a gate relies on it).
 - **Effect reference model:** a pos-only post through the monster uses the monster's attach model as reference: its
   2.5 scale and its height leak into the effect. GU shells post their own effects with the shell as target (flags 3)
   and keep the shell alive until the effect is dead (em089_shell.c pattern).
