@@ -142,7 +142,8 @@ static float s_cam6[16] __attribute__((aligned(16))) = {
 #define SHELL_MGR         0x1892550u
 typedef uint8_t *(*param_alloc_t)(uint32_t size, uint32_t align);
 #define param_alloc FN(param_alloc_t, 0x4660b4)   /* st007 0x4981d4 */
-typedef void (*shell_post_t)(void *mgr, void *param);
+/* line: unit line bit (0x48c4f0 adds 18 | (line & 1) to the unit list); GU's st007 post 0x498214 passes 0 */
+typedef void (*shell_post_t)(void *mgr, void *param, uint32_t line);
 #define shell_post FN(shell_post_t, 0x48c4f0)
 #define VT_PARAM_011      0x175fae0u  /* +8 = vtable (0x4981fc) */
 #define SHELL_PL_COM_011  31u
@@ -312,7 +313,7 @@ static void post_shot(void *player)
     FIELD(uint32_t, p, 0x14) = 0;                     /* no st007: start from the owner, then stage_demolisher_pose */
     s_m.post_wait = ACT_FIRE_DONE;
     s_m.shell = 0;
-    shell_post(*(void **)MAIN(SHELL_MGR), p);
+    shell_post(*(void **)MAIN(SHELL_MGR), p, 0);
     logf("gogport: stage demolisher: shot posted (uShellPlcom_011 mode 0, owner %x)", (uint32_t)player);
 }
 

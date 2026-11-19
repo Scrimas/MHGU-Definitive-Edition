@@ -95,7 +95,8 @@ typedef void (*rec_free_t)(void *mgr, void *rec);
 #define SHELL_MGR         0x1892550u
 typedef uint8_t *(*param_alloc_t)(uint32_t size, uint32_t align);
 #define param_alloc FN(param_alloc_t, 0x4632ec)
-typedef void (*shell_post_t)(void *mgr, void *param);
+/* line: unit line bit (0x48c4f0 adds 18 | (line & 1) to the unit list); GU's st008 post 0x2d96e8 passes 0 */
+typedef void (*shell_post_t)(void *mgr, void *param, uint32_t line);
 #define shell_post FN(shell_post_t, 0x48c4f0)
 #define VT_SETUP_PARAM    0x175f7b0u  /* +8 = vtable (0x2d96c4) */
 #define SHELL_PL_COM_009  29u
@@ -310,7 +311,7 @@ static void post_shot(void *player, int k, int bonus)
         if (!s_c.pend[i].live) { s_c.pend[i].k = (uint8_t)k; s_c.pend[i].bonus = (uint8_t)bonus; s_c.pend[i].live = 1;
                                  s_c.pend[i].rem0 = rem(); break; }
     s_c.shots[k]++;
-    shell_post(*(void **)MAIN(SHELL_MGR), p);
+    shell_post(*(void **)MAIN(SHELL_MGR), p, 0);
 }
 
 /* called by stage_gimmick.c's 0x503bb0 (Dragonator fire) hook first: 1 = handled (cannon fired, skip) */
