@@ -134,12 +134,13 @@ PEL_TAIL_WORLD = bytes.fromhex(
 assert len(PEL_TAIL_WORLD) == len(PEL_TAIL)
 
 
-def pel_follows(rid):
-    """records posted on a moving unit (3000 / 3001 blob, 5100 + sub uShell051 ground shell: em089_efx_post_on):
-    previous tail (all-previous bytes = their test-4 state, when they moved correctly; its colour bytes are already
-    off). Not the 4200 / 4300 + sub uShell016 beams: with the previous tail the laser was gone (test 4) and the tar beam
-    not drawn (test 6); with PEL_TAIL it shot out of the mouth (test 5)."""
-    return rid in (3000, 3001) or 5100 <= rid < 5200
+def pel_follows(rid, path):
+    """Gogmazios' records posted on a moving unit (3000 / 3001 blob, 5100 + sub uShell051 ground shell:
+    em089_efx_post_on): previous tail (all-previous bytes = their test-4 state, when they moved correctly; its colour
+    bytes are already off). Not the 4200 / 4300 + sub uShell016 beams: with the previous tail the laser was gone
+    (test 4) and the tar beam not drawn (test 6); with PEL_TAIL it shot out of the mouth (test 5). The ids are
+    em089's own, so only its EFLs take the rule (other ports reuse the numbers: Stygian's 3000 / 3001)."""
+    return path.startswith('effect\\efl\\em\\em089\\') and (rid in (3000, 3001) or 5100 <= rid < 5200)
 # GU Filter (unit type 9) words 24..31: constant in every GU sample (cm202_050, em013/027/033 ...)
 # (2026-10-19, filter helper, C + S) Same in all 29 GU type-9 units of the romfs (eflcorp.pkl); the 7 Capcom
 # conversions (4U em023_010 / 016, em028_016, em116_011, d0502_004 -> GU em068_00_009 / 011, em071 / em072, em038_00_008,
@@ -661,7 +662,7 @@ def mef_follows(r):
 
 def pel_record(path, r, S=None, soil=M19A03_AREA_SOIL, motion=False, mef_rotation=False):
     """r: a MEF record dict; optional keys for code posts of other monsters (ids are per PEL, so they do not go
-    through em089's id rules): follow (bool, else pel_follows(id)), world (bool: posted at a point with no target,
+    through em089's id rules): follow (bool, else pel_follows(id, path)), world (bool: posted at a point with no target,
     PEL_TAIL_WORLD), colour (RGBA bytes, else CODE_COLOUR), once (bool: a follow record that plays once, +0x38 1,
     +0x3a 0 = GU em057_00u records 90 / 120, the charge change; PEL_TAIL_PREV's +0x3a 1 restarts the effect each time
     it ends until stopped: Stygian's discharge pulsed every 1-2 s, issue #8 test). motion: the record of a motion
@@ -679,7 +680,7 @@ def pel_record(path, r, S=None, soil=M19A03_AREA_SOIL, motion=False, mef_rotatio
         if mef_rotation and not r['flags'] & MEF_ROT_MASKS:
             st[0x38] = 1 if r['flags'] & MEF_BODY else 0
     else:
-        st[0x34:] = PEL_TAIL_PREV if r.get('follow', pel_follows(r['id'])) else PEL_TAIL
+        st[0x34:] = PEL_TAIL_PREV if r.get('follow', pel_follows(r['id'], path)) else PEL_TAIL
     if r.get('once'):
         st[0x38], st[0x3a] = 1, 0
     for o, v in PEL_COLOUR_OFF:

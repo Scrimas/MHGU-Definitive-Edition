@@ -50,18 +50,13 @@ _K = None
 
 def knowledge():
     """{'gu' / '4u': {address: [(kind, text, sources)]}, 'report': ghidra_names' report lines, 'vtables': {game:
-    {vtable address: class}}}: the rows ghidra_names.collect() writes, in the same order (kept in step by hand)"""
+    {vtable address: class}}}: the rows ghidra_names.collect() writes (ghidra_names.rows, merged)"""
     global _K
     if _K is None:
         report = []
-        gu = list(gn.gu_defines(report))
-        gu_name = {a: n for k, a, n, _ in gu if k == 'func'}
-        u4 = [('func', x, gu_name[y], ['notes/api-map.md (C)']) for x, y in gn.api_c_pairs() if y in gu_name]
-        gu += [('comment', a, 'mhgu-de hook ' + n, ['module/build.py']) for n, a in gn.hooks()]
-        gu += gn.gu_classes(report)[0]
-        u4 += gn.u4_classes(report)
+        R = gn.rows(report)
         _K = {'report': report, 'vtables': {}}
-        for game, rows in (('gu', gn.merge(gu, report, 'gu')), ('4u', gn.merge(u4, report, 'mh4u'))):
+        for game, rows in (('gu', gn.merge(R['gu'], report, 'gu')), ('4u', gn.merge(R['mh4u'], report, 'mh4u'))):
             by = collections.defaultdict(list)
             for k, a, t, src in rows:
                 by[a].append((k, t, src))
@@ -113,6 +108,14 @@ def u4_known_starts():
     return _U4_STARTS
 
 
+def ends_flow(w):
+    """an unconditional ARM instruction after which execution never falls through: b, bx, ldm / pop with pc,
+    ldr pc, mov pc, lr"""
+    if w >> 28 != 0xE: return False
+    return ((w & 0x0F000000) == 0x0A000000 or (w & 0x0FFFFFF0) == 0x012FFF10 or (w & 0x0E108000) == 0x08108000
+            or (w & 0x0C50F000) == 0x0410F000 or w == 0xE1A0F00E)
+
+
 def func_start(game, a):
     """(start, how it was found) of the function containing code address a"""
     if game == 'gu':
@@ -138,6 +141,12 @@ def func_start(game, a):
             elif (w & 0x0F3F0E00) == 0x0D1F0A00:
                 y = x + 8 + 4 * ((w & 0xFF) if w & 0x00800000 else -(w & 0xFF))
                 lits.update((y, y + 4))
+        # code that runs into the push (no unconditional return / branch before it, past literals and zero padding)
+        # makes it a late prologue too
+        x = p - 4
+        while x >= k and (x in lits or word(x) == 0): x -= 4
+        if x < k or not ends_flow(word(x)):
+            return k, '%s; the push {.., lr} at %#x follows code that runs into it (%#x): same function' % (how, p, x)
         for x in range(k, p, 4):
             w = word(x)
             pw = word(x - 4)
@@ -149,6 +158,14 @@ def func_start(game, a):
                     return k, '%s; the push {.., lr} at %#x is reached by the branch at %#x: same function' % (how, p, x)
         return p, 'push {.., lr} walk-back: no branch from %#x (%s) reaches it' % (k, how)
     return k, how
+
+
+def table_only_starts():
+    """GU functions asm.starts() misses: a push {.., lr} that func_start takes as its own start (reached only through
+    a jump table or pointer); ghidra_names seeds them"""
+    known = set(asm.starts())
+    return sorted(a for a, (m, o) in asm.INS.items()
+                  if m == 'push' and 'lr' in o and a not in known and func_start('gu', a)[0] == a)
 
 
 def vtable_slots(game, f):

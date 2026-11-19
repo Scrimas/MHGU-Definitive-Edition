@@ -56,6 +56,41 @@ def to_gu(b):
     return bytes(b)
 
 
+# GU's instruction length table, main 0x1732c8c, 167 ops (C): byte < 0x80 = argument count; 0x8n..0xBn = block ops
+# (00 opens with n args, 01 = case with a 1..4-byte value, 02 else, ff end). The arc builders cut scripts with it.
+LEN_TABLE, LEN_COUNT = 0x1732c8c, 167
+
+
+def tokens(s, lens):
+    """a script's instructions, by GU's length table (an op past the table = the end, 0xff)"""
+    out, i = [], 0
+    while i < len(s):
+        op = s[i]
+        if op >= len(lens):
+            out.append(s[i:]); break
+        v = lens[op]
+        n = 1 + v if v < 0x80 else 2 + (v & 0xf) if s[i + 1] == 0 else 2 + (v >> 4) - 7 if s[i + 1] == 1 else 2
+        out.append(s[i:i + n]); i += n
+    assert b''.join(out) == s, 'EMC script does not tokenize'
+    return out
+
+
+def em_only(s, em, lens, op=0x46):
+    """the script with every switch block of `op` (4U 0x46 = em number, GU 0x91 / 0x92 = variant) reduced to em's
+    body (its case, else the else body)"""
+    out, frames = bytearray(), []                   # per open block: [taking, taken]
+    for t in tokens(s, lens):
+        if t[0] == op:
+            if t[1] == 0x00: frames.append([False, False])
+            elif t[1] == 0x01: frames[-1][0] = t[2] == em and not frames[-1][1]; frames[-1][1] |= frames[-1][0]
+            elif t[1] == 0x02: frames[-1][0] = not frames[-1][1]; frames[-1][1] = True
+            else: frames.pop()
+            continue
+        if all(f[0] for f in frames): out += t
+    assert not frames, 'unbalanced switch block'
+    return bytes(out)
+
+
 def refs(code):
     """heuristic: `00 cat num` with cat < 14 at a token start, and `14 nn`."""
     nat, calls = [], []

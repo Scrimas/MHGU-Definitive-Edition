@@ -92,7 +92,7 @@ assert mrl_build.TEMPLATES['add_const'] == ADD_CONST
 #   g20 s0 (GU 0xa0 0xa1), g4 s0 (GU ends it with the native 0/255 in both species' tables); Desert Seltas also g1 s29 (4U ops 0x05 0x49 0x8c) and g1 s34
 #   (0x8d). GU's extra entries are appended (GU's class picks group-1 scripts by number). Every other script is their 4U body: GU's own retunes of the
 #   species (g1 s46, g1 s81, g12 s0, g13 s0, the Queen's g2 / g18 calls of 1/26 GU took out ...) do not come, his own AI is 4U's.
-EMC_LEN_TABLE, EMC_LEN_COUNT = 0x1732c8c, 167
+EMC_LEN_TABLE, EMC_LEN_COUNT = emc.LEN_TABLE, emc.LEN_COUNT
 EMC_4U_ONLY = {0x03, 0x05, 0x40, 0x46, 0x49, 0x4a, 0x7e, 0x8a, 0x8b, 0x8c, 0x8d, 0x87}
 # 4U stage -> GU stage in a kept `2a 01 NN` case: Anc. Steppe 1 -> 11, Primal Forest 3 -> 13, Frozen Seaway 4 -> 14, Arena 11 -> 9, Volcanic Hollow 15
 # -> 12, Dunes 17 / 18 -> 5; Sunken Hollow 2, Heaven's Mount 5 and 13 (a stage of lookups in both classes' slot 66, S: Everwood) have none here
@@ -306,37 +306,10 @@ def motion_bank(e, S, gfile, b, notes):
     return out
 
 
-def emc_tokens(s, lens):
-    out, i = [], 0
-    while i < len(s):
-        op = s[i]
-        if op >= len(lens):
-            out.append(s[i:]); break
-        v = lens[op]
-        n = 1 + v if v < 0x80 else 2 + (v & 0xf) if s[i + 1] == 0 else 2 + (v >> 4) - 7 if s[i + 1] == 1 else 2
-        out.append(s[i:i + n]); i += n
-    assert b''.join(out) == s, 'EMC script does not tokenize'
-    return out
-
-
-def emc_em_only(s, em, lens, op=0x46):
-    out, frames = bytearray(), []
-    for t in emc_tokens(s, lens):
-        if t[0] == op:
-            if t[1] == 0x00: frames.append([False, False])
-            elif t[1] == 0x01: frames[-1][0] = t[2] == em and not frames[-1][1]; frames[-1][1] |= frames[-1][0]
-            elif t[1] == 0x02: frames[-1][0] = not frames[-1][1]; frames[-1][1] = True
-            else: frames.pop()
-            continue
-        if all(f[0] for f in frames): out += t
-    assert not frames, 'unbalanced switch block'
-    return bytes(out)
-
-
 def emc_else_only(s, lens, op):
     """a script with its `op` blocks (IF t / ELSE f / END) reduced to the else body: the state op asks for does not exist here"""
     out, frames = bytearray(), []
-    for t in emc_tokens(s, lens):
+    for t in emc.tokens(s, lens):
         if t[0] == op:
             if t[1] == 0x00: frames.append(False)
             elif t[1] == 0x02: frames[-1] = True
@@ -351,7 +324,7 @@ def emc_else_only(s, lens, op):
 def stage_cases(s, lens):
     """4U `2a 01 NN` stage cases of a kept script -> GU's numbers"""
     out = []
-    for t in emc_tokens(s, lens):
+    for t in emc.tokens(s, lens):
         if t[0] == 0x2a and t[1] == 1:
             assert t[2] in STAGE_CASE, ('4U stage case without a GU number', t.hex())
             t = bytes([0x2a, 1, STAGE_CASE[t[2]]])
@@ -362,7 +335,7 @@ def stage_cases(s, lens):
 def reduced_4u(d4, em, img):
     """the 4U table's groups with the op-0x46 blocks reduced to em (routes_seltas.routing reads it)"""
     lens = img[EMC_LEN_TABLE:EMC_LEN_TABLE + EMC_LEN_COUNT]
-    return [[emc_em_only(s, em, lens) for s in g] for g in emc.parse(d4)[1]]
+    return [[emc.em_only(s, em, lens) for s in g] for g in emc.parse(d4)[1]]
 
 
 def cmdtbl(e, d4, gu, img, notes):
@@ -371,28 +344,28 @@ def cmdtbl(e, d4, gu, img, notes):
     ver, u4 = emc.parse(d4)
     _, g = emc.parse(gu)
     assert len(u4) == 23 and len(g) == 21 and not u4[21] and not u4[22], 'EMC group layout changed'
-    ops = lambda s: {t[0] for t in emc_tokens(s, lens)}
+    ops = lambda s: {t[0] for t in emc.tokens(s, lens)}
     out, own, same, gu_taken, frenzy, dropped = [], [], [], [], [], []
     for gi in range(21):
         scripts = []
         for k in range(len(g[gi])):
-            gv = emc_em_only(g[gi][k], 1, lens, 0x92)       # GU's variant-1 body
+            gv = emc.em_only(g[gi][k], 1, lens, 0x92)       # GU's variant-1 body
             if (gi, k) in e.c['emc_gu'] or k >= len(u4[gi]):
                 scripts.append(gv)
                 if k < len(u4[gi]): gu_taken.append((gi, k))
                 continue
-            mine = emc_em_only(u4[gi][k], e.c['em'], lens)
+            mine = emc.em_only(u4[gi][k], e.c['em'], lens)
             if OP_FRENZY in ops(mine):
                 frenzy.append((gi, k))
                 mine = emc_else_only(mine, lens, OP_FRENZY)
             mine = stage_cases(mine, lens)
             # an op of that list GU's own script holds too is GU's language there (the Queen's g18 s3 keeps 0x8c in both games)
             assert not ops(mine) & EMC_4U_ONLY - ops(gv), ('4U op left', e.name, gi, k, sorted(ops(mine) & EMC_4U_ONLY - ops(gv)))
-            if any(t[0] == 0x92 for t in emc_tokens(g[gi][k], lens)):
+            if any(t[0] == 0x92 for t in emc.tokens(g[gi][k], lens)):
                 (same if mine == gv else own).append((gi, k))
             scripts.append(mine)
         for k in range(len(g[gi]), len(u4[gi])):        # 4U scripts past GU's count (the Queen's g14 s0): appended, 4U's body
-            mine = emc_em_only(u4[gi][k], e.c['em'], lens)
+            mine = emc.em_only(u4[gi][k], e.c['em'], lens)
             if OP_FRENZY in ops(mine):
                 frenzy.append((gi, k))
                 mine = emc_else_only(mine, lens, OP_FRENZY)

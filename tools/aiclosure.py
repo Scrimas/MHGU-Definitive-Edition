@@ -10,7 +10,7 @@ tables start.
 
 The porting guide (lessons from Desert Seltas): GU keeps the code of actions only a subspecies' 4U table starts, but no
 GU table reaches it; test those first. Scripts are cut into instructions by the game's own length table (GU main
-0x1732c8c, 167 ops, the arc builders' emc_tokens; 4U 0xffe9f4, 146 ops, bound at 0x93555c `cmp r0, #146`, equal to GU's
+0x1732c8c, 167 ops, tools/emc.py LEN_TABLE; 4U 0xffe9f4, 146 ops, bound at 0x93555c `cmp r0, #146`, equal to GU's
 first 146): a byte < 0x80 = its argument count, 0x8n..0xBn = block ops (`00` opens with n bytes, `01` a case, else 1).
 A 4U arc (ARC version 0x13) is read with 4U's table, a GU or port arc (0x11) with GU's. An action inside a 4U em switch
 (op 0x46: one 4U table can serve two species) or a GU variant switch (op 0x92) is shown with its case, e.g.
@@ -26,7 +26,7 @@ import paths
 sys.path.insert(0, paths.GU_PY)
 import arcpack, emc  # noqa: E402
 
-LEN_GU = (0x1732c8c, 167)
+LEN_GU = (emc.LEN_TABLE, emc.LEN_COUNT)
 LEN_4U = (0xffe9f4 - 0x100000, 146)                 # offset in dump/exefs_v11/mem.bin (flat from 0x100000)
 # the switch blocks a subspecies' actions sit in: 4U 0x46 on the em number (0x951ff0, build_dalamadur_arc.py), GU
 # 0x92 on the variant (build_seltas_arc.py); `op 00` opens, `op 01 v` = case v, `op 02` = else, `op ff` ends

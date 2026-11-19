@@ -329,7 +329,7 @@ def dttune_ai(out_keep, c101_keep, c101_ai, notes):
 #   ported yet), every other action (c, n) -> (c, PORT_BASE + n), which GU's dispatchers never handle (cat 1 0..35,
 #   2 0..200, 3 0..9, 6 0..50, 7 0..200, C) and module/em007_01_moves.c runs as his ported 4U handler.
 # GU's scripts run for variant 1 as their op-0x92 else bodies (GU's variant switch, cases 0 and 4 only): imported so.
-EMC_LEN_TABLE, EMC_LEN_COUNT = 0x1732c8c, 167
+EMC_LEN_TABLE, EMC_LEN_COUNT = emc.LEN_TABLE, emc.LEN_COUNT
 EMC_TYPE = 0x3AABBA02
 PORT_BASE = 208
 KEEP = {(0, 255), (11, 38)}              # GU 0/255 = END (0xca10c), 11/38 = base 0xa134c = 4U base 0x9197c0 (C)
@@ -349,36 +349,6 @@ APPROX = set()                           # his attack twins (7/0 5 6 7 9 18 20 2
 EMC_4U_ONLY = {0x03, 0x06, 0x07, 0x22, 0x2a, 0x36, 0x40, 0x41, 0x46, 0x49, 0x4a, 0x4d, 0x63, 0x8b, 0x91}
 AAT_PATH = 'enemy\\area_act_tbl\\enemy'
 MOVES_C = os.path.join(MON, 'module', 'em007_01_moves.c')
-
-
-def emc_tokens(s, lens):
-    """a script's instructions, by GU's length table (an op past the table = the end, 0xff)"""
-    out, i = [], 0
-    while i < len(s):
-        op = s[i]
-        if op >= len(lens):
-            out.append(s[i:]); break
-        v = lens[op]
-        n = 1 + v if v < 0x80 else 2 + (v & 0xf) if s[i + 1] == 0 else 2 + (v >> 4) - 7 if s[i + 1] == 1 else 2
-        out.append(s[i:i + n]); i += n
-    assert b''.join(out) == s, 'EMC script does not tokenize'
-    return out
-
-
-def emc_em_only(s, em, lens, op=0x46):
-    """the script with every switch block of `op` (4U 0x46 = em number, GU 0x92 = variant) reduced to em's body (its
-    case, else the else body)"""
-    out, frames = bytearray(), []
-    for t in emc_tokens(s, lens):
-        if t[0] == op:
-            if t[1] == 0x00: frames.append([False, False])
-            elif t[1] == 0x01: frames[-1][0] = t[2] == em and not frames[-1][1]; frames[-1][1] |= frames[-1][0]
-            elif t[1] == 0x02: frames[-1][0] = not frames[-1][1]; frames[-1][1] = True
-            else: frames.pop()
-            continue
-        if all(f[0] for f in frames): out += t
-    assert not frames, 'unbalanced switch block'
-    return bytes(out)
 
 
 def action_of(k):
@@ -411,9 +381,9 @@ def cmdtbl(d4, gu, img, aat, notes):
     ver, u4 = emc.parse(d4)
     _, g = emc.parse(gu)
     assert len(u4) == 23 and len(g) == 21 and not u4[21] and not u4[22], 'EMC group layout changed'
-    m = [[emc_em_only(s, 101, lens) for s in gr] for gr in u4[:21]]
-    gv = [[emc_em_only(s, 1, lens, 0x92) for s in gr] for gr in g]
-    ops = lambda s: {t[0] for t in emc_tokens(s, lens)}
+    m = [[emc.em_only(s, 101, lens) for s in gr] for gr in u4[:21]]
+    gv = [[emc.em_only(s, 1, lens, 0x92) for s in gr] for gr in g]
+    ops = lambda s: {t[0] for t in emc.tokens(s, lens)}
     n1 = len(m[1])
     assert [len(x) for x in m[2:]] == [len(x) if gi not in (7, 16) else {7: 0, 16: 1}[gi] for gi, x in
                                        enumerate(g[2:], 2)], 'his group sizes differ from GU\'s beyond groups 7 / 16'
@@ -433,7 +403,7 @@ def cmdtbl(d4, gu, img, aat, notes):
 
     def imported(s):
         out = []
-        for t in emc_tokens(s, lens):
+        for t in emc.tokens(s, lens):
             if t[0] == 0x14:
                 out.append(bytes([0x14, gu_script(t[1])]))
             elif t[0] == 0x00 and len(t) == 3 and (t[1], t[2]) in GU_TO_HIS:
@@ -448,9 +418,9 @@ def cmdtbl(d4, gu, img, aat, notes):
     groups = [None, g1]
     # group 0
     g0 = list(m[0])
-    t0 = emc_tokens(g0[0], lens)
+    t0 = emc.tokens(g0[0], lens)
     assert t0[:3] == [b'\x61\x00', b'\x14\x0c', b'\x61\x02'] and b'\x3f\x00\x20\x08' in g0[0] and b'\x20\x01' in g0[0]
-    assert emc_tokens(gv[0][0], lens)[:3] == [b'\x61\x00', b'\x9e\x00\x00', b'\x61\x02']
+    assert emc.tokens(gv[0][0], lens)[:3] == [b'\x61\x00', b'\x9e\x00\x00', b'\x61\x02']
     g0[0] = b''.join([t0[0], b'\x9e\x00\x00'] + t0[2:])
     assert gv[0][1] == b'\x94\x00\x00\x95\x00\x00\xff' and {0x96, 0x97} <= ops(gv[0][2])
     assert ops(m[0][8]) & EMC_4U_ONLY and ops(m[0][1]) & EMC_4U_ONLY, 'his g0 s1 / s8 are not his area scripts'
@@ -469,7 +439,7 @@ def cmdtbl(d4, gu, img, aat, notes):
         gi, k = todo.pop()
         if (gi, k) in reach: continue
         reach.add((gi, k))
-        for t in emc_tokens(groups[gi][k], lens):
+        for t in emc.tokens(groups[gi][k], lens):
             if t[0] == 0x14 and (gi, k) not in gu_made: todo.append((1, t[1]))
             if t[0] == 0x20 and gi == 0: todo.append((0, t[1]))
     his = sorted((gi, k) for gi in range(21) for k in range(len(groups[gi])) if (gi, k) not in gu_made)
@@ -479,7 +449,7 @@ def cmdtbl(d4, gu, img, aat, notes):
     used = set()
     for gi, k in his:
         out = []
-        for t in emc_tokens(groups[gi][k], lens):
+        for t in emc.tokens(groups[gi][k], lens):
             if t[0] == 0 and len(t) == 3:
                 used.add((t[1], t[2]))
                 t = bytes([0]) + bytes(action_of((t[1], t[2])))

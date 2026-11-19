@@ -203,39 +203,10 @@ def shared_4u(S, notes):
 # reaches the GU handler of 4U's handler with 4U's parameters (C, dispatcher emulation 2026-11-01, plan.md).
 # Instruction lengths: GU's table main 0x1732c8c (byte < 0x80 = argument count; 0x8n..0xBn block ops: 00 opens with n
 # args, 01 = case with a 1..4-byte value, 02 else, ff end).
-EMC_LEN_TABLE, EMC_LEN_COUNT = 0x1732c8c, 167
+EMC_LEN_TABLE, EMC_LEN_COUNT = emc.LEN_TABLE, emc.LEN_COUNT
 EMC_GU = {(0, 0), (0, 1), (0, 4), (20, 0)}           # (group, script): GU's version
 EMC_GU_GROUPS = (16,)                                 # whole group GU's
 EMC_4U_AREA_OPS = {0x03, 0x06, 0x22, 0x2a, 0x35, 0x36, 0x40, 0x41, 0x49, 0x4a, 0x4d, 0x63, 0x8b}   # 4U area / patrol
-
-
-def emc_tokens(s, lens):
-    """a script's instructions, by GU's length table (an op past the table = the end, 0xff)"""
-    out, i = [], 0
-    while i < len(s):
-        op = s[i]
-        if op >= len(lens):
-            out.append(s[i:]); break
-        v = lens[op]
-        n = 1 + v if v < 0x80 else 2 + (v & 0xf) if s[i + 1] == 0 else 2 + (v >> 4) - 7 if s[i + 1] == 1 else 2
-        out.append(s[i:i + n]); i += n
-    assert b''.join(out) == s, 'EMC script does not tokenize'
-    return out
-
-
-def emc_em_only(s, em, lens, op=0x46):
-    """the script with every em-switch block (4U op 0x46, GU op 0x91) reduced to em's body (its case, else the else)"""
-    out, frames = bytearray(), []                   # per open block: [taking, taken]
-    for t in emc_tokens(s, lens):
-        if t[0] == op:
-            if t[1] == 0x00: frames.append([False, False])
-            elif t[1] == 0x01: frames[-1][0] = t[2] == em and not frames[-1][1]; frames[-1][1] |= frames[-1][0]
-            elif t[1] == 0x02: frames[-1][0] = not frames[-1][1]; frames[-1][1] = True
-            else: frames.pop()
-            continue
-        if all(f[0] for f in frames): out += t
-    assert not frames, 'unbalanced em-switch block'
-    return bytes(out)
 
 
 def cmdtbl(d4, gu, img, notes):
@@ -244,8 +215,8 @@ def cmdtbl(d4, gu, img, notes):
     ver, u4 = emc.parse(d4)
     _, g = emc.parse(gu)
     assert len(u4) == 23 and len(g) == 21 and not u4[22], 'EMC group layout changed'
-    assert [emc_em_only(s, 41, lens) for s in u4[21]] == [b'\xff'], "4U group 21 (em 115's) is not empty for em 41"
-    ops = lambda s: {t[0] for t in emc_tokens(s, lens)}
+    assert [emc.em_only(s, 41, lens) for s in u4[21]] == [b'\xff'], "4U group 21 (em 115's) is not empty for em 41"
+    ops = lambda s: {t[0] for t in emc.tokens(s, lens)}
     out, own, gu_taken = [], [], []
     for gi in range(21):
         if gi in EMC_GU_GROUPS:
@@ -254,10 +225,10 @@ def cmdtbl(d4, gu, img, notes):
         for k, s in enumerate(u4[gi]):
             if (gi, k) in EMC_GU:
                 scripts.append(g[gi][k]); gu_taken.append((gi, k)); continue
-            s = emc_em_only(s, 41, lens)
+            s = emc.em_only(s, 41, lens)
             assert not ops(s) & {0x46, 0x91}, ('4U em switch / rest op left', gi, k)
             assert not ops(s) & EMC_4U_AREA_OPS or s == g[gi][k], ('4U area op in a script GU changed', gi, k)
-            if s != emc_em_only(u4[gi][k], 40, lens): own.append((gi, k))
+            if s != emc.em_only(u4[gi][k], 40, lens): own.append((gi, k))
             scripts.append(s)
         assert len(scripts) <= len(g[gi]), gi
         out.append(scripts + list(g[gi][len(scripts):]))
@@ -266,7 +237,7 @@ def cmdtbl(d4, gu, img, notes):
     added = [(gi, k) for gi in range(21) if gi not in EMC_GU_GROUPS for k in range(len(u4[gi]), len(g[gi]))]
     loose = set()
     for gi, k in gu_taken + added:
-        for t in emc_tokens(emc_em_only(g[gi][k], 5, lens, 0x91), lens):
+        for t in emc.tokens(emc.em_only(g[gi][k], 5, lens, 0x91), lens):
             if t[0] == 0x14 and out[1][t[1]] != g[1][t[1]]:
                 assert gi == 0 and (gi, k) in added, ('GU script calls a 4U script that differs', gi, k, t[1])
                 loose.add(t[1])

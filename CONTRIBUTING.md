@@ -141,8 +141,10 @@ python3 tools/ghidra_names.py apply     # after new names land in the code or no
 ```
 
 - `project` seeds the function starts Ghidra's auto-analysis misses in these stripped C++ binaries (vtable and
-  table-only functions): GU from `tools/gulib` (`asm.starts()`), 4U from every `push {.., lr}` of `dump/mh4u.asm`.
-  That gives about 64,000 GU and 33,000 4U functions, against about 40,000 and 26,000 without seeds.
+  table-only functions): GU from `tools/gulib` (`asm.starts()`) plus the functions only a jump table reaches
+  (`tools/sym.py` table_only_starts), 4U from every `push {.., lr}` of `dump/mh4u.asm`. That gives about 71,000 GU
+  and 33,000 4U functions, against about 40,000 and 26,000 without seeds. `apply` adds the jump-table ones to an
+  older project too.
 - `apply` names what is confirmed: the `FN(...)` / `MAIN(...)` defines of `module/game.h` not marked S / W / guess,
   other files' defines rated (C) on their line, their 4U counterparts where `notes/api-map.md` rates the pair C, and
   the monster classes' vtables (`uEm057_00_vt125`, `uEm057_00_ctor`, ...). Everything else it knows becomes a

@@ -226,7 +226,7 @@ def motion_bank(S, gfile, b, notes):
 # g0 s17 and g1 s83 s84 (GU's stage numbers; on stage 5 the same default as 4U's), g20 s0. Group 16 = GU's (empty; 4U's rest group, which GU never selects, Black Gravios' check). 4U's op 0x87 (W+0x53a, frenzy, G: GU has no
 # frenzy state) keeps its else body. 4U stage cases in kept scripts (g1 s44 s80 s81 s82 s94) get GU's numbers: 4U Dunes 17 / 18 -> GU 5 (STAGE_CASE). GU's extra entries are appended: g0 s24, g1 s107.. (GU's class picks group-1 scripts by
 # number, area_act_tbl 107..114).
-EMC_LEN_TABLE, EMC_LEN_COUNT = 0x1732c8c, 167
+EMC_LEN_TABLE, EMC_LEN_COUNT = emc.LEN_TABLE, emc.LEN_COUNT
 EMC_GU = {(0, 0), (0, 1), (0, 12), (0, 17), (1, 83), (1, 84), (20, 0)}
 EMC_GU_GROUPS = (16,)
 EMC_4U_ONLY = {0x03, 0x05, 0x40, 0x46, 0x49, 0x4a, 0x7e, 0x8a, 0x8b, 0x8c, 0x8d, 0x87}
@@ -234,37 +234,10 @@ STAGE_CASE = {2: 0xFF, 3: 13, 17: 5, 18: 5}        # 4U stage -> GU stage in a k
 OP_FRENZY = 0x87
 
 
-def emc_tokens(s, lens):
-    out, i = [], 0
-    while i < len(s):
-        op = s[i]
-        if op >= len(lens):
-            out.append(s[i:]); break
-        v = lens[op]
-        n = 1 + v if v < 0x80 else 2 + (v & 0xf) if s[i + 1] == 0 else 2 + (v >> 4) - 7 if s[i + 1] == 1 else 2
-        out.append(s[i:i + n]); i += n
-    assert b''.join(out) == s, 'EMC script does not tokenize'
-    return out
-
-
-def emc_em_only(s, em, lens, op=0x46):
-    out, frames = bytearray(), []
-    for t in emc_tokens(s, lens):
-        if t[0] == op:
-            if t[1] == 0x00: frames.append([False, False])
-            elif t[1] == 0x01: frames[-1][0] = t[2] == em and not frames[-1][1]; frames[-1][1] |= frames[-1][0]
-            elif t[1] == 0x02: frames[-1][0] = not frames[-1][1]; frames[-1][1] = True
-            else: frames.pop()
-            continue
-        if all(f[0] for f in frames): out += t
-    assert not frames, 'unbalanced switch block'
-    return bytes(out)
-
-
 def emc_else_only(s, lens, op):
     """a script with its `op` blocks (IF t / ELSE f / END) reduced to the else body: the state op asks for does not exist here"""
     out, frames = bytearray(), []
-    for t in emc_tokens(s, lens):
+    for t in emc.tokens(s, lens):
         if t[0] == op:
             if t[1] == 0x00: frames.append(False)
             elif t[1] == 0x02: frames[-1] = True
@@ -279,7 +252,7 @@ def emc_else_only(s, lens, op):
 def stage_cases(s, lens):
     """4U `2a 01 NN` stage cases of a kept script -> GU's numbers"""
     out = []
-    for t in emc_tokens(s, lens):
+    for t in emc.tokens(s, lens):
         if t[0] == 0x2a and t[1] == 1:
             assert t[2] in STAGE_CASE, ('4U stage case without a GU number', t.hex())
             t = bytes([0x2a, 1, STAGE_CASE[t[2]]])
@@ -293,7 +266,7 @@ def cmdtbl(d4, gu, img, notes):
     ver, u4 = emc.parse(d4)
     _, g = emc.parse(gu)
     assert len(u4) == 23 and len(g) == 21 and not u4[21] and not u4[22], 'EMC group layout changed'
-    ops = lambda s: {t[0] for t in emc_tokens(s, lens)}
+    ops = lambda s: {t[0] for t in emc.tokens(s, lens)}
     assert not any(ops(x) & {0x92} for gr in g for x in gr), 'GU has a variant switch now'
     out, own, same, frenzy = [], [], [], []
     for gi in range(21):
@@ -304,7 +277,7 @@ def cmdtbl(d4, gu, img, notes):
             gv = g[gi][k] if k < len(g[gi]) else None
             if (gi, k) in EMC_GU:
                 scripts.append(gv); continue
-            mine = emc_em_only(s, 96, lens)
+            mine = emc.em_only(s, 96, lens)
             if OP_FRENZY in ops(mine):
                 frenzy.append((gi, k))
                 mine = emc_else_only(mine, lens, OP_FRENZY)

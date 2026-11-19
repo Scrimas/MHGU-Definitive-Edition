@@ -18,6 +18,8 @@ Only facts that need no judgement:
   returns the class's own DTI. Every monster class derives directly from the base (GU uFestaEnemy, 4U uEnemy).
   A slot function only one monster class's vtable holds gets `<class>_vt<N>`; one in the base vtables, or in
   several classes, gets a comment saying where it sits. Slots past the base class's count are left alone.
+- GU functions only a jump table or pointer reaches (tools/sym.py table_only_starts: a push {.., lr} after an
+  unconditional return / branch that no branch of the code before reaches): function starts, also among the seeds.
 ApplyNames.java renames only functions with Ghidra's own names (FUN_..., analysis labels); a vtable target or
 constructor Ghidra missed becomes a function (a vtable slot and a tail-called constructor start one). Every skip
 is reported.
@@ -228,8 +230,9 @@ def merge(rows, report, tag):
     return sorted(final, key=lambda r: (r[1], r[0], r[2]))
 
 
-def collect():
-    os.makedirs(OUT, exist_ok=True); report = []
+def rows(report):
+    """{'gu' / 'mh4u': [(kind, address, text, sources)]} before merge(): what collect() writes (tools/sym.py reads
+    them too)"""
     gu_rows = list(gu_defines(report))
     gu_name = {a: n for k, a, n, _ in gu_rows if k == 'func'}
     u4_rows = []
@@ -239,12 +242,20 @@ def collect():
     gu_rows += [('comment', a, 'mhgu-de hook ' + n, ['module/build.py']) for n, a in hooks()]
     cr, _ = gu_classes(report); gu_rows += cr
     u4_rows += u4_classes(report)
-    for tag, rows in (('gu', gu_rows), ('mh4u', u4_rows)):
-        rows = merge(rows, report, tag)
+    return {'gu': gu_rows, 'mh4u': u4_rows}
+
+
+def collect():
+    import sym      # here: sym imports this module
+    os.makedirs(OUT, exist_ok=True); report = []
+    R = rows(report)
+    R['gu'] += [('entry', a, '-', ['tools/sym.py table_only_starts']) for a in sym.table_only_starts()]
+    for tag, rs in R.items():
+        rs = merge(rs, report, tag)
         with open(os.path.join(OUT, tag + '.tsv'), 'w', encoding='utf-8') as f:
-            for k, a, t, src in rows:
+            for k, a, t, src in rs:
                 f.write('%s\t%#x\t%s\t%s\n' % (k, a, t, ','.join(src)))
-        report.append('%s rows: %s' % (tag, dict(collections.Counter(r[0] for r in rows))))
+        report.append('%s rows: %s' % (tag, dict(collections.Counter(r[0] for r in rs))))
     with open(os.path.join(OUT, 'report.txt'), 'w', encoding='utf-8') as f:
         f.write('\n'.join(report) + '\n')
     print('\n'.join(l for l in report if 'rows' in l or 'kept' in l or 'slot functions' in l))
@@ -265,7 +276,9 @@ def headless(tag, step, args):
 
 def seeds(tag):
     """function starts the auto-analysis cannot find (stripped C++: vtable / table-only functions)"""
-    if tag == 'gu': return sorted(g.asm.starts())
+    if tag == 'gu':
+        import sym  # here: sym imports this module
+        return sorted(set(g.asm.starts()) | set(sym.table_only_starts()))
     push = re.compile(r'^ +([0-9a-f]+):\s+(?:push|stmdb\s+sp!,)\s+\{([^}]*)\}')
     return sorted({int(m.group(1), 16) for l in open(os.path.join(paths.DUMP, 'mh4u.asm'), errors='replace')
                    for m in [push.match(l)] if m and 'lr' in m.group(2)})

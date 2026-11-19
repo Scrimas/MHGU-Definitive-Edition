@@ -236,44 +236,17 @@ def motion_bank(S, gfile, b, notes):
 # only in it and in 4U's group 21); g0 s14 / s15 = GU's, which are 4U's without the op-0x91 block (4U: if W+0x7e80 & 32 = the Apex state, C: her else body); g0 s18:
 # 4U's with its stage case in GU's number (4U 4 -> GU 14). GU's extra entries are appended: g1 s83.. (GU's class picks group-1 scripts by number, area_act_tbl 83..90).
 # g0 s2 / s6 / g12 s0 / g13 s0 keep her 4U bodies (GU's Najarala retunes and its extra selector, a deviation only from GU).
-EMC_LEN_TABLE, EMC_LEN_COUNT = 0x1732c8c, 167
+EMC_LEN_TABLE, EMC_LEN_COUNT = emc.LEN_TABLE, emc.LEN_COUNT
 EMC_GU = {(0, 0), (0, 1), (0, 9), (0, 14), (0, 15), (1, 16), (1, 48), (1, 72), (20, 0)}
 EMC_GU_GROUPS = (16,)
 EMC_4U_ONLY = {0x03, 0x06, 0x07, 0x22, 0x2a, 0x36, 0x40, 0x41, 0x46, 0x49, 0x4a, 0x4d, 0x63, 0x8b, 0x91}
 STAGE_CASE = {4: 14}             # 4U Frozen Seaway -> GU stage in a kept `2a 01 NN` case
 
 
-def emc_tokens(s, lens):
-    out, i = [], 0
-    while i < len(s):
-        op = s[i]
-        if op >= len(lens):
-            out.append(s[i:]); break
-        v = lens[op]
-        n = 1 + v if v < 0x80 else 2 + (v & 0xf) if s[i + 1] == 0 else 2 + (v >> 4) - 7 if s[i + 1] == 1 else 2
-        out.append(s[i:i + n]); i += n
-    assert b''.join(out) == s, 'EMC script does not tokenize'
-    return out
-
-
-def emc_em_only(s, em, lens, op=0x46):
-    out, frames = bytearray(), []
-    for t in emc_tokens(s, lens):
-        if t[0] == op:
-            if t[1] == 0x00: frames.append([False, False])
-            elif t[1] == 0x01: frames[-1][0] = t[2] == em and not frames[-1][1]; frames[-1][1] |= frames[-1][0]
-            elif t[1] == 0x02: frames[-1][0] = not frames[-1][1]; frames[-1][1] = True
-            else: frames.pop()
-            continue
-        if all(f[0] for f in frames): out += t
-    assert not frames, 'unbalanced switch block'
-    return bytes(out)
-
-
 def stage_cases(s, lens):
     """4U `2a 01 NN` stage cases of a kept script -> GU's numbers"""
     out = []
-    for t in emc_tokens(s, lens):
+    for t in emc.tokens(s, lens):
         if t[0] == 0x2a and t[1] == 1:
             assert t[2] in STAGE_CASE, ('4U stage case without a GU number', t.hex())
             t = bytes([0x2a, 1, STAGE_CASE[t[2]]])
@@ -287,18 +260,18 @@ def cmdtbl(d4, gu, img, notes):
     ver, u4 = emc.parse(d4)
     _, g = emc.parse(gu)
     assert len(u4) == 23 and len(g) == 21 and not u4[22], 'EMC group layout changed'
-    ops = lambda s: {t[0] for t in emc_tokens(s, lens)}
+    ops = lambda s: {t[0] for t in emc.tokens(s, lens)}
     out, own, same = [], [], []
     for gi in range(21):
         if gi in EMC_GU_GROUPS:
-            out.append([emc_em_only(x, 1, lens, 0x92) for x in g[gi]]); continue
+            out.append([emc.em_only(x, 1, lens, 0x92) for x in g[gi]]); continue
         scripts = []
         for k, s in enumerate(u4[gi]):
-            gv = emc_em_only(g[gi][k], 1, lens, 0x92) if k < len(g[gi]) else None
+            gv = emc.em_only(g[gi][k], 1, lens, 0x92) if k < len(g[gi]) else None
             if (gi, k) in EMC_GU:
                 scripts.append(gv); continue
-            mine = emc_em_only(s, 93, lens)
-            if any(t[0] == 0x92 for t in emc_tokens(g[gi][k], lens)):
+            mine = emc.em_only(s, 93, lens)
+            if any(t[0] == 0x92 for t in emc.tokens(g[gi][k], lens)):
                 if mine == gv: same.append((gi, k))
                 else: own.append((gi, k))
             if (gi, k) == (0, 18):
@@ -306,13 +279,13 @@ def cmdtbl(d4, gu, img, notes):
             assert not ops(mine) & (EMC_4U_ONLY - {0x07, 0x2a, 0x36, 0x40, 0x4d, 0x06, 0x22, 0x63, 0x41, 0x4a, 0x03, 0x49, 0x8b}), ('switch op left', gi, k)
             scripts.append(mine)
         assert len(scripts) <= len(g[gi]), gi
-        out.append(scripts + [emc_em_only(x, 1, lens, 0x92) for x in g[gi][len(scripts):]])
-    gu_v1 = [[emc_em_only(x, 1, lens, 0x92) for x in gr] for gr in g]
+        out.append(scripts + [emc.em_only(x, 1, lens, 0x92) for x in g[gi][len(scripts):]])
+    gu_v1 = [[emc.em_only(x, 1, lens, 0x92) for x in gr] for gr in g]
     stray = {(gi, k): sorted(ops(s) & EMC_4U_ONLY) for gi, gr in enumerate(out) for k, s in enumerate(gr)
              if ops(s) & EMC_4U_ONLY and s != gu_v1[gi][k] and (gi, k) != (0, 18)}
     assert not stray, ('4U area op in a script GU does not have that way', stray)
     # scripts GU's taken / appended ones call stay GU's where GU has its own
-    loose = sorted({t[1] for gi, k in sorted(EMC_GU) + [(1, k) for k in range(len(u4[1]), len(g[1]))] for t in emc_tokens(gu_v1[gi][k], lens)
+    loose = sorted({t[1] for gi, k in sorted(EMC_GU) + [(1, k) for k in range(len(u4[1]), len(g[1]))] for t in emc.tokens(gu_v1[gi][k], lens)
                     if t[0] == 0x14 and out[1][t[1]] != gu_v1[1][t[1]]})
     assert [len(x) for x in out] == [len(x) for x in g], 'our table must carry every GU entry number'
     notes.append('AI table: 4U em023_cmd for em 93; GU\'s %s; GU\'s group %s; g0 s18 with GU stage numbers; GU extra entries appended (%s); scripts with her '

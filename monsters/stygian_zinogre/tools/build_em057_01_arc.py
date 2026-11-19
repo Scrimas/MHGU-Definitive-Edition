@@ -236,6 +236,10 @@ SHELL_FX_ONCE = (3202, 3205)
 # set; GU twin EN_MOVECLASS); asserted against the 4U MEF
 MEF_B0 = {3000: 6, 3001: 7, 3019: 2, 3020: 3, 3021: 3, 3022: 3, 3023: 4, 3027: 4, 3028: 4, 3029: 1, 3030: 1, 3031: 1,
           3033: 1, 3040: 9, 3041: 9}
+# em049_018's two joint -1 ground records follow him (GU's previous tail), as shipped through 1.0.5: they took it from
+# Gogmazios' id rule (efl4u2gu pel_follows, em089's ids 3000 / 3001) until 2026-11-19. S: 4U 0xc4838c updates every
+# effect whose +0x274 flags are set (the ground flag) from its owner each frame, so they move with him there too.
+FOLLOW_IDS = (3000, 3001)
 # the ground records on a joint of em048_0 (Zinogre's, shipped in em049.arc) and em049_1 (MEF flags 2 + 4: 4U
 # 0xc4838c keeps them at the joint, on the ground, turned with the body, every frame; issue #8: his charged bolts off
 # their spot, the tail swipe's em048_008 standing up) -> id: (joint, offset, rotation in degrees, MEF flags) =
@@ -502,7 +506,8 @@ def effects(S, gu_pel_u, code, notes):
                                   scl=(1.0, 1.0, 1.0), follow=follow, world=joint == -1 and not follow,
                                   once=rid in SHELL_FX_ONCE)))
     spec = dict(arc=SRC_4U, stage_unpacked=[], mef='effect\\mef\\em\\em048_0', em_efl='effect\\efl\\em\\em049\\',
-                groups=groups, extra=[(groups[49] % r['file'], r) for r in own],
+                groups=groups, extra=[(groups[49] % r['file'], dict(r, follow=True) if r['id'] in FOLLOW_IDS else r)
+                                      for r in own],
                 lmts=[(P48 + 'mot\\em048_%d' % b, PSL % b) for b in BANKS], pel=PEL_U, soil=arena_soil(notes),
                 list2=list2, extra2=extra2, hide_grey_models='chunks',   # issue #6 white debris (efl4u2gu.CHUNK_MODELS)
                 world=set(GROUND_JOINT), mef_rotation=True)   # issue #8: 3031 on the tail joint turned with the body
@@ -689,38 +694,9 @@ def cambodydata(model_bones, notes):
 # engine op 0x9e where 4U called its area script s88, C), and GU's extra entries are appended: its class picks group-1
 # scripts by number (area_act_tbl, Tigerstripe's lesson). Instruction lengths: GU's table main 0x1732c8c (byte < 0x80
 # = argument count; 0x8n..0xBn block ops: 00 opens with n args, 01 = case with a 1..4-byte value, 02 else, ff end).
-EMC_LEN_TABLE, EMC_LEN_COUNT = 0x1732c8c, 167
+EMC_LEN_TABLE, EMC_LEN_COUNT = emc.LEN_TABLE, emc.LEN_COUNT
 EMC_GU_AREA = {(0, 0), (0, 1), (0, 2), (20, 0), (1, 59), (1, 62), (1, 63), (1, 88)}   # (group, script): GU's version
 EMC_4U_ONLY_OPS = {0x03, 0x06, 0x36, 0x4d, 0x2a}    # 4U area ops (no-ops in GU) and stage switches (4U stage ids)
-
-
-def emc_tokens(s, lens):
-    """a script's instructions, by GU's length table (an op past the table = the end, 0xff)"""
-    out, i = [], 0
-    while i < len(s):
-        op = s[i]
-        if op >= len(lens):
-            out.append(s[i:]); break
-        v = lens[op]
-        n = 1 + v if v < 0x80 else 2 + (v & 0xf) if s[i + 1] == 0 else 2 + (v >> 4) - 7 if s[i + 1] == 1 else 2
-        out.append(s[i:i + n]); i += n
-    assert b''.join(out) == s, 'EMC script does not tokenize'
-    return out
-
-
-def emc_em_only(s, em, lens):
-    """the script with every op-0x46 block reduced to em's body (its case, else the else body)"""
-    out, frames = bytearray(), []                   # per open 0x46 block: [taking, taken]
-    for t in emc_tokens(s, lens):
-        if t[0] == 0x46:
-            if t[1] == 0x00: frames.append([False, False])
-            elif t[1] == 0x01: frames[-1][0] = t[2] == em and not frames[-1][1]; frames[-1][1] |= frames[-1][0]
-            elif t[1] == 0x02: frames[-1][0] = not frames[-1][1]; frames[-1][1] = True
-            else: frames.pop()
-            continue
-        if all(f[0] for f in frames): out += t
-    assert not frames, 'unbalanced op-0x46 block'
-    return bytes(out)
 
 
 # 4U's rest test (notes/plan.md B7). 4U op 0x80 = if ((s8) W+0x53a) [0x953500: 0x93731c], op 0x91 = if (W+0x7e80 & 32)
@@ -731,7 +707,7 @@ def emc_em_only(s, em, lens):
 # (W+0x53a || rec+0x5e08 & 32) for Stygian. Without that hook both forms skip R, as the table did before.
 def emc_rest_merge(s, lens):
     """4U g0 s3's op-0x80 block with its op-0x91 else -> one op-0x80 block (see above); other scripts unchanged"""
-    t = emc_tokens(s, lens)
+    t = emc.tokens(s, lens)
     ops = [x[:2] for x in t]
     if b'\x91\x00' not in ops: return s
     a, e, o = ops.index(b'\x80\x00'), ops.index(b'\x80\x02'), ops.index(b'\x91\x00')
@@ -747,21 +723,21 @@ def cmdtbl(d4, gu, img, notes):
     ver, u4 = emc.parse(d4)
     _, g = emc.parse(gu)
     assert len(u4) == 23 and len(g) == 21 and not u4[22], 'EMC group layout changed'
-    assert [emc_em_only(s, 49, lens) for s in u4[21]] == [b'\xff'], "4U group 21 (em 114's) is not empty for em 49"
+    assert [emc.em_only(s, 49, lens) for s in u4[21]] == [b'\xff'], "4U group 21 (em 114's) is not empty for em 49"
     out, kept, called = [], 0, set()
     for gi in range(21):
         scripts = []
         for k, s in enumerate(u4[gi]):
             if (gi, k) in EMC_GU_AREA:
                 scripts.append(g[gi][k]); continue
-            s = emc_rest_merge(emc_em_only(s, 49, lens), lens)
-            assert not {t[0] for t in emc_tokens(s, lens)} & EMC_4U_ONLY_OPS, ('4U-only op left', gi, k)
+            s = emc_rest_merge(emc.em_only(s, 49, lens), lens)
+            assert not {t[0] for t in emc.tokens(s, lens)} & EMC_4U_ONLY_OPS, ('4U-only op left', gi, k)
             scripts.append(s); kept += 1
         extra = g[gi][len(u4[gi]):]
         for s in extra:
-            called |= {t[1] for t in emc_tokens(s, lens) if t[0] == 0x14}
+            called |= {t[1] for t in emc.tokens(s, lens) if t[0] == 0x14}
         out.append(scripts + list(extra))
-    heads = [t[:2] for sc in out for s in sc for t in emc_tokens(s, lens)]
+    heads = [t[:2] for sc in out for s in sc for t in emc.tokens(s, lens)]
     assert heads.count(b'\x80\x00') == 1 and not any(h[0] == 0x91 for h in heads), \
         'op-0x80 / 0x91 blocks changed: module/em057_01_ai.c answers the one op-0x80 block (g0 s3)'
     differs = sorted(c for c in called if c < len(u4[1]) and out[1][c] != g[1][c])
@@ -911,7 +887,7 @@ def main():
         ents.append((path, typ, data))
         own[k] = (path, typ)
     lens = img[EMC_LEN_TABLE:EMC_LEN_TABLE + EMC_LEN_COUNT]
-    scripts = [[emc_em_only(s, 49, lens) for s in g] for g in emc.parse(S[(P48 + 'data\\em048_cmd', T['EMC'])])[1]]
+    scripts = [[emc.em_only(s, 49, lens) for s in g] for g in emc.parse(S[(P48 + 'data\\em048_cmd', T['EMC'])])[1]]
     for k, (path, typ, data) in area_files(rom, gfile, {k: ghash[fileid_entry(img, gman[k])][1]
                                                         for k in AREA_FIELDS}, scripts, notes).items():
         ents.append((path, typ, data))
