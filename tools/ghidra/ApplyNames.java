@@ -2,6 +2,8 @@
 // entry: creates a function there when none starts there (vtable slot targets, tail-called constructors);
 // func: renames the function that starts at the address, only while it has a Ghidra name (FUN_..., default);
 // label: adds a non-primary label; comment: appends a line to the pre comment. Every skip is reported.
+// A "4U / GU counterpart" comment line (tools/match4u.py pairs) the list no longer holds is removed first: a rebuilt
+// pair list changes counterparts, and an old line would then name the wrong function.
 // @category MHGU-DE
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -21,6 +23,22 @@ public class ApplyNames extends GhidraScript {
         Map<String, Integer> n = new TreeMap<>();
         SymbolTable st = currentProgram.getSymbolTable();
         Listing li = currentProgram.getListing();
+        String pair = "(4U|GU) counterpart .*";
+        Set<String> pairs = new HashSet<>();
+        for (String row : rows) {
+            String[] c = row.split("\t", -1);
+            if (c[0].equals("comment") && c[2].matches(pair)) pairs.add(toAddr(Long.decode(c[1])) + "\t" + c[2]);
+        }
+        List<Address> commented = new ArrayList<>();
+        li.getCommentAddressIterator(CommentType.PRE, currentProgram.getMemory(), true).forEach(commented::add);
+        for (Address a : commented) {
+            String[] old = li.getComment(CommentType.PRE, a).split("\n");
+            List<String> keep = new ArrayList<>();
+            for (String l : old) if (!l.matches(pair) || pairs.contains(a + "\t" + l)) keep.add(l);
+            if (keep.size() == old.length) continue;
+            li.setComment(a, CommentType.PRE, keep.isEmpty() ? null : String.join("\n", keep));
+            n.merge("comment-stale-removed", old.length - keep.size(), Integer::sum);
+        }
         for (String row : rows) {
             String[] c = row.split("\t", -1);
             if (c.length < 4) throw new IOException("bad row: " + row);

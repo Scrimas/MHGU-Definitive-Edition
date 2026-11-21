@@ -137,7 +137,8 @@ and the JDK Ghidra asks for: `ghidra-analyzeHeadless` on PATH (NixOS), otherwise
 
 ```sh
 python3 tools/ghidra_names.py project   # once: dump/gu/ghidra and dump/mh4u_ghidra (about 30 minutes)
-python3 tools/ghidra_names.py apply     # after new names land in the code or notes (seconds)
+python3 tools/match4u.py build          # optional: the 4U <-> GU function pairs apply puts in (about a minute)
+python3 tools/ghidra_names.py apply     # after new names land in the code or notes (about a minute)
 ```
 
 - `project` seeds the function starts Ghidra's auto-analysis misses in these stripped C++ binaries (vtable and
@@ -147,10 +148,28 @@ python3 tools/ghidra_names.py apply     # after new names land in the code or no
   older project too.
 - `apply` names what is confirmed: the `FN(...)` / `MAIN(...)` defines of `module/game.h` not marked S / W / guess,
   other files' defines rated (C) on their line, their 4U counterparts where `notes/api-map.md` rates the pair C, and
-  the monster classes' vtables (`uEm057_00_vt125`, `uEm057_00_ctor`, ...). Everything else it knows becomes a
-  comment: unconfirmed defines ("mhgu-de code calls this NAME"), the mod's hook sites, the base vtables' functions
-  (they may come from engine classes further down). It renames only functions that still have Ghidra's own names,
-  and lists every skip in `dump/ghidra_names/*.applied.txt`. Rate a define (C) once it is checked, then re-run.
+  the engine's class vtables. Every MtDTI class whose getDTI sits at slot 5 of exactly one vtable gets
+  `<Class>_vtable` (about 3,200 GU and 970 4U classes), each slot function the class that introduces it
+  (`uEm057_00_vt125`, `cUnit_vt5`; about 24,000 GU and 6,400 4U functions), GU classes also `_ctor`,
+  `_newInstance`, `_dti_vtable` where that pattern checks out. Everything else it knows becomes a comment:
+  unconfirmed defines ("mhgu-de code calls this NAME"), the mod's hook sites, slot functions without one owner. It
+  renames only functions that still have Ghidra's own names, and lists every skip in
+  `dump/ghidra_names/*.applied.txt` (the refused classes and functions, by reason, in `report.txt`). Rate a define
+  (C) once it is checked, then re-run.
+- Once `python3 tools/match4u.py build` has written `dump/match4u/pairs.tsv`, `apply` also puts its 4U <-> GU
+  function pairs in: a comment on both functions naming the counterpart and its rating (C / S / W), and for a C pair
+  (a same-named class's getDTI, newInstance, own MtObject slots) the counterpart's name on a function that has none.
+  Re-run the build after new names land, then `apply`: it removes the counterpart comments the new list dropped.
+- `apply` then gives the monster object its layout (`tools/ghidra_types.py`): structures of both games' monster
+  classes and enemy record (GU `uEnemyBase` / `uEnemy` / `uFestaEnemy` / `uEmXXX_YY`, `EnemyRec`, `EnemyWork`; 4U
+  `uEnemy` / `uEmNNN`, `EnemyW`), from the `EN_*` / `REC_*` / `MOT_*` offset defines and the notes' `| 4U | GU |`
+  offset tables. A field gets its name when its define is confirmed as above, the rest a field comment. `this` gets
+  its structure only where that is certain (a class namespace + `__thiscall`: names stay, the qualified name gains
+  `uEm001_00::` / `uEnemy::`): the monster classes' and the enemy base classes' own slot functions, and every
+  function all of whose references are calls or tail branches that pass the monster in r0 from already typed code,
+  with no pointer to it (the action handlers, the shared helpers only monster code calls). The class says what the
+  object always is in the game's code, not which class declares the function. Slots that return a struct through r0
+  (GU 54, 203, 229) are never typed. Conflicts and what was left out: `dump/ghidra_types/report.txt`.
 
 ## Analysis tools (optional)
 
@@ -174,6 +193,7 @@ python3 tools/gate4u.py ENTRY|all [--actions]    # the 4U actions that let each 
 python3 tools/logreport.py [LOG] [--port PREFIX] # any port's Ryujinx log (default: the newest)
 python3 tools/hookcheck.py                       # every hook / patch site vs GU main
 python3 tools/sym.py {gu|4u} ADDR ...            # name an address: function, offset, repo names, vtable slots
+python3 tools/match4u.py {4u|gu} ADDR ...        # its counterpart in the other game, rating, evidence (`build` first)
 ```
 
 fncheck (MISSING) and hookcheck (PROBLEM) exit 1 on a finding; `fxaudit.py 4U_ARC GU_ARC` audits one arc.

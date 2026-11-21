@@ -6,17 +6,17 @@ Per address: the instruction there, the containing function's start and the offs
 address and for that start, and the vtable slots holding the start.
 - Names: the lists tools/ghidra_names.py collect writes (built here in memory, nothing written): `name` rows are the
   facts it calls confirmed (module/game.h defines unless rated S / W / guess, other files' defines marked (C), 4U
-  names of notes/api-map.md C pairs, vtable slot names <class>_vt<N>, ctors); `comment` rows are everything else
-  (unrated defines, hook sites, shared vtable slots). Also: every notes/api-map.md row naming the address, with its
-  rating, and module/game.h's `[0x...]` 4U brackets (comments: on the define line, or in the comment right above
-  when that comment names the define).
+  names of notes/api-map.md C pairs, class vtables, slot names <class>_vt<N>, GU ctors); `comment` rows are everything
+  else (unrated defines, hook sites, vtable slots without one owner). Also: every notes/api-map.md row naming the
+  address, with its rating, and module/game.h's `[0x...]` 4U brackets (comments: on the define line, or in the
+  comment right above when that comment names the define).
 - Function start: the nearest known start (GU asm.func_start: call targets and code pointers in data; 4U call
   targets and vtable slot functions), unless the push walk-back (GU asm.func_start_push, 4U dis4u.func_bounds: the
   4U Ghidra project's seeds) finds a push {.., lr} after it that no branch of the code before reaches: a function
   only a jump table or a computed pointer reaches (GU's action handlers). A heuristic: a function without a push
   that the call graph misses, or a false known start (asm.starts takes every code pointer in data), misplaces it.
-- Vtables: GU every vtable word holding the start (gulib/vt.py; class names from ghidra_names' monster vtables, other
-  vtables unnamed); 4U the monster class vtable slots holding it, and a count of the other data words equal to it.
+- Vtables: GU every vtable word holding the start (gulib/vt.py; class names from ghidra_names' class vtables, other
+  vtables unnamed); 4U the class vtable slots holding it, and a count of the other data words equal to it.
 An empty list means the repo names nothing there, not that nothing is known about it.
 """
 import bisect, collections, os, re, sys
@@ -50,19 +50,17 @@ _K = None
 
 def knowledge():
     """{'gu' / '4u': {address: [(kind, text, sources)]}, 'report': ghidra_names' report lines, 'vtables': {game:
-    {vtable address: class}}}: the rows ghidra_names.collect() writes (ghidra_names.rows, merged)"""
+    {vtable address: (class, slot count)}}}: the rows ghidra_names.collect() writes (ghidra_names.rows, merged)"""
     global _K
     if _K is None:
-        report = []
-        R = gn.rows(report)
-        _K = {'report': report, 'vtables': {}}
+        report = []; vts = {}
+        R = gn.rows(report, vts)
+        _K = {'report': report, 'vtables': {'gu': vts['gu'], '4u': vts['mh4u']}}
         for game, rows in (('gu', gn.merge(R['gu'], report, 'gu')), ('4u', gn.merge(R['mh4u'], report, 'mh4u'))):
             by = collections.defaultdict(list)
             for k, a, t, src in rows:
                 by[a].append((k, t, src))
             _K[game] = by
-            _K['vtables'][game] = {a: t[:-len('_vtable')] for k, a, t, _ in rows
-                                   if k == 'label' and t.endswith('_vtable') and not t.endswith('_dti_vtable')}
     return _K
 
 
@@ -175,7 +173,7 @@ def vtable_slots(game, f):
     if game == 'gu':
         for i, idx, _ in vt.holders(f):
             head = i - 4 * idx
-            out.append('%s slot %d (word %#x)' % (names[head], idx, i) if head in names else
+            out.append('%s slot %d (word %#x)' % (names[head][0], idx, i) if head in names else
                        'unnamed vtable %#x slot %d (word %#x; head by walk-back)' % (head, idx, i))
         return out
     w = np.frombuffer(a4u.M, dtype='<u4')
@@ -185,11 +183,11 @@ def vtable_slots(game, f):
         x = a4u.B + 4 * int(k)
         if x < a4u.TEXT_END: continue
         j = bisect.bisect_right(heads, x) - 1
-        if j >= 0 and x < heads[j] + 4 * gn.U4_SLOTS:
-            out.append('%s slot %d (word %#x)' % (names[heads[j]], (x - heads[j]) // 4, x))
+        if j >= 0 and x < heads[j] + 4 * names[heads[j]][1]:
+            out.append('%s slot %d (word %#x)' % (names[heads[j]][0], (x - heads[j]) // 4, x))
         else:
             other += 1
-    if other: out.append('%d other data word(s) equal %#x (pointers or plain numbers, not in a monster vtable)' % (other, f))
+    if other: out.append('%d other data word(s) equal %#x (pointers or plain numbers, not in a class vtable)' % (other, f))
     return out
 
 

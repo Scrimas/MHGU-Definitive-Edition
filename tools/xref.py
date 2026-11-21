@@ -65,7 +65,7 @@ class Exe:
                 if needle in o and r.search(o): yield a, m, o.split(' <')[0]
             return
         mm, n = self.dis._mm, needle.encode()
-        i = mm.find(n)
+        i = mm.find(n, 0)      # from the top: without a start, find begins where dis4u's last read left the map
         while i >= 0:
             s = mm.rfind(b'\n', 0, i) + 1
             e = mm.find(b'\n', i)
