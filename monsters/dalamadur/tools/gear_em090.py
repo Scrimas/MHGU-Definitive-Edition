@@ -12,8 +12,10 @@ Choices (the rules of Gogmazios' / Tigerstripe's armor, user OK 2026-10-21; list
   - Templates: GU Akantor Mask / Fangs (590 / 591, HR rarity 7) for HR and EX, Akantor Mask X / Fangs X (1054 /
     1055, rarity 10) for X and Z (Gogmazios' template): max level, limit levels, defense table, sound, look.
   - Defense: 4U defense x the mean GU / 4U ratio of the same-tier 4U sets GU also has (ANCHORS; X = Gogmazios'
-    anchors, so 4U 110 / 64 give the same GU 132 / 77 as Gogma X). GU weakened the EX sets (4U EX Kaiser / EX
-    Kushala 81 -> GU 70 / 76), so EX Rebellion (4U 81) lands BELOW plain Rebellion (4U 69): to review.
+    anchors, so 4U 110 / 64 give the same GU 134 / 81 as Gogma X): HR 75 / 38, X 134 / 81, Z 137 / 82. EX (issue
+    #50): GU weakened the EX sets (4U EX Kaiser / EX Kushala 81 -> GU 70 / 76), so that ratio put EX Rebellion (4U
+    81) below plain Rebellion (4U 69); GU keeps every EX set just above its species' S set (EX_OVER_S, x 1.06), so
+    EX Rebellion = HR Rebellion's GU defense x that ratio: 79 / 40.
   - Skills by GU tree name; 4U PunishDraw = GU 'Punish Draw' (41, +10 = Punishing Draw, C); FreeElemnt (Awaken)
     has no GU tree: dropped (as Tigerstripe), so Rebellion Z keeps Status Res 10, Edgemaster 3 / SteadyHand 3,
     Expert -15, PunishDraw / Rapid Fire 10.
@@ -41,21 +43,36 @@ PAIRS = [('Rebellion', [286, 287, 286, 281, 283], (590, 591), (193, 194), 'HR', 
           {'Great Wyvern Crystal': 'Skyblade Drgnsphire'})]
 # tier -> ([(4U head ID, GU series)] Blademaster, [...] Gunner): 4U HR Akantor Mask / Ukanlos Mask / Kaiser Crown /
 # Kushala Glare = GU Akantor Mask / Ukanlos Mask / Kaiser Crown S / Kushala Glare S (GU renamed its HR versions);
-# EX Kaiser / EX Kushala; X = Gogmazios' (gear_em089.py: Kaiser Crown X, Akantor Mask X / Kaiser Mask X)
+# X = Gogmazios' (gear_em089.py: Kaiser Crown X, Akantor Mask X, Ukanlos Mask X, Kushala Glare X)
 ANCHORS = {'HR': ([(132, 590), (338, 594), (280, 570), (240, 560)], [(133, 591), (339, 595), (281, 571), (241, 561)]),
-           'EX': ([(144, 572), (242, 562)], [(145, 573), (243, 563)]),
-           'X': ([(634, 1002), (636, 1054)], [(635, 1003)])}
+           'X': ([(634, 1002), (636, 1054), (642, 1058), (644, 996)],
+                 [(635, 1003), (637, 1055), (643, 1059), (645, 997)])}
+# EX tier: ([(GU S series, GU EX series)] Blademaster, [...] Gunner): Kaiser Crown S / EX Kaiser Crown, Kushala
+# Glare S / EX Kushala Glare
+EX_OVER_S = ([(570, 572), (560, 562)], [(571, 573), (561, 563)])
 TREE_4U_GU = {'PunishDraw': 'Punish Draw'}
 DROPPED_TREES = {'FreeElemnt'}
 TEMPLATE_WORD = 'Akantor'
+
+
+def gu_defense(exe, series, tier, g, d4):
+    """GU defense of 4U defense d4, class g (0 Blademaster, 1 Gunner): d4 x the tier's mean GU / 4U ANCHORS ratio"""
+    ratios = [series[8 + 127 * gu + 106] / gear4u.armor_4u(exe, 33, k)['defense'] for k, gu in ANCHORS[tier][g]]
+    return int(d4 * sum(ratios) / len(ratios) + 0.5)
 
 
 def defense_map(exe, series, tier, defs):
     """{4U defense: GU defense} of one pair's Blademaster / Gunner defenses `defs`"""
     out = {}
     for g, d4 in enumerate(defs):
-        ratios = [series[8 + 127 * gu + 106] / gear4u.armor_4u(exe, 33, k)['defense'] for k, gu in ANCHORS[tier][g]]
-        out[d4] = int(d4 * sum(ratios) / len(ratios) + 0.5)
+        if tier == 'EX':
+            # GU cut 4U's EX sets (EX Kaiser / EX Kushala 81 -> 70 / 76) yet keeps each just above its species' S set
+            # (about x 1.06); scaling 4U 81 like those put EX Rebellion below HR Rebellion (issue #50)
+            hr = gu_defense(exe, series, 'HR', g, gear4u.armor_4u(exe, 33, PAIRS[0][1][0] + g)['defense'])
+            ratios = [series[8 + 127 * ex + 106] / series[8 + 127 * s + 106] for s, ex in EX_OVER_S[g]]
+            out[d4] = int(hr * sum(ratios) / len(ratios) + 0.5)
+        else:
+            out[d4] = gu_defense(exe, series, tier, g, d4)
     return out
 
 

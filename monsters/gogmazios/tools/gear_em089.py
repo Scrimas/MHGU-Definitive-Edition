@@ -15,8 +15,10 @@ Choices (notes/content-plan.md):
     counts; module/gear.c appends only when the loaded count is that number (v1.4 item count = v1.0's, 2991).
   - Template: GU Akantor Mask X / Fangs X (series 1054 / 1055, rarity 10, the X tier 4U Gogma belongs to: 4U def
     110 = 4U Akantor Mask X 110, Kaiser Crown X 109): max level, limit levels, defense table, colours, sound, look.
-  - Defense: 4U def x mean GU/4U ratio of the X sets present in both games (Blademaster: Kaiser Crown X 128/109,
-    Akantor Mask X 134/110 -> 1.196; Gunner: Kaiser Mask X 76/63 = 1.206): 110 -> 132, 64 -> 77.
+  - Defense: 4U def x mean GU/4U ratio of the Elder X sets present in both games (Blademaster: Kaiser Crown X
+    128/109, Akantor Mask X 134/110, Ukanlos Mask X 136/106, Kushala Glare X 132/109 -> 1.222; Gunner: Kaiser Mask X
+    76/63, Akantor Fangs X 80/64, Ukanlos Fangs X 81/60, Kushala Snarl X 79/63 -> 1.265): 110 -> 134, 64 -> 81
+    (issue #50; Ukanlos / Kushala and the Gunner's Akantor were missing, 132 / 77 before).
   - Model: 4U's own numbers, 352 Blademaster / 353 Gunner (4U armor record +0 male / +2 female model = 0x160 /
     0x161). GU keeps 4U model numbers and 352 / 353 are unused gaps in its file list; the arcs come from
     tools/armor4u2gu.py (romfs/nativeNX/arc/player/com/{m,f}/{352,353}/<part>.arc).
@@ -56,7 +58,7 @@ ARMOR = dict(
     template=(1054, 1055),               # GU Akantor Mask X / Fangs X
     model=(352, 353),                    # 4U Gogma Blademaster / Gunner models
     parts=[550, 554, 538, 538, 546],     # 4U Blademaster IDs: head, body, arms, waist, legs
-    defense={110: 132, 64: 77},          # 4U defense -> GU (module docstring)
+    defense={110: 134, 64: 81},          # 4U defense -> GU (module docstring)
     tree=lambda tree4, name: TREE_ID if tree4 == ARCANA_4U else GU_TREES[name],
     # 4U armor recipes (create table, notes/content-plan.md appendix): (item name, count) per part
     recipes=[[('Gogmazios Gasher', 2), ('Gogmazios Battlement', 4), ('Gogmazios Fortress', 2), ('Purecrystal', 2)],

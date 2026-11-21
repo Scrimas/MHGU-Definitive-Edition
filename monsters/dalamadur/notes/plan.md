@@ -140,7 +140,8 @@ Progress 2026-10-21 (built, not tested in game):
 - Armor DONE 2026-10-21 (approved; built, not tested): tools/gear4u.armors (several pairs; armor() = one pair,
   Gogmazios / Tigerstripe gen/ byte-identical), monsters/dalamadur/tools/gear_em090.py (choices in its docstring:
   templates Akantor HR / Akantor X, defense HR 75 / 38, EX 73 / 37 (below HR: GU weakened EX sets, to review),
-  X 132 / 77, Z 134 / 78; PunishDraw -> GU 'Punish Draw', FreeElemnt dropped), allocations armor_series 8 /
+  X 132 / 77, Z 134 / 78 (2026-11-21, issue #50: EX 79 / 40 = HR x GU's EX / S ratio, X 134 / 81, Z 137 / 82 with
+  Ukanlos X / Kushala X anchors added); PunishDraw -> GU 'Punish Draw', FreeElemnt dropped), allocations armor_series 8 /
   create 4 / process 28 / models 193..453; models: build.sh armor (80 arcs, tools/armor4u2gu.py; 4U m_arm298's
   untextured Scene_Material -> null slots, Capcom's rule from GU m/008/leg; Gogmazios / Tigerstripe arcs identical).
   Weapons: next (helper).
