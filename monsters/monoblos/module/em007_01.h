@@ -71,7 +71,7 @@ typedef void (*spinWindow_t)(void *self, uint32_t ang, float a, float b);
                                                      * fraction preset to 1.0 (C: same body) */
 typedef void (*camShakeJoint_t)(void *self, int32_t joint, uint32_t id, uint32_t zero);
 #define camShakeJoint FN(camShakeJoint_t, 0xc24d8)  /* [0x910c6c(this, joint, id)] (stygian em057_01.h) */
-#define EN_MOVECLASS 0xb5f8      /* u8 move class [4U this+0xca8 bits: bit k -> k] (stygian em057_01.h) */
+#define EN_MOVECLASS 0xb5f8      /* u8 move class (4U: bit k of the u32 mask this+0xca8 -> k) (stygian em057_01.h) */
 #define REC_FLAGS   0x3b4        /* u16 part flags, bit 0 = tail severed [4U W+0x42c] (dalamadur dala_parts.c) */
 typedef int (*atFrame_t)(void *self, float f);
 #define atFrame     FN(atFrame_t, 0xb0a30)          /* [0x941dbc] motionCheck(0, f, 0) */

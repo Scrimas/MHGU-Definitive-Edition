@@ -19,7 +19,7 @@ typedef void (*jointDelta_t)(void *self, uint32_t joint, float *out);
 #define jointDelta   FN(jointDelta_t, 0xb0c40)  /* [0x936960] */
 typedef void (*self_t2)(void *self);
 #define pin13a0      FN(self_t2, 0xc0644)       /* [0xb05184] this+0x13a0 = 1.0 (stygian em057_01.h) */
-#define REC_SPIN_ANG 0x200                      /* [4U W+0x248] */
+#define REC_TURN_ANG 0x200   /* turn helpers' angle: heading to the move target [4U W+0x248] (C: 0x795ac vs 0x92f420) */
 #define EN_TURN_K    0x13b8                     /* [4U this+0xd58] */
 
 static inline void sincos_u16(uint32_t ang, float *s, float *c)
@@ -77,7 +77,7 @@ void mbmv_8d8cc0(void *self, const uint8_t *p)
         x += pos[0];
         z += pos[2];
         ang = atan_u16(t[0] - x, t[2] - z);
-        RU(rec, REC_SPIN_ANG) = ang;
+        RU(rec, REC_TURN_ANG) = ang;
         st->a80 = (int32_t)((ang - RU(rec, REC_YAW)) & 0xffff);
         if (kind == 0) {
             if (st->a80 > 0x8000) st->a80 = 0x8000;

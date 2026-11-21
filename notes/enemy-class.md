@@ -12,7 +12,7 @@ CONFIRMED = read in code; GUESS = inferred, needs a check.
 | uEnemy (abstract) | 0x1852d68 | 0xca80 | 0x1734c18 | 0xacc84 (returns 0) | 0xacc8c | 0x1734798 (286 slots) |
 | uFestaEnemy | 0x18533f8 | 0xcac0 | 0x17351c4 | 0xc9ce8 | 0xc9cf0 | **0x1734d44** (286 slots) |
 | uEm001_00 (Rathian) | 0x1850f58 | 0xcad0 | 0x1732290 | 0x4c48c | 0xcefe98 | 0x179acf8 |
-Monster sizes: 0xcad0..0xcf20 (uEm084_00 0x6320 is an exception); `gu_enemy.py classes` lists all 60.
+Monster sizes: 0xcad0..0xcf20 (uEm084_00: 0x26320); `gu_enemy.py classes` lists all 60.
 Static DTI init of the monster classes: 0x4f078 (calls 0x7aedcc in sequence).
 
 ## MtDTI (CONFIRMED, ctor 0x7aedcc)

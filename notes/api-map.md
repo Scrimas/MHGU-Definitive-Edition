@@ -99,7 +99,7 @@ found no other data table (other em-number uses are bounded switches). Icon pict
 | 0x78bd | attack id byte (0x9162f8) | 0x6143 (this+0x7583) | C | setter 0xb1a14 identical shape |
 | 0xb00 | (byte) | 0x990 | S | 35/62 |
 | 0xda (via +0x8d88) | net-sync state byte (slots 78/79) | work+0x24 = rec+0x84 (slots 171/172) | C | enemy-class slot map |
-| 0x370 / 0x374 | HP / max HP | 0x370 / 0x374 | C | both read in damage code (4U em089 data, GU 0x9a7b8) |
+| 0x3e8 / 0x3ec | HP / max HP | 0x370 / 0x374 | C | both setHP clamp HP to max (4U 0x91ad34, GU 0x9a764) |
 | 440 / 444 (f) | speed factors (0x911cb4) | 428 / 432 | C | getter pair 0x911cb4 / 0xbe5d4 |
 | table rows (+i*6) at 0x94741c | per-index rank bytes | +0x3bc + i*12 (0x9d428) | C | getter pair |
 | 0xf0..0x104 (f), 0xf8/0xfc (w) | parts / position vectors | not resolved | W | GU candidates in fieldmap.txt (0xb68c ...) |
@@ -133,7 +133,8 @@ so every remaining field needs its own evidence; `fieldmap.py map OFF` gives can
 | 0x938620 | 9 | 0x9e994 | S | status flag query |
 | 0x90f994 | 8 | 0xb0a00 | C | current motion id |
 | 0x92e9d4, 0x92dd04, 0x93093c | 7 each | 0xbca40, 0x78c34, 0xc1708 | S | state / target geometry |
-| 0x93d8a8, 0xb054e0, 0x93457c, 0x922c78 | 6 each | 0xbf590, 0xb09e4, 0xaa418, 0xb0870 | S | |
+| 0x93d8a8, 0x93457c, 0x922c78 | 6 each | 0xbf590, 0xaa418, 0xb0870 | S | |
+| 0xb054e0 | the votes named 0xb09e4, the frame getter | 0x726dc | C | layer-1 weight setter (module/game.h layer1SetWeight): both store one word |
 | 0x92dc88, 0x916bcc, 0x936ea8 | 5 each | 0x78b88, 0xc6e14, 0xbab88 | S | |
 | 0x9276b4, 0x927730, 0x915d7c, 0x92d0d4 | 4 each | 0xa6d04, 0x82510, 0xbf7d8, 0xc46c8 | S | see appendix |
 | 0x6620c4 | 12 | ? | - | posts a 16-byte event (sound/effect request) via 0x660e88; not in Rathian -> pick via another monster |

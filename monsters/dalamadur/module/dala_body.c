@@ -50,7 +50,7 @@ typedef const uint8_t *(*bodyRecs_t)(void *self);
 #define REC_SHAPE0  0x500                     /* s32 first cache slot of this enemy */
 #define REC_PARTOFF 0x3b4                     /* u16 +12 test bits [4U W+0x42c] */
 #define REC_NOPUSH  0x528                     /* u8 player push off [4U W+0x55a] */
-#define REC_PARTDMG 0x488                     /* u16[8] part damage counters (hit code 0x9d6f8) */
+#define REC_PARTDMG 0x488                     /* part damage counters, 8 x 16 bit; the game adds and reads them signed (0x9d6f8, 0x98178) */
 #define J_IDS       0x498
 #define J_ARRAY     0x494
 #define J_SIZE      160u

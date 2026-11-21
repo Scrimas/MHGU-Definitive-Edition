@@ -10,7 +10,7 @@
  * - sleepFlagA / B = 4U 0x922cd8 / 0x93c6c8 (C: GU d3c3dc / d3c3e4 at the same place). */
 #include "em007_01.h"
 
-#define REC_D38      0x13a8     /* this offset (not the record): [4U this+0xd38] float, 1.0 for some dig motions */
+#define EN_D38       0x13a8     /* [4U this+0xd38] float, 1.0 for some dig motions */
 #define REC_TGT_SUB  (REC_TGT_KIND + 2)
 #define REC_TGT_PAR  (REC_TGT_KIND + 4)
 #define PL_POS       0x40       /* a hunter's position (C: 4U [t+0xe30]+0x10 = GU pl+0x40, em057_01_shell046.c) */
@@ -74,10 +74,10 @@ void mbmv_8da42c(void *self, const uint8_t *p)
         if (kind == 1) {
             setMotion(self, 0x41f, 0.0f, 0.0f);
         } else if (kind == 2) {
-            FIELD(float, self, REC_D38) = 1.0f;
+            FIELD(float, self, EN_D38) = 1.0f;
             setMotion(self, 0x424, 0.0f, 0.0f);
         } else if (kind == 3) {
-            FIELD(float, self, REC_D38) = 1.0f;
+            FIELD(float, self, EN_D38) = 1.0f;
             setMotion(self, 0x425, 0.0f, 0.0f);
         } else {
             setMotion(self, 0x41e, 0.0f, 0.0f);
@@ -171,7 +171,7 @@ void mbmv_8dc13c(void *self, const uint8_t *p)
     }
     if (kind < 7) {                                         /* 4U jump table 0x8dc1dc */
         float hi = 0.0f;
-        if (kind == 3 || kind == 4 || kind == 5 || kind == 6) FIELD(float, self, REC_D38) = 1.0f;
+        if (kind == 3 || kind == 4 || kind == 5 || kind == 6) FIELD(float, self, EN_D38) = 1.0f;
         if (kind == 0 || kind == 3 || kind == 6) hi = 18.0f;
         else if (kind == 1 || kind == 4) hi = 26.0f;
         else hi = 83.0f;                                    /* 2, 5 */

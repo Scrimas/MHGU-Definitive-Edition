@@ -265,16 +265,6 @@ def structs(F, game, report):
     return out
 
 
-def gu_size(c):
-    """the DTI size: the movw r3 gu_enemy reads, plus a movt r3 between it and the DTI ctor call (uEm084_00)"""
-    for k in range(1, 20):
-        m, o = gu_enemy.ins(c['site'] - 4 * k)
-        mm = re.match(r'r3, #(0x[0-9a-f]+|\d+)$', o)
-        if m == 'movt' and mm: return c['size'] | int(mm.group(1), 0) << 16
-        if m in ('movw', 'mov') and mm: return c['size']
-    return c['size']
-
-
 _classes = {}
 
 
@@ -292,7 +282,7 @@ def classes(game, report):
                 work = any(asm.INS.get(a, ('', ''))[0] == 'movw' and asm.INS[a][1].endswith('#0xcac0')
                            for a in range(c['ctor'], end, 4))
                 if not work: report.append('gu class without EN_WORK (its ctor does not set this+0xcac0): ' + name)
-                out[name] = (gu_size(c), c['vt'], work)
+                out[name] = (c['size'], c['vt'], work)
         else:
             D, N = a4u.dtis(), a4u.by_name()
             for name, d in sorted(N.items()):

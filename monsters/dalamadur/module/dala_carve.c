@@ -43,7 +43,7 @@
 #define REC_CARVE_H   0x5d38   /* s32 carcass carve point handle, -1 = none (C: GU 0xac6c4) */
 #define REC_GROUND_Y  0x5b4    /* float ground probe y: flags-1 points take their y from it */
 #define REC_END_STEP  0x550    /* u8 reaction player end machine step (death: 1 = carcass) (C: GU 0xa134c) */
-#define REC_RAGE      0x518    /* u8 rage */
+#define REC_RAGE_STATE 0x518  /* u8 rage state (0 calm, 1 enraged, 2 other) [4U W+0x530] (C: 0xbce6c vs 0x93399c) */
 #define LAYER1_MOT    0x5f4    /* u16 layer-1 motion (layer 0 0x4b4 + 0x140) */
 #define LAYER1_FRAME  0x640    /* float layer-1 frame (layer 0 0x500 + 0x140) */
 #define gu_new    FN(void *(*)(uint32_t), 0x7af3a0)   /* MT heap new[] / delete[] (the loader's, dala_break.c) */
@@ -219,7 +219,7 @@ void dala_carcass_log(void *self)
     logf("dalaport: carcass %s motion %x frame %d layer1 %x frame %d weight %d/1000 rage %u | hunter %d %d %d: dxz %d "
          "dy %d radius %d point %d %d %d", tail ? "tail" : "head", curMotion(self), (int)motionFrame(self),
          FIELD(uint16_t, self, LAYER1_MOT), (int)FIELD(float, self, LAYER1_FRAME), (int)(layer1Weight(self) * 1000.0f),
-         rec[REC_RAGE], p ? (int)p[0] : 0, p ? (int)p[1] : 0, p ? (int)p[2] : 0, (int)d, p ? (int)(p[1] - c[1]) : 0,
+         rec[REC_RAGE_STATE], p ? (int)p[0] : 0, p ? (int)p[1] : 0, p ? (int)p[2] : 0, (int)d, p ? (int)(p[1] - c[1]) : 0,
          (int)s_rad[tail], (int)c[0], (int)c[1], (int)c[2]);
 }
 

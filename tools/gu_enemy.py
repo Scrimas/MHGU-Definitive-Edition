@@ -47,10 +47,13 @@ def next_got(a, n=20, want='ldr'):
 
 
 def movw_r3(site):
+    """r3 before the call: movw / mov, with the movt after it when the value needs one (uEm084_00's size 0x26320)"""
+    hi = 0
     for k in range(1, 20):
         m, o = ins(site - 4 * k)
         mm = re.match(r'r3, #(0x[0-9a-f]+|\d+)$', o)
-        if m in ('movw', 'mov') and mm: return int(mm.group(1), 0)
+        if m == 'movt' and mm: hi = int(mm.group(1), 0) << 16
+        elif m in ('movw', 'mov') and mm: return hi | int(mm.group(1), 0)
     return None
 
 

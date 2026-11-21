@@ -28,7 +28,7 @@
 #define REC_STATUS  0x5e08  /* u8 status bits [4U W+0x7e80] (C: GU a1fc8 = 4U 0x936418, same body); bit 32 = 4U's rested
                              * state (meaning G), no GU setter found (S) */
 #define EN_AREA     0x1054  /* u8 unit area (sound calls) [4U W+0x14c] */
-#define EN_MOVECLASS 0xb5f8 /* u8 move class [4U this+0xca8 bits: bit k -> k] */
+#define EN_MOVECLASS 0xb5f8 /* u8 move class (4U: bit k of the u32 mask this+0xca8 -> k) */
 #define SND_MGR     0x1896f5c
 
 /* ---- GU callees not in game.h */

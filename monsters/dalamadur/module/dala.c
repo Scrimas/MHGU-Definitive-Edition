@@ -234,10 +234,10 @@ void dala_hp_sync(void *head)
  * 4U's pool sets HP = 0 on both halves every frame (0x9201cc); how 4U then starts em083's death was NOT found
  * (tail class, its partner-lookup sites, the death chooser 0x92c0a4 and its callers checked: none kills the
  * partner). Port: once either half is dead (category 11 or 12/255), the controller sets the other half's HP to the
- * pool's 0 and one point of GU's net damage rec+0x5d66 (written by GU's damage message 0xa26f8), so the other half
+ * pool's 0 and one point of GU's pending damage rec+0x5d66 (GU sets it in its frame tick 0xa2664), so the other half
  * dies through GU's own path above; after 60 frames without a death it requests 11/0 directly (0x76afc). Other
  * machines get the death action like any death (setAction replay; op 7 -> 12/255 is GU's own). */
-#define REC_NET_DAMAGE 0x5d66   /* s16, GU damage update applies it and runs the death check (0x98ae4 / 0x98be4) */
+#define REC_PEND_DAMAGE 0x5d66  /* s16 pending damage: damage update 0x97ddc applies it, checks death, clears it (C) */
 typedef void (*reactRequest_t)(void *self, uint32_t cat, uint32_t num);
 #define reactRequest FN(reactRequest_t, 0x76afc)   /* setAction(cat, num, mode 5) unless in category 11 */
 static int half_dead(void *e)
@@ -272,7 +272,7 @@ void dala_death_sync(void *head)
     }
     FIELD(float, REC(live), REC_HP_FLOOR) = -1.0f;   /* no floor on a dead pool */
     setHP(live, 0);
-    FIELD(int16_t, REC(live), REC_NET_DAMAGE) = 1;
+    FIELD(int16_t, REC(live), REC_PEND_DAMAGE) = 1;
     /* 4U shares the death (kind 1) and the partner reacts one frame after the post (dala_react.c). GU's own death
      * check never fired on the live half here (test 2026-10-22: still alive after 60 frames, so the two death motions
      * ran 60 frames apart): request it on the next frame. */
