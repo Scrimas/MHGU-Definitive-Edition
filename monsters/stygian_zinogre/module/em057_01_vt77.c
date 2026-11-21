@@ -23,7 +23,7 @@
 #include "em057_01.h"
 
 #define SZ_N(a) (sizeof(a) / sizeof((a)[0]))
-#define REC_GROUND_Y  0x5b4   /* ground height under the monster [4U W+0x624] (S) */
+#define REC_GROUND_Y  0x5b4   /* ground height under the monster [4U W+0x624] (C: 0xbc8b0 vs 0x9167ec) */
 #define WK_TOGGLE     0x35    /* u8 flipped by the repeat timer [4U work+0x35] */
 
 typedef int (*actIs_t)(void *self, uint32_t cat, uint32_t num);

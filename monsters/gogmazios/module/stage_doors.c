@@ -58,7 +58,7 @@ typedef int (*hud_msg_t)(uint32_t kind, uint32_t id, uint32_t arg);
 typedef void *(*enemy_get_t)(void *sEnemy, uint32_t i);
 #define enemy_get FN(enemy_get_t, 0x5ceb4)   /* slots 0..9 */
 #define EN_REC            0x1428u
-#define EN_SMALL          0xb5f7u
+#define EN_SMALL          0xb5f7u   /* (C: GU 0x6fb14) */
 #define REC_HP_           0x370u
 
 static const float k_eft_pos[3] = {0.0f, 0.0f, 0.0f};   /* a01 Effect controller: KowareEftPos (world) */

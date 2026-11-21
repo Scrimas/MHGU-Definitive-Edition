@@ -19,7 +19,7 @@ enum { R0, R1, R2, R3, R4, R5, R12, LR };
 #define EN_VARIANT (EN_ID + 5)      /* u8, set by setup 0x6fb14 from ID bits 8-11 */
 #define EN_AREA    0x1054           /* u8 current area */
 #define MAX_LINES  3000u            /* a few minutes of fight */
-#define EN_SCRIPT  0x72fc           /* u8 group, u8 script of the running AI script */
+#define EN_SCRIPT  0x72fc           /* u8 group, u8 script of the running AI script (C: GU 0x8282c) */
 #define EN_COSTREC 0x75f0           /* record pointer: 1/18 stamina cost float at +196, a factor at +200 (GU 0x9cf7c) */
 
 void em005_01_laser_tick(void *self);       /* the 7/57 laser's 4U effect (em005_01_laser.c) */

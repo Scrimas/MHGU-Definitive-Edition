@@ -40,9 +40,9 @@
 #define DTP_CARVES    0x6c     /* carve records (12 B) */
 #define DTP_NCARVE    0x8e     /* u8 their count */
 #define EN_AREA       0x1054   /* u8 map area */
-#define REC_CARVE_H   0x5d38   /* s32 carcass carve point handle, -1 = none */
+#define REC_CARVE_H   0x5d38   /* s32 carcass carve point handle, -1 = none (C: GU 0xac6c4) */
 #define REC_GROUND_Y  0x5b4    /* float ground probe y: flags-1 points take their y from it */
-#define REC_END_STEP  0x550    /* u8 reaction player end machine step (death: 1 = carcass) */
+#define REC_END_STEP  0x550    /* u8 reaction player end machine step (death: 1 = carcass) (C: GU 0xa134c) */
 #define REC_RAGE      0x518    /* u8 rage */
 #define LAYER1_MOT    0x5f4    /* u16 layer-1 motion (layer 0 0x4b4 + 0x140) */
 #define LAYER1_FRAME  0x640    /* float layer-1 frame (layer 0 0x500 + 0x140) */

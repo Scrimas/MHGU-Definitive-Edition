@@ -56,7 +56,7 @@ typedef float (*size_factor_t)(void *self);
 #define SH_ANGLES        0xfe8
 #define SH_DT            28
 #define SH_ATK0_SCALE    0x13bc
-#define REC_GROUND_Y     0x5b4    /* ground height under the monster [4U W+0x624] (S) */
+#define REC_GROUND_Y     0x5b4    /* ground height under the monster [4U W+0x624] (C: 0xbc8b0 vs 0x9167ec) */
 
 #ifndef EM089_SHELL_FILE
 #define EM089_SHELL_FILE 0x1071du

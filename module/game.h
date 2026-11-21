@@ -179,7 +179,7 @@ typedef void (*wanderPoint_t)(void *self, uint32_t a, uint32_t b);
 #define REC_ANGLES  0x50    /* u32 x, yaw (0x54), z angle triple [4U W+424] */
 #define REC_VSPEED  0x5c    /* float vertical speed [4U W+384] */
 #define REC_STATE   0x1ba   /* u8 state class [4U W+0x1c8] (C: 0x7cab8 vs 0x91150c) */
-#define REC_MODE    0x1bb   /* u8 mode flag, bit 0 tested by the engine, net-synced [4U W+0x1c9] (S) */
+#define REC_MODE    0x1bb   /* u8 mode flag, bit 0 tested by the engine, net-synced [4U W+0x1c9] (C) */
 #define EN_DT       28      /* float time scale (frames per tick), used by 0xc0e78 / 0xbf7d8 [4U this+20] (C) */
 
 /* end of an action: virtual slot 247 (base 0x75224): setTargetMode(0), setAction(0, 0|1|2 by state, mode 2),

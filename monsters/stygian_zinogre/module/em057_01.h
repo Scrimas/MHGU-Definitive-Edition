@@ -14,10 +14,10 @@
 #define RF(p, off)  FIELD(float, p, off)
 #define RU(p, off)  FIELD(uint32_t, p, off)
 
-#define REC_ACCEL_Y 0x24    /* float acceleration y [4U W+372] */
+#define REC_ACCEL_Y 0x24    /* float acceleration y [4U W+372] (C: 0x7a8dc vs 0x9165cc) */
 #define REC_V30     0x30    /* float[4] [4U W+392]: the backstep's saved velocity (0x84383c) */
 #define REC_TIMER   0x1bc   /* float action timer [4U W+468] (C: tigerstripe 2b, site efd1d0) */
-#define REC_MSPEED  0x398   /* float motion speed multiplier set by setMotionSpeed [4U W+0x410] */
+#define REC_MSPEED  0x398   /* float motion speed multiplier set by setMotionSpeed [4U W+0x410] (C) */
 #define REC_CNTUP   0x7a4   /* u32, nonzero: the 0x84b548 timer counts up [4U W+0x814] */
 #define WK_ANG      0x18    /* u32 angle to the target slot (u16 value) [4U work+0x18] */
 #define WK_TURN     0x1c    /* u32 turn for spinWindow, sign-extended for right turns [4U work+0x1c] */

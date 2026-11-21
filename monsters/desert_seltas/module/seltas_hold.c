@@ -37,7 +37,7 @@ enum { R0, R1, R2, R3, R4, R5, R12, LR };
 #define REC_STEP     0x1a1
 #define REC_SIDE     0x230
 #define REC_RIDER    0x1bb           /* bit 0: her Desert Seltas rides on her */
-#define REC_SCALE    0x1b0           /* f32, 4U W+444 */
+#define REC_SCALE    0x1b0           /* f32, 4U W+444 (C: GU 0x6fb14) */
 #define PIN_FRAME    86.0f           /* 16/2's attack frame: GU's literal 0xf9b474 for both of its frame checks */
 #define MAX_LOG      40u
 

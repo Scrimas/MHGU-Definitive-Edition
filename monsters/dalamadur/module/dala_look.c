@@ -41,12 +41,12 @@ typedef void (*lookPoint_t)(void *self, const float *vec, uint32_t slot);
  * LK_ANGLE[index] when a kind-1 record names it (index <= 5, angle != 0, C). Only the spawn setup runs it (0xb9910,
  * before slot 118 at 0xba2d4), while the list is still Kushala's empty one: run again after the install. */
 #define lookJoints FN(void (*)(void *), 0xa7ff8)
-#define EN_JOINT_N    0x490
-#define EN_JOINTS     0x494
+#define EN_JOINT_N    0x490   /* (C: GU 0xa7ff8, 0x94f4d4) */
+#define EN_JOINTS     0x494   /* (C: GU 0xa7ff8, 0x94f4d4) */
 #define JOINT_SIZE    0xa0
 #define JOINT_CB      0x4
 #define JOINT_ID      0x93
-#define EN_JOINT_CB   0xb740   /* the callback object the joints point to */
+#define EN_JOINT_CB   0xb740   /* the callback object the joints point to (C: GU 0xacc8c, 0xa7ff8) */
 
 /* the dtbparts object (enemy+0x75f0, shared by the four arcs: dala_break.c): look records +0x68 (16 bytes {s32
  * joint, u8 kind, pad, s32 index +8, s32 limit +0xc}), u8 count +0x8d (loader 0x5575c: new[16 n] at 0x55a78, C);

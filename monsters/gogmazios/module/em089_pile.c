@@ -39,7 +39,7 @@
 #define CUT_QUAT         0x50u     /* x, y, z, w (GU 0x73d1c) */
 #define CUT_SCALE        0x60u     /* x, y, z, 0 (GU 0x73a20) */
 #define CUT_GROUPS       0x110u    /* uModel mesh-group display bits, word 0 (4U uModel+0x108; GU 0x89079c) */
-#define REC_GROUND_Y     0x5b4u    /* enemy record: ground height under the monster [4U W+0x624] (em089_shell005.c) */
+#define REC_GROUND_Y     0x5b4u    /* enemy record: ground height under the monster [4U W+0x624] (em089_shell005.c) (C) */
 #define CUT_AREA         0x1054u
 #define CUT_INIT         0x139cu   /* u8 1 after the init 0x736b8 (4U obj+0xd2c) */
 #define CUT_TYPE         0x1474u   /* u8 1 / 2 / 3 (setup 0xb9f4c / 0xb9fc0 / 0xba030) */

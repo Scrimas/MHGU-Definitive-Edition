@@ -77,13 +77,13 @@
  *   and spawn_b3() gives 4U's value from the quest instead.
  * REC_SPEED2: second motion-speed factor (4U W+0x40c = W+1036; 4U 0x941dd4 = W+1028 * W+1036 * status, GU 0xb000c
  *   reads rec+908 * rec+916 with the same status / category 10-11-13 test: C); GU spawn setup 0xb8f20 resets it. */
-#define REC_SPAWN_B3 0x5cb6
-#define REC_SPEED2   0x394
+#define REC_SPAWN_B3 0x5cb6   /* (C: GU 0x6fb14) */
+#define REC_SPEED2   0x394   /* (C: GU 0xb000c) */
 /* GU rage: addAnger 0xbcc04(this, dmg) adds to the anger counter rec+0x510 (s16; threshold from data block +0x28
  * by HP decile, default 600); at the threshold, when not enraged (rage timer rec+0x514 <= 0) it posts think event
  * rec+0x362 |= 4 (0x7fc40), which the think-event dispatcher 0x7f0cc turns into list 6 = EMC group 6
  * ([this+0x72f4]+0x18, 0x7f960). */
-#define REC_ANGER      0x510
+#define REC_ANGER      0x510   /* (C: GU 0xbcc04) */
 #define REC_RAGE_TIMER 0x514
 
 #define REC(self)   FIELD(uint8_t *, self, EN_RECORD)
@@ -1513,8 +1513,8 @@ static void act_7_27(void *self, uint32_t var)
  * the collision dispatcher 0x2ba7fc (after the polygon-info filler 0x2b95a4) = GU count rec+0x7a0, records
  * rec+0x5c0 + 48 i, filled by 0xa75f4 from the dispatcher 0x18285c (target type +0x1052 == 1 = enemy; after the
  * filler 0x1815a4): C. Record +5 = polygon attribute >> 24 (wall type) in both. */
-#define REC_CONTACT_N   0x7a0
-#define REC_CONTACT0    0x5c0
+#define REC_CONTACT_N   0x7a0   /* (C: GU 0xa75f4) */
+#define REC_CONTACT0    0x5c0   /* (C: GU 0xa75f4) */
 static int map_contact_45(void *self)
 {
     uint8_t *rec = REC(self);
