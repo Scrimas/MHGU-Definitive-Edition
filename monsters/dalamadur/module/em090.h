@@ -26,7 +26,7 @@
 #define F_END        0xcc10   /* = DALA_SIZE */
 
 /* the controller (net owner) fields, GU (class-study.md "Who controls each half online", C) */
-#define EN_OWNER     0x7424   /* u8 owner = the controlling member's index */
+#define EN_OWNER     0x7424   /* owner = the controlling member's index; s8 in the game (-1 = none), read here as u8 */
 
 #define EN_VARIANT   (EN_ID + 5)   /* u8: 0 = Dalamadur, 1 = Shah */
 
@@ -34,12 +34,12 @@
  * each frame (0xa5198 -> 0xa532c), so it is rewritten every frame after that (GU's Ahtal-Ka / Ahtal-Neset in slot
  * 119: 0x10b6b7c / 0x10a8748). 4U: uEm024 / uEm083 slot 44 tails write W+0x55b = 1 every frame (0x77311c /
  * 0x8a1fc4). Without it the two halves' push spheres (emd word 21, radius 100 at the origin) moved them 200 apart. */
-#define REC_NO_ENEMY_PUSH 0x529
+#define REC_NO_ENEMY_PUSH 0x529   /* (C: GU 0x17cbf0) */
 /* u8 "no ground": GU's ground probe 0xbdf1c (rec+0x5b0 / +0x5b4 / +0x5b8) and the ground adjust 0xbe010 skip the
  * enemy while it is set (C); Ahtal-Ka / Ahtal-Neset write it every frame in slot 119 next to the push flag
  * (0x10b6b6c / 0x10a8738, C). Without it GU lifted both halves from 4U's spawn point y 0 to y 301 (test 2026-10-21:
  * front legs above the ground). */
-#define REC_NO_GROUND     0x5cd5
+#define REC_NO_GROUND     0x5cd5   /* (C: GU 0xbdf1c) */
 
 /* ---- the action framework shared by both halves (dala.c; notes/port.md for the GU side) ---- */
 #define REC(self)    FIELD(uint8_t *, self, EN_RECORD)
@@ -49,7 +49,7 @@
 /* per-action timer 4U W+468 = GU rec+0x1bc: reaction-sequence op 3 writes it in both players (4U 0x931b7c, GU
  * 0x9f568, C); Rathian's idle counts it down */
 #define REC_TIMER    0x1bc
-#define REC_HP_FLOOR 0x380    /* float: setHP 0x9a764 keeps HP >= max * this (-1 = none) [4U W+0x3f8] */
+#define REC_HP_FLOOR 0x380    /* float: setHP 0x9a764 keeps HP >= max * this (-1 = none) [4U W+0x3f8] (C) */
 #define TIMER(self)  FIELD(float, REC(self), REC_TIMER)
 #define DALA_WORK(T, self, off) FIELD(T, self, F_WORK + (off))   /* 4U [this+0x8d88] + off */
 
@@ -106,6 +106,7 @@ void dala_carcass_lock(void *self);                 /* slot 168: the carcass kee
 /* dala_psl.c: GU slot 75 = the PSL (motion effect) post 0x70028, logged; dala_psl_watch: slot 119, both halves */
 void *dala_psl_post(void *self, uint32_t list, const uint8_t *data, uint32_t slot, void *req);
 #define SLOT_PSL_POST 75
+void dala_b0_flag(void *self, uint32_t bits);       /* the current action's 4U this+0xca8 bits (em090_act7.c) */
 void dala_psl_watch(void *self);
 /* dala_react.c: one attack damages one half only (GU slots 38 hit landed / 209 hit candidate, 4U 0xbf4d28) */
 void dala_hit_landed(void *self, uint8_t *hit, void *attacker, uint32_t kind);

@@ -496,11 +496,14 @@ Stop it with `ryutest.sh stop` (matches the cmdline: the gui process's /proc exe
   with an axis mask, roars among them, are not judged).
 - **MEF byte 0 gates the post (2026-11-19):** 4U posts a b0 != 0 record only while the action handler sets bit b0 of
   this+0xca8; GU keeps that as one number (EN_MOVECLASS, the same per handler) and never tests it for PSL posts. A port
-  whose records carry b0 needs the test in its PSL hook (Stygian: the uncharged tail swipe drew the charged bolts).
-  `tools/fxaudit.py --ports` lists per port the b0 records that no module table named *b0* gates (only Stygian and
-  Black Gravios have such tables; a gate written another way is not seen). `tools/gate4u.py ENTRY` reads 4U's
+  whose records carry b0 needs that test (Stygian: the uncharged tail swipe drew the charged bolts). The core gate
+  `module/b0gate.c` does it from a port's tables (records -> bit, action -> bits it sets, a function for bits under a
+  condition such as the quest rank): Black Gravios, Tidal Najarala, Shrouded Nerscylla and the Desert Seltas Queen use
+  it, Stygian tests EN_MOVECLASS in its own PSL hook. `tools/fxaudit.py --ports` lists per port the b0 records that no
+  module table named *b0* gates (a gate written another way is not seen). `tools/gate4u.py ENTRY` reads 4U's
   dispatcher for every action and says, per record, in which actions 4U sets its bit always, sometimes or never: the
-  "never" rows are the effects GU shows and 4U does not (read the 4U code of each before a gate relies on it).
+  "never" rows are the effects GU shows and 4U does not (read the 4U code of each before a gate relies on it: the
+  Queen's 1/31 was missed until the tool followed a this+k pointer).
 - **Effect reference model:** a pos-only post through the monster uses the monster's attach model as reference: its
   2.5 scale and its height leak into the effect. GU shells post their own effects with the shell as target (flags 3)
   and keep the shell alive until the effect is dead (em089_shell.c pattern).

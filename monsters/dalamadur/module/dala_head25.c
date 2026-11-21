@@ -2,8 +2,8 @@
  * 40, as Gogmazios' slot 77; Shah shares the class; the file name keeps the index first read from a wrong address
  * point): the heat zone pulse and the 10/114 attack window. Its other parts: the per-motion byte W+0x7eec (written by
  * other classes too, no reader found in any addressing form: S, no effect), the effect-28 draw test 0x19fbf0 (open,
- * behaviour.md); this+0xca8 (table 0x775030 by motion and area class) has no
- * effect (per-class scratch nothing reads, em090_act7.c render_flag). Runs from the head's GU slot 119 on every
+ * behaviour.md); this+0xca8 (table 0x775030 by motion and area class): the condition bits of his motion effects,
+ * applied at the post (dala_psl.c mask_bits; not "no effect" as read on 2026-10-22). Runs from the head's GU slot 119 on every
  * machine: its inputs (motion, rage byte) reach all machines through GU's action and state sync (MP).
  *
  * Heat zone (4U, C): slot 25 sets W+0x7e64 = 2 (0x934048) and the zone selector work+0x40 while

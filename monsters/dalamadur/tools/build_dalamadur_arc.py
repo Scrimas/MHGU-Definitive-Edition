@@ -504,6 +504,20 @@ def effects(em4, gu, soil, notes):
     MEF _1 (ids 2000+; no class code posts them, the motions' LMT events do: 4U 0x391a18) joins as extra records.
     MEF groups: the em's own EFL family, qe 6 / 13. MEF slot mode 1 -> PEL end mode 1 (pel_slot_end)."""
     S = efl4u2gu.sources(os.path.join(ROOT, 'dump/romfs/data/%s.arc' % em4), [])
+    # the 4U condition bits (MEF byte 0) that module/dala_psl.c s_b0_<gu> gives the core PSL gate (module/b0gate.c),
+    # and its k_mask77 = the head's slot-77 table 0x775030 (rows {motion, 4 masks}, end key 0xffff)
+    import a4u
+    b0 = {r['id']: r['b0'] for k in (0, 1) for r in efl4u2gu.mef_records(S[('effect\\mef\\em\\%s_%d' % (em4, k), T['MEF'])])}
+    src = open(os.path.join(MON, 'module', 'dala_psl.c'), encoding='utf-8').read()
+    rows = re.findall(r'\{(\d+), (\d+)\}', re.search(r's_b0_%s\[\] = \{(.*?)\};' % gu, src, re.S).group(1))
+    assert rows and all(b0.get(int(i)) == int(b) for i, b in rows), 'module/dala_psl.c s_b0_%s differs from the MEFs' % gu
+    table, a = [], 0xfdc898
+    while a4u.u(a) != 0xffff:
+        table.append(tuple(a4u.u(a + 4 * j) for j in range(5)))
+        a += 20
+    body = re.search(r'k_mask77\[\] = \{(.*?)\};', src, re.S).group(1)
+    assert [tuple(int(x, 0) for x in re.findall(r'0x[0-9a-f]+', row)) for row in re.findall(r'\{0x[^}]*\}\}', body)] \
+        == table, "module/dala_psl.c k_mask77 differs from 4U's 0x775030"
     num = int(em4[2:])
     groups = {num: 'effect\\efl\\em\\%s\\%s_%%03d' % (em4, em4)}
     groups.update({g: 'effect\\efl\\qe\\qe%03d\\qe%03d_%%03d' % (g, g) for g in (6, 13)})

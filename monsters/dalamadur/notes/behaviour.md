@@ -393,9 +393,11 @@ User: meteor speed fine (log: clock 0.5 = head delta 0.5 at 60 fps); rewards fix
    as remembered, no proof either way; 4U's walk rule adds joint 5 (the head) only once part 0 is broken, the same
    condition as the head arrows -> the port now follows the 4U rule (dala_efx_arrows_frame, both halves, slot 119;
    log "dalaport: arrows").
-   Render flag this+0xca8 (E): NO EFFECT (C, 2026-10-22): per-class scratch; no 4U base code reads it on an enemy,
-   Capcom's GU twins of other classes write the bit index into this+0xb5f8 (read only by class code; pairs
-   0x6df15c / 0xd008e8, 0x6e07c8 / 0xd0137c, 0x6f0fb0 / 0xd4f440), and Dalamadur's head / tail never test it.
+   Render flag this+0xca8 (E): CORRECTED 2026-11-19. The 2026-10-22 reading ("no effect, no 4U base code reads it")
+   was wrong: the motion-effect component this+0xc78 reads it (+0x30) and posts a MEF record with byte 0 = b only
+   while bit b is set (notes/porting-guide.md "MEF byte 0 gates the post"). Slot 77's table 0x775030 (by motion and
+   highest broken piece) and the attacks' 0x800 / 0x1000 / 0x4000 decide which crag and charge records play:
+   dala_psl.c mask_bits through the core gate module/b0gate.c.
    User (2026-10-22): the heat is around the TORSO (not the head) and only while ENRAGED; core hook on GU 0x6a160
    and head / tail map icons approved; restore 4U's metallic sheen (extend / sphere map) on the body materials.
    Plan "finish regular Dalamadur" (2026-10-22): A head-tail sync (helper), B AI cond 3 / 4, C walkable back, D head

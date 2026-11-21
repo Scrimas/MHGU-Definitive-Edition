@@ -24,6 +24,7 @@
 #include "util.h"
 #include "alloc.h"
 #include "port.h"
+#include "b0gate.h"
 
 enum { R0, R1, R2, R3, R4, R5, R12, LR };
 #define ARG5_AT_SITE (8 + 8)        /* regs[8] = sp[0] at the site; 0x70028 pushed 6 registers and took 8 bytes: its fifth argument is 8 words up */
@@ -56,6 +57,20 @@ static const struct { uint16_t id; int16_t joint, x, z; uint8_t snow; } k_ground
     {2017, 145, 0, 0, 1}, {2018, 145, 0, 0, 1},
 };
 #define N_GROUND (sizeof k_ground / sizeof k_ground[0])
+
+/* 4U's condition bits (MEF byte 0) of her records, for the core PSL gate (module/b0gate.c; C, tools/gate4u.py
+ * tidal_najarala and the 4U code, 2026-11-19). Motion 0x2c posts 407 / 408 (b0 1) and 2012 (b0 2), GU all three
+ * whenever it plays. 4U: 2/1 2/3 2/4 = 0x75e250(r1 0 / 1 / 2), which sets bit 1 on entry (0x75e274); 6/3 6/7 6/9 =
+ * 0x766d08(0 / 1 / 2), bit 2 on entry (0x766d20); 13/1 = 0x76652c case 1, bit 2 on entry (0x766660). GU runs every one
+ * under the same numbers (notes/plan.md "Handlers"). Records 13 / 14 (motion 0x22f, b0 3 / 4) are not listed: no
+ * 4U action was found playing 0x22f. build_em068_01_arc.py asserts s_b0 against her MEFs. */
+static const struct b0rec s_b0[] = { {407, 1}, {408, 1}, {2012, 2} };
+static const struct b0act s_mask[] = {
+    {2, 1, 1}, {2, 3, 1}, {2, 4, 1}, {6, 3, 2}, {6, 7, 2}, {6, 9, 2}, {13, 1, 2},
+};
+const struct b0port em068_01_b0port = {
+    TIDAL_NAJARALA_EM_ID, "tnport", s_b0, sizeof s_b0 / sizeof s_b0[0], s_mask, sizeof s_mask / sizeof s_mask[0], 0,
+};
 
 static uint32_t ground_flags(void *self, const uint8_t *rec)
 {

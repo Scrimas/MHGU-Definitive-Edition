@@ -23,6 +23,8 @@
 #include "util.h"
 #include "em089_efx.h"
 #include "em089_shell016.h"   /* em089_shell016_fx hook (set by em089_efx_init) */
+#include "alloc.h"
+#include "b0gate.h"
 
 typedef void *(*efx_post_t)(void *self, uint32_t mode, uint32_t id, void *req);
 #define efx_post_u   FN(efx_post_t, 0x6ff74)     /* PEL u (this+0xb624), returns uMHProofEffect* or 0 */
@@ -201,6 +203,31 @@ void *em089_psl_post(void *self, uint32_t list, const uint8_t *data, uint32_t sl
     }
     return pslPostBase(self, list, data, slot, req);
 }
+
+/* 4U's condition bits (MEF byte 0) of his records, for the core PSL gate (module/b0gate.c, inside pslPostBase; C,
+ * tools/gate4u.py gogmazios and the 4U code, 2026-11-19). The handlers of the tail sweeps 7/19 7/20 (0x8bbaf8,
+ * motions 0x23c / 0x23d) and of 7/133 (0x8c0090, 0x26a) set bit 2 every frame when the tail is severed
+ * (0x91a884(this, 1) = W+0x42c & 1, GU rec+0x3b4 & 1), else bit 1; the death 11/0 (motion 0x30d) sets bit 3 in flying
+ * mode (0x8b6da4, W+0x1c9 == 1 = GU rec+0x1bb), else only bit 0 (0x8b6ac8, also every other 11/n). Their ports in
+ * em089_act.c / em089_react.c leave the mask out; this answers it from the same tests. tools/build_em089_arc.py
+ * asserts s_b0 against his MEF. */
+#define REC_DETACHED 0x3b4      /* u16 detached-part bits (4U W+0x42c), em089_break.h BRK_REC_DETACHED */
+static const struct b0rec s_b0[] = {
+    {26, 1}, {27, 1}, {34, 1}, {35, 1}, {36, 1}, {37, 2}, {38, 2}, {39, 2}, {54, 1}, {55, 2}, {56, 2}, {60, 1},
+    {61, 1}, {62, 1}, {63, 2}, {69, 3}, {70, 3},
+};
+
+static uint32_t mask_bits(const void *self)
+{
+    const uint8_t *rec = FIELD(const uint8_t *, self, EN_RECORD);
+    uint8_t cat = FIELD(uint8_t, self, EN_ACT_CAT), num = FIELD(uint8_t, self, EN_ACT_NUM);
+    if (cat == 7 && (num == 19 || num == 20 || num == 133))
+        return FIELD(uint16_t, rec, REC_DETACHED) & 1 ? 1u << 2 : 1u << 1;
+    if (cat == 11 && num == 0 && FIELD(uint8_t, rec, REC_MODE) == 1) return 1u << 3;
+    return 0;
+}
+
+const struct b0port em089_b0port = { GOGMAZIOS_EM_ID, "gogport", s_b0, sizeof s_b0 / sizeof s_b0[0], 0, 0, mask_bits };
 
 void em089_efx_kill(void *eff)
 {

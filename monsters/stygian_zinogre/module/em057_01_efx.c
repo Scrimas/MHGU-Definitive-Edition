@@ -299,16 +299,19 @@ typedef float (*groundRay_t)(void *mgr, const float *from, const float *to, uint
 #define COLL_MGR     (*(void **)MAIN(0x21270e0)) /* its manager [*0x10574fc] */
 #define REC_GROUND_Y 0x5b4
 
-/* MEF byte 0 of Stygian's own records (4U em049_1, = build_em057_01_arc.py MEF_B0; C): 4U's motion-effect queue
+/* MEF byte 0 of Stygian's records (4U em048_0 + em049_1, = build_em057_01_arc.py MEF_B0; C): 4U's motion-effect queue
  * 0x391a60 posts a record with b0 != 0 only when bit b0 of its unit's mask (enemy: this+0xca8, the bits its action
  * handlers set every frame, cleared after the frame's posts 0x393524) is set; the 1000-range records have b0 0. GU
  * keeps that per-action state as one number, EN_MOVECLASS (bit k -> k, cleared every frame 0x6f5a4), set by the
  * twins of every 4U handler that sets a bit (2026-11-19: 4U uEm048 bits 1-7 / 9 in 23 handlers; GU's kept ones store
  * the same numbers, e.g. 7/109 efbb04 = 4U 0x84f138: 1 while charged; the ported ones in em057_01_mv_*.c), but its PSL /
  * PEL carry no such condition, so the PSL hook applies 4U's rule (issue #8: the uncharged tail swipe 7/109 posted
- * the charged bolts 3030, the back slam 0x227 both 3000 (b0 6, uncharged) and 3001 (b0 7, charged)). */
+ * the charged bolts 3030, the back slam 0x227 both 3000 (b0 6, uncharged) and 3001 (b0 7, charged)). Zinogre's roar
+ * records 42 / 43 (em048_0, motion 0x314, b0 5): 4U 0x847274(k) sets bit 5 for k = 0, 2-5 (1/9 1/38, 1/37, 1/39 1/42
+ * 1/43), not for k = 1 (1/34), and 1/2 (0x852fd8) plays 0x314 with no mask (tools/gate4u.py); GU ef45e0 stores 5 for
+ * r1 0 / 2 only (1/34 = r1 1), its 1/2 (ef51a8) none, and em057_01_mv_f.c 5 for 1/39 1/42 1/43 (C). */
 static const uint16_t s_mef_b0[][2] = {
-    {3000, 6}, {3001, 7}, {3019, 2}, {3020, 3}, {3021, 3}, {3022, 3}, {3023, 4}, {3027, 4}, {3028, 4},
+    {42, 5}, {43, 5}, {3000, 6}, {3001, 7}, {3019, 2}, {3020, 3}, {3021, 3}, {3022, 3}, {3023, 4}, {3027, 4}, {3028, 4},
     {3029, 1}, {3030, 1}, {3031, 1}, {3033, 1}, {3040, 9}, {3041, 9},
 };
 

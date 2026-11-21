@@ -676,6 +676,11 @@ def effects(S, gu_pel_u, gu_pel_c, gu_psls, notes):
     notes). Effects of 4U's ground flag: the list of what remains after GU's common effects is logged, notes/plan.md "Ground"."""
     groups = {96: EFL96}
     groups.update({g: 'effect\\efl\\qe\\qe%03d\\qe%03d_%%03d' % (g, g) for g in (0, 3, 6, 8, 13)})
+    # the 4U condition bits (MEF byte 0) that module/em070_01_fx.c s_b0 gives the core PSL gate (module/b0gate.c)
+    b0 = {r['id']: r['b0'] for r in efl4u2gu.mef_records(S[(MEF, efl4u2gu.T['MEF'])])}
+    src = open(os.path.join(MON, 'module', 'em070_01_fx.c'), encoding='utf-8').read()
+    rows = re.findall(r'\{(\d+), (\d+)\}', re.search(r's_b0\[\] = \{(.*?)\};', src, re.S).group(1))
+    assert rows and all(b0.get(int(i)) == int(b) for i, b in rows), 'module/em070_01_fx.c s_b0 differs from her MEF'
     spec = dict(arc=SRC_4U, stage_unpacked=[], mef=MEF, em_efl='effect\\efl\\em\\em096\\', groups=groups, extra=[],
                 lmts=[(P4 + 'mot\\em096_%d' % b, PSL % b) for b in BANKS], pel=PEL_U, soil=dunes_soil(notes),
                 list2=shell_list2(efl4u2gu.pel_lists(gu_pel_u)[2]), solid_fill=SOLID_FILL, intensity=True, intensity_skip=DUST_1X,

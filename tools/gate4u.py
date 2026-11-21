@@ -18,7 +18,8 @@ pointer), gets no verdict. `python3 tools/gate4u.py all > dump/gate4u/report.txt
 
 How (static, C): each action is the class's vtable slot 44 dispatcher read with the work bytes +0x1ca / +0x1cb
 (category / number) known, every category 0..15 and number 0..255, by a forward dataflow pass from r0 = this:
-constants, this / W = [this+0xe28] / the em byte W+0x1c0, the flags of compares on known values (so variant and
+constants, this / W = [this+0xe28] / the em byte W+0x1c0 (also through a pointer this+k: `add r5, r4, #3072; add r5,
+r5, #552; ldr r0, [r5]`, the Desert Seltas Queen's 1/31), the flags of compares on known values (so variant and
 species tests resolve), jump tables (`cmp; ldrlo pc` / `add pc`), and the bits of `ldr [this, #0xca8]; orr ...;
 str [this, #0xca8]` (must = every path, may = some). Direct calls with r0 = this are followed 5 levels deep with
 their r1 / r2 when constant or this (a callee's summary joins its caller's paths); motions are the constant r1 of
@@ -120,6 +121,11 @@ def join(s, t):
     regs = {r: v for r in s.regs if r in t.regs for v in [join_val(s.regs[r], t.regs[r])] if v is not None}
     return St(regs, tuple(a if a == b else None for a, b in zip(s.flags, t.flags)), s.must & t.must, s.may | t.may,
               s.mot | t.mot, s.notes | t.notes)
+
+
+def this_off(base, off):
+    """(base, offset) of a memory operand, a pointer this+k (('p', k)) read as this with offset k + off"""
+    return ('this', base[1] + off) if isinstance(base, tuple) and base[0] == 'p' else (base, off)
 
 
 def val(s, x):
@@ -272,7 +278,7 @@ class Ana:
             if base in ('ldr', 'ldrb') and len(ops) == 2:
                 mem = MEM.match(o)
                 if mem and mem.group(1) in REGS:
-                    rb, off = t.regs.get(mem.group(2)), int(mem.group(3) or '0', 0)
+                    rb, off = this_off(t.regs.get(mem.group(2)), int(mem.group(3) or '0', 0))
                     v = None
                     if rb == 'this' and off == 0xca8 and base == 'ldr': v = ('m', 0, 0)
                     elif rb == 'this' and off == 0xe28 and base == 'ldr': v = 'W'
@@ -285,9 +291,11 @@ class Ana:
                     return None
             if base == 'str' and len(ops) == 2:
                 mem = MEM.match(o)
-                if mem and int(mem.group(3) or '0', 0) == 0xca8 and mem.group(2) != 'sp':
+                rb, off = this_off(t.regs.get(mem.group(2)), int(mem.group(3) or '0', 0)) if mem else (None, 0)
+                if mem and (int(mem.group(3) or '0', 0) == 0xca8 or rb == 'this' and off == 0xca8) \
+                        and mem.group(2) != 'sp':
                     self.seen.add(a)
-                    if t.regs.get(mem.group(2)) == 'this':
+                    if rb == 'this' and off == 0xca8:
                         v = t.regs.get(mem.group(1))
                         if isinstance(v, tuple) and v[0] == 'm': t.must, t.may = t.must | v[1], t.may | v[2]
                         elif isinstance(v, tuple) and v[0] == 'c': t.must, t.may = t.must | v[1], t.may | v[1]
@@ -311,6 +319,10 @@ class Ana:
                         v = ('m', x[1] | k, x[2] | k) if base == 'orr' else ('m', x[1] & ~k, x[2] & ~k)
                     elif base == 'orr':
                         v = ('m', x[1], ALL)
+                elif base in ('add', 'sub') and (x == 'this' or isinstance(x, tuple) and x[0] == 'p') \
+                        and isinstance(y, tuple) and y[0] == 'c':
+                    k = this_off(x, 0)[1]                 # `add r5, r4, #3072; add r5, r5, #552`: this+0xe28
+                    v = ('p', k + y[1] if base == 'add' else k - y[1])
                 elif isinstance(x, tuple) and x[0] == 'c' and isinstance(y, tuple) and y[0] == 'c':
                     p, q = x[1], y[1]
                     v = ('c', {'orr': p | q, 'and': p & q, 'bic': p & ~q, 'eor': p ^ q, 'add': p + q, 'sub': p - q,

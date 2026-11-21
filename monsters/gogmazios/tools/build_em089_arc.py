@@ -562,6 +562,12 @@ def main():
         assert not any((p, t) in have for p, t, _ in efx_entries), 'effect paths clash'
         entries += efx_entries
         notes.append('effects: %d entries (tools/efl4u2gu.py); %d log lines' % (len(efx_entries), len(efx_log)))
+        # the 4U condition bits (MEF byte 0) that module/em089_efx.c s_b0 gives the core PSL gate (module/b0gate.c)
+        mef = efl4u2gu.sources()[(efl4u2gu.MEF_PATH, efl4u2gu.T['MEF'])]
+        b0 = {r['id']: r['b0'] for r in efl4u2gu.mef_records(mef)}
+        fx_c = open(os.path.join(MON, 'module', 'em089_efx.c'), encoding='utf-8').read()
+        rows = re.findall(r'\{(\d+), (\d+)\}', re.search(r's_b0\[\] = \{(.*?)\};', fx_c, re.S).group(1))
+        assert rows and all(b0.get(int(i)) == int(b) for i, b in rows), 'module/em089_efx.c s_b0 differs from his MEF'
 
     # ---- manifest + file IDs
     new_files = []                       # (fid, path, type)

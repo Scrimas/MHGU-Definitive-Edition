@@ -37,11 +37,10 @@ static void look_setup(void *self, uint32_t set) { dala_look_setup(self, set); }
 static void look_point(void *self) { dala_look_point(self); }
 static void look_mode(void *self) { dala_look_mode(self, 3); }
 
-/* 4U this+0xca8 |= bits every frame before the step switch (0x800 / 0x1000 / 0x4000). No effect (C, 2026-10-22): the
- * word is per-class scratch: no 4U base code reads it on an enemy, other 4U classes keep their own values in it
- * (GU's Capcom twins write the bit index into this+0xb5f8 instead, read only by class code: pairs 0x6df15c / 0xd008e8,
- * 0x6e07c8 / 0xd0137c, 0x6f0fb0 / 0xd4f440), and Dalamadur's class never tests it (head / tail ranges scanned). */
-static void render_flag(void *self, uint32_t bits) { (void)self; (void)bits; }
+/* 4U this+0xca8 |= bits every frame before the step switch (0x800 / 0x1000 / 0x4000). The 2026-10-22 reading ("no
+ * effect, nothing reads it") was wrong: the motion-effect component reads the word (MEF byte 0, notes/porting-guide.md
+ * "MEF byte 0 gates the post"), so Shah's two sets of each attack's effects follow these bits (dala_psl.c). */
+static void render_flag(void *self, uint32_t bits) { dala_b0_flag(self, bits); }
 
 /* 4U 0x77250c(this, kind, lim, ang, flag): the fireball uShell001 of kind (24 / 25 Dalamadur, 88 / 89 Shah) from the
  * joint 5 matrix toward target slot 0 W+0x218 (direction clamped by lim / ang, spawn data 0x773e00), posted through

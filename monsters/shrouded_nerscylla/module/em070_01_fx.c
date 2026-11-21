@@ -11,6 +11,7 @@
 #include "util.h"
 #include "alloc.h"
 #include "port.h"
+#include "b0gate.h"
 
 enum { R0, R1, R2, R3, R4, R5, R12, LR };
 #define ARG5_AT_SITE (8 + 8)        /* regs[8] = sp[0] at the site; 0x70028 pushed 6 registers and took 8 bytes: its fifth argument is 8 words up */
@@ -37,6 +38,37 @@ static const struct { uint16_t id; int16_t joint, z; } k_ground[] = {
     {50, 0, 0}, {500, 0, 240}, {501, 0, 0}, {503, -1, 100}, {504, 0, 0},
 };
 #define N_GROUND (sizeof k_ground / sizeof k_ground[0])
+
+/* 4U's condition bits (MEF byte 0) of her records, for the core PSL gate (module/b0gate.c; C, tools/gate4u.py
+ * shrouded_nerscylla and the 4U code, 2026-11-19). Three 4U handlers each play one motion and pick its records' bit:
+ * 0x7a1520(k) (motion 0x239: 4 b0 1, 5 b0 2, 54 b0 12) = 7/5 (k 0), 7/33 (1); 0x7a18f8(k) (0x21e: 30 31 b0 1, 32 51
+ * b0 2, 52 53 b0 12) = 7/6 (0), 7/8 (1), 7/31 (2); 0x7a3880(k) (0x239) = 7/52 (0), 7/53 (1). Each sets bit 2 for its
+ * last k, and otherwise bit 12 when the quest rank 0x69ae70(*0xfbeffc) is >= 5 (G), else bit 1, on every frame. GU runs
+ * them under the same numbers with the same k (fa8670 fa8a9c faab60), and plays all of a motion's records. Record 35
+ * (b0 4, motions 0x207 0x20a 0x255): 4U's 7/30 (0x7a29e4) sets bit 6 (rank >= 2) or 3, never 4; 7/2 / 7/63 reach
+ * 0x7a7ae4, which sets 4 when the hit flag W+0x53a is set (0x93731c), a field GU does not keep (em057_01_ai.c): there
+ * it stays as GU plays it. Her other b0 records are left as GU plays them (bits set under conditions not resolved here,
+ * or outside her actions). build_em070_01_arc.py asserts s_b0 against her MEF. */
+typedef uint32_t (*quest_rank_t)(void *mgr);
+#define questRank    FN(quest_rank_t, 0x3a8d68)     /* [0x69ae70(*0xfbeffc)]: rank tier 1 / 3 / 5 (G) */
+#define QUEST_MGR    (*(void **)MAIN(0x188ad90))
+
+static const struct b0rec s_b0[] = {
+    {4, 1}, {5, 2}, {30, 1}, {31, 1}, {32, 2}, {35, 4}, {51, 2}, {52, 12}, {53, 12}, {54, 12},
+};
+static const struct b0act s_mask[] = { {7, 31, 2}, {7, 33, 2}, {7, 53, 2}, {7, 2, 4}, {7, 63, 4} };
+
+static uint32_t rank_bits(const void *self)
+{
+    uint8_t num = FIELD(uint8_t, self, EN_ACT_NUM);
+    if (FIELD(uint8_t, self, EN_ACT_CAT) != 7 || (num != 5 && num != 6 && num != 8 && num != 52)) return 0;
+    return questRank(QUEST_MGR) >= 5 ? 1u << 12 : 1u << 1;
+}
+
+const struct b0port em070_01_b0port = {
+    SHROUDED_NERSCYLLA_EM_ID, "snport", s_b0, sizeof s_b0 / sizeof s_b0[0], s_mask, sizeof s_mask / sizeof s_mask[0],
+    rank_bits,
+};
 
 static uint32_t ground_flags(void *self, const uint8_t *rec)
 {

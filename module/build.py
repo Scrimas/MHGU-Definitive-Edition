@@ -180,8 +180,9 @@ HOOKS = [
                                    # em041_101 (monsters/black_gravios/module/em005_01_laser.c)
     ('em005_01_act', 0xD31128),    # uEm004_00 slot 125 action dispatcher: Black Gravios (variant 1) action / motion
                                    # log (monsters/black_gravios/module/em005_01_diag.c)
-    ('em005_01_pslgate', 0x70050), # uFestaEnemy slot 75 PSL post, after its request setup: Black Gravios' 4U effect
-                                   # records only under their 4U condition bit (monsters/black_gravios/module/em005_01_fx.c)
+    ('b0gate', 0x70050),           # uFestaEnemy slot 75 PSL post, after its request setup: the ports' 4U effect
+                                   # records only under their 4U condition bit (module/b0gate.c: Black Gravios, Tidal
+                                   # Najarala, Shrouded Nerscylla, the Desert Seltas Queen)
     ('em005_01_objlog', 0x3A7ED8), # quest tally 0x3a75c8 after its objective loop: Black Gravios' objectives (log;
                                    # em005_01_diag.c)
     ('em005_01_eat_pre', 0xD27D58),   # uEm004_00 1/18 (d27c8c) around its 0x9cf7c(this, 1) call: Black Gravios'
@@ -272,7 +273,7 @@ MID_EXIT = {
     'tex_bind': 0xA4FB34,        # pop {r4, pc}: the bind is skipped, the sprite keeps its texture
     'notes_new_clear': 0x5B0AF4, # cmp r5, #7: the NEW mark of an entry past the save map is not written
     'notes_em_unlocked': 0x524794,  # bx lr: returns the r0 notes_em_unlocked_c wrote
-    'em005_01_pslgate': 0x7016C, # mov r0, #0; return: the PSL slot posts nothing (GU's own no-post path)
+    'b0gate': 0x7016C,           # mov r0, #0; return: the PSL slot posts nothing (GU's own no-post path)
     'em005_01_laser': 0xD2DFE8,  # b 0xd2e03c: GU's laser shell not posted (4U's capsule instead, em005_01_shell016.c)
     'intruder_came': 0x3A1814,   # ldrb r0, [r8, #0x55]: GU's intruder count skipped, the second intruder armed
     # seltas_shots.c: past GU's variant test (`cmp r0, #0; bne` skip) to its post, for the Desert Seltas / Queen
@@ -730,7 +731,7 @@ def main():
     incs = ['-I', OUT, '-I', HERE] + [a for d in mods for a in ('-I', d)]
     srcs = [os.path.join(HERE, f) for f in ('crt0.S', 'main.c', 'util.c', 'port.c', 'quest.c', 'items.c', 'gear.c',
                                             'notes.c', 'stage_alias.c', 'bgm.c', 'icons.c', 'save.c',
-                                            'modsave.c', 'savefile.c')]
+                                            'modsave.c', 'savefile.c', 'b0gate.c')]
     for d in mods:                                     # every registered monster's code, registry order
         srcs += sorted(glob.glob(os.path.join(d, '*.c')))
     srcs += [os.path.join(OUT, 'port_monsters.c'), os.path.join(OUT, 'tables.S')]

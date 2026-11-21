@@ -756,6 +756,11 @@ def effects(S, gu_pel_u, gu_pel_c, gu_psls, notes):
     groups = {93: 'effect\\efl\\em\\em093\\em093_%03d'}
     groups.update({g: 'effect\\efl\\qe\\qe%03d\\qe%03d_%%03d' % (g, g) for g in (0, 6, 8, 13)})
     own = efl4u2gu.mef_records(S[(MEFS[1], efl4u2gu.T['MEF'])])
+    # the 4U condition bits (MEF byte 0) that module/em068_01_fx.c s_b0 gives the core PSL gate (module/b0gate.c)
+    b0 = {r['id']: r['b0'] for r in efl4u2gu.mef_records(S[(MEFS[0], efl4u2gu.T['MEF'])]) + own}
+    src = open(os.path.join(ROOT, 'monsters', 'tidal_najarala', 'module', 'em068_01_fx.c'), encoding='utf-8').read()
+    rows = re.findall(r'\{(\d+), (\d+)\}', re.search(r's_b0\[\] = \{(.*?)\};', src, re.S).group(1))
+    assert rows and all(b0.get(int(i)) == int(b) for i, b in rows), 'module/em068_01_fx.c s_b0 differs from her MEFs'
     code, base = code_4u()
     extra2 = []
     for (rid, name, follow), elem in zip(JET_FX, (12, 13)):

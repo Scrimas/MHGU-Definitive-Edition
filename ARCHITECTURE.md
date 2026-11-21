@@ -53,6 +53,7 @@ module/               Core C module (the shared engine of the port):
                           reference, installer/core/src/modsave.rs the installer's copy, tools/test_modsave.py
                           compares the three)
   stage_alias.c           maps 4U stages onto GU stage slots (port_stages: one per map package with a [stage])
+  b0gate.c b0gate.h       4U's condition bit (MEF byte 0) of the ports' motion effects, by their per-port tables
   game.h util.c util.h    GU structures and helpers
   core.toml               core version and build config
   build.py                builds subsdk1 + IPS; `build.py install` installs into the Ryujinx mod folder

@@ -15,6 +15,7 @@
 #include "util.h"
 #include "alloc.h"
 #include "port.h"
+#include "b0gate.h"
 
 enum { R0, R1, R2, R3, R4, R5, R12, LR };
 #define ARG5_AT_SITE (8 + 8)        /* regs[8] = sp[0] at the site; 0x70028 pushed 6 registers and took 8 bytes: its fifth argument is 8 words up */
@@ -53,6 +54,18 @@ static const struct ground k_ground_em069_01[] = {
     {528, 144, 0, -400}, {534, 1, 0, 0},
 };
 #define N_OF(t) (sizeof (t) / sizeof (t)[0])
+
+/* the Queen's 4U condition bits (MEF byte 0), for the core PSL gate (module/b0gate.c; C, tools/gate4u.py
+ * desert_seltas_queen and the 4U code, 2026-11-19): motion 0x477 posts 27 / 28 (b0 10). 4U sets bit 10 only in 1/31
+ * (0x78d368, em 95, from step 1; 0x477 is her motion there), not in 7/72 (0x794358: motion 0x465 then 0x477, bit 11
+ * only) or 7/80 (0x794540: 0x477, no bit), where GU plays them too. GU runs these under 4U's numbers (notes/plan.md,
+ * "Action closure"). Her other b0 records stay as GU plays them (bits set under conditions not resolved here, or
+ * outside her actions). tools/build_seltas_arc.py asserts s_b0_em069_01 against her MEF. */
+static const struct b0rec s_b0_em069_01[] = { {27, 10}, {28, 10} };
+static const struct b0act s_mask_em069_01[] = { {1, 31, 10} };
+const struct b0port em069_01_b0port = {
+    DESERT_SELTAS_QUEEN_EM_ID, "dsport", s_b0_em069_01, N_OF(s_b0_em069_01), s_mask_em069_01, N_OF(s_mask_em069_01), 0,
+};
 
 /* 4U's ground kind rule on the word under them -> the set of elements to draw ((2 << kind) | 1) */
 static uint32_t ground_flags(void *self, const uint8_t *rec)

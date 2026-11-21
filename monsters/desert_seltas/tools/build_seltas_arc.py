@@ -517,6 +517,13 @@ def pel_ground_records(e, pel, S, notes):
     want = [(r['id'], r['joint'], round(r['pos'][0]), round(r['pos'][2])) for r in ground]
     assert ground_rows(e) == want, ('k_ground_%s (module/seltas_fx.c) differs from the MEF records' % e.c['ours'], want)
     by = {r['id']: r for r in mef}
+    # the 4U condition bits (MEF byte 0) that module/seltas_fx.c gives the core PSL gate (module/b0gate.c), the Queen's
+    src = open(os.path.join(MON, 'module', 'seltas_fx.c'), encoding='utf-8').read()
+    tb = re.search(r's_b0_%s\[\] = \{(.*?)\};' % e.c['ours'], src, re.S)
+    if tb:
+        rows = re.findall(r'\{(\d+), (\d+)\}', tb.group(1))
+        assert rows and all(int(i) in by and by[int(i)]['b0'] == int(b) for i, b in rows), \
+            's_b0_%s (module/seltas_fx.c) differs from the MEF' % e.c['ours']
     lists = efl4u2gu.pel_lists(pel)
     n, body = lists[1]
     out, i, placed, ends = bytearray(), 0, set(), 0

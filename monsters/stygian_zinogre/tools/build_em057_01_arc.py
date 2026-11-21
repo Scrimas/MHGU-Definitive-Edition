@@ -232,10 +232,10 @@ SHELL_FX = [   # (id, 4U group, element, k, joint, follow, 4U post)
 # follow records posted once with no handle (4U 0x856f0c keeps none): GU's one-shot follow tail (efl4u2gu pel_record
 # once = GU's own charge-change records 90 / 120); the looping tail replayed the discharge every 1-2 s (issue #8 test)
 SHELL_FX_ONCE = (3202, 3205)
-# MEF byte 0 of em049_1's records = em057_01_efx.c s_mef_b0 (4U posts a b0 record only while bit b0 of this+0xca8 is
-# set; GU twin EN_MOVECLASS); asserted against the 4U MEF
-MEF_B0 = {3000: 6, 3001: 7, 3019: 2, 3020: 3, 3021: 3, 3022: 3, 3023: 4, 3027: 4, 3028: 4, 3029: 1, 3030: 1, 3031: 1,
-          3033: 1, 3040: 9, 3041: 9}
+# MEF byte 0 of em048_0's and em049_1's records = em057_01_efx.c s_mef_b0 (4U posts a b0 record only while bit b0 of
+# this+0xca8 is set; GU twin EN_MOVECLASS); asserted against the 4U MEFs
+MEF_B0 = {42: 5, 43: 5, 3000: 6, 3001: 7, 3019: 2, 3020: 3, 3021: 3, 3022: 3, 3023: 4, 3027: 4, 3028: 4, 3029: 1,
+          3030: 1, 3031: 1, 3033: 1, 3040: 9, 3041: 9}
 # em049_018's two joint -1 ground records follow him (GU's previous tail), as shipped through 1.0.5: they took it from
 # Gogmazios' id rule (efl4u2gu pel_follows, em089's ids 3000 / 3001) until 2026-11-19. S: 4U 0xc4838c updates every
 # effect whose +0x274 flags are set (the ground flag) from its owner each frame, so they move with him there too.
@@ -488,8 +488,9 @@ def effects(S, gu_pel_u, code, notes):
     groups.update({g: 'effect\\efl\\qe\\qe%03d\\qe%03d_%%03d' % (g, g) for g in (0, 6, 8, 13)})
     own = efl4u2gu.mef_records(S[('effect\\mef\\em\\em049_1', efl4u2gu.T['MEF'])])
     assert all(r['grp'] == 49 for r in own), 'em049_1 names another EFL group'
-    assert {r['id']: r['b0'] for r in own if r['b0']} == MEF_B0, 'em049_1 b0 bytes: update em057_01_efx.c s_mef_b0'
     shared = efl4u2gu.mef_records(S[('effect\\mef\\em\\em048_0', efl4u2gu.T['MEF'])])
+    assert {r['id']: r['b0'] for r in shared + own if r['b0']} == MEF_B0, \
+        'em048_0 / em049_1 b0 bytes: update em057_01_efx.c s_mef_b0'
     gj = {r['id']: (r['joint'], r['pos'], r['rot'], r['flags']) for r in shared + own
           if r['joint'] >= 0 and r['flags'] & 6 == 6}
     assert gj == GROUND_JOINT, ('ground records on a joint: update em057_01_efx.c k_gjoint', gj)

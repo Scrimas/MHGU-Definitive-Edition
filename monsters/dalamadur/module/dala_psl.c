@@ -24,6 +24,7 @@
 #include "game.h"
 #include "util.h"
 #include "em090.h"
+#include "b0gate.h"
 
 typedef void *(*psl_post_t)(void *self, uint32_t list, const uint8_t *data, uint32_t slot, void *req);
 #define pslPostBase FN(psl_post_t, 0x70028)
@@ -148,6 +149,59 @@ static uint32_t fx_sig(void *eff)
     return 0x80000000u | (uint32_t)alive(eff) << 24 | (uint32_t)e[0x30] << 16 | (uint32_t)e[0x198] << 8 |
            (uint32_t)e[0x199] << 4 | e[0x19a];
 }
+
+/* 4U's condition bits (MEF byte 0) of the head's records, for the core PSL gate (module/b0gate.c, inside
+ * pslPostBase; C, tools/gate4u.py and the 4U code, 2026-11-19). The head's slot 77 (0x774aa8, every frame) stores the
+ * whole mask word from table 0x775030 when the current motion has a row there (k_mask77: column = 0x7731a4, the
+ * highest broken arena piece = dala_broken), and keeps it otherwise; the actions 7.20 7.22 7.40 7.42 OR their bits
+ * (0x800 / 0x1000 / 0x4000) every frame before their step switch (em090_act7.c render_flag -> dala_b0_flag). No other
+ * 4U code writes the head's word (every store to +0xca8 read: the head's five, the tail's own one), the component
+ * clears it after the frame's posts (0x393524), and the tail (em083.arc) has no effects. So the crag records on
+ * motions without a row (0x234, 0x23f) never post in 4U, nor the other set of a charged attack. Deviation kept: 7.40
+ * sets 0x4000 or 0x800 by a ground probe that is not mapped (0x2b9fa8), here both, as GU plays them.
+ * tools/build_dalamadur_arc.py asserts s_b0_* against the MEFs and k_mask77 against 4U's table. */
+static const struct b0rec s_b0_em090_00[] = {
+    {2000, 1}, {2003, 2}, {2004, 3}, {2005, 4}, {2006, 5}, {2009, 6}, {2015, 7}, {2016, 8}, {2018, 9}, {2023, 10},
+};
+static const struct b0rec s_b0_em090_01[] = {
+    {15, 12}, {16, 12}, {17, 12}, {18, 12}, {19, 12}, {2000, 1}, {2003, 2}, {2004, 3}, {2005, 4}, {2006, 5}, {2009, 6},
+    {2015, 7}, {2016, 8}, {2018, 9}, {2023, 10}, {2501, 11}, {2502, 11}, {2503, 11}, {2504, 14}, {2505, 11}, {2506, 11},
+    {2507, 11}, {2508, 11}, {2611, 12}, {2612, 12},
+};
+static const struct { uint16_t motion, mask[4]; } k_mask77[] = {
+    {0x3d, {0x7ff, 0x7ff, 0x7ff, 0x7ff}}, {0x3e, {0x7ff, 0x7d9, 0x7d9, 0x7d9}}, {0x3f, {0x7ff, 0x7ff, 0x7ff, 0x3ab}},
+    {0x40, {0x7ff, 0x6fd, 0x6fd, 0x661}}, {0x41, {0x7ff, 0x7ff, 0x7ff, 0x7ff}}, {0x42, {0x7ff, 0x7ff, 0x5ff, 0x5ff}},
+};
+static struct { const void *self; uint8_t cat, num; uint32_t bits; } s_flag;   /* the last action's own bits */
+
+void dala_b0_flag(void *self, uint32_t bits)
+{
+    s_flag.self = self;
+    s_flag.cat = FIELD(uint8_t, self, EN_ACT_CAT);
+    s_flag.num = FIELD(uint8_t, self, EN_ACT_NUM);
+    s_flag.bits = bits;
+}
+
+static uint32_t mask_bits(const void *self)
+{
+    uint32_t mot = curMotion((void *)self), m = 0;
+    if (s_flag.self == self && s_flag.cat == FIELD(uint8_t, self, EN_ACT_CAT) &&
+        s_flag.num == FIELD(uint8_t, self, EN_ACT_NUM))
+        m = s_flag.bits;
+    for (uint32_t i = 0; i < sizeof k_mask77 / sizeof k_mask77[0]; i++)
+        if (k_mask77[i].motion == mot) {
+            int b = dala_broken((void *)self);
+            return k_mask77[i].mask[b >= 1 && b <= 3 ? b : 0];
+        }
+    return m;
+}
+
+const struct b0port em090_00_b0port = {
+    DALAMADUR_EM_ID, "dalaport", s_b0_em090_00, sizeof s_b0_em090_00 / sizeof s_b0_em090_00[0], 0, 0, mask_bits,
+};
+const struct b0port em090_01_b0port = {
+    SHAH_DALAMADUR_EM_ID, "dalaport", s_b0_em090_01, sizeof s_b0_em090_01 / sizeof s_b0_em090_01[0], 0, 0, mask_bits,
+};
 
 void *dala_psl_post(void *self, uint32_t list, const uint8_t *data, uint32_t slot, void *req)
 {
