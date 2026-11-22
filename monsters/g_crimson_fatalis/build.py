@@ -20,7 +20,7 @@ from steps import DUMP, py, armor, weapon, main
 
 T = os.path.join(MON, 'tools')
 ROMFS = os.path.join(MON, 'romfs')
-# Wroth 410 / 411 (tools/gear_em013_06.py; GX Fatalis Crimson's 507 / 508 are GU's own arcs)
+# Wroth 410 / 411 (tools/gear_em013_06.py)
 ARMOR = (410, 411)
 # class, 4U arc prefix, model (tools/gear_weapons_em013_06.py). No sound arcs: each 4U arc holds a sound set GU ships
 # (checked there)
@@ -35,7 +35,7 @@ def dt():     # dtbase / dttune of 4U em078 and em117 on GU em013_01 (tools/dt_c
 
 def weapons():
     for c, pf, m in WEAPONS:
-        yield weapon(ROMFS, int(c), pf + m, m, '--alpha-test-4u', '--anim-4u', '--shield-bone0')
+        yield weapon(ROMFS, int(c), pf + m, m, '--alpha-test-4u', '--anim-4u', '--shield-bone0', '--opaque-4u')
 
 
 STEPS = [
@@ -44,13 +44,12 @@ STEPS = [
     ('arc', 'monster arc (carves, shell family) + manifest + FILE', lambda: [py(os.path.join(T, 'build_em013_06_arc.py'))]),
     ('name', 'NAME ("Crimson Fatalis (4U)", GU\'s words, 5 languages)',
      lambda: [py(os.path.join(T, 'name_em013_06.py'))]),
-    ('items', 'TBLA + TXTA (Crimson Fatalis Ticket) + BUI4',
-     lambda: [py(os.path.join(T, 'items_em013_06.py'))]),
-    ('gear', 'armor records (Wroth, GX Fatalis Crimson)', lambda: [py(os.path.join(T, 'gear_em013_06.py'))]),
+    ('items', 'BUI4 (break rewards)', lambda: [py(os.path.join(T, 'items_em013_06.py'))]),
+    ('gear', 'armor records (Wroth)', lambda: [py(os.path.join(T, 'gear_em013_06.py'))]),
     ('armor', 'armor model arcs (Wroth, 20)', lambda: armor(ROMFS, ARMOR)),
     ('weapons', 'weapon model arcs (8)', weapons),
     ('gearw', 'weapon table records (8 one-weapon lines)', lambda: [py(os.path.join(T, 'gear_weapons_em013_06.py'))]),
-    ('quest', '11498 11499 11400 (4U m11036 m60249 m60215)',
+    ('quest', '11498 11499 11497 (4U m11036 m60249 m60215)',
      lambda: [py(os.path.join(T, 'build_em013_06_quest.py'), flags=('-I', '-B'))]),
     ('pack', 'gen/*.sec -> gen/g_crimson_fatalis.bin', lambda: [py('tools/portdata.py', 'pack', 'g_crimson_fatalis')]),
 ]

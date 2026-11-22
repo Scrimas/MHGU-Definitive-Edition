@@ -43,7 +43,7 @@ from gear4u import EXE, EXE_BASE, RomFS, gu_arc, cnt
 # GU table classes (main offsets: element alloc / free / ctor / parse, in-memory element size; module/gear.c)
 CLS_DECO = (0x184140, 0x18417c, 0x1841a8, 0x184484, 12)
 CLS_DECO_CREATE = (0x4aacd4, 0x4aad10, 0x4aad3c, 0x4ab294, 20)
-# the Arcana tree and Enlightened Blade: tools/gear4u.py arcana (shared with G-rank Crimson Fatalis' GX set)
+# the Arcana tree and Enlightened Blade: tools/gear4u.py arcana (any package whose gear has Arcana ships the same)
 SERIES_FIRST, TREE_ID, ARCANA_4U = 1287, gear4u.ARCANA_TREE, gear4u.ARCANA_4U
 GU_TREES = {'Expert': 70, 'Artillery': 90, 'Avarice': 199, 'Sharpener': 34, 'Dead Eye': 66, 'Normal Up': 48,
             'Normal S+': 52, 'Reload Spd': 45}

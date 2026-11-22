@@ -949,10 +949,10 @@ GREY_SPREAD = 8
 GREY_MIN = 0x20     # near-black rubble kept (Dalamadur em024_001 ff0a0b0d; darkest confirmed white chunk ff2f2f2f)
 
 
-def hide_grey_models(d, d4, log=None, models=None):
+def hide_grey_models(d, d4, log=None, models=None, any_colour=False):
     """converted EFL d (4U source d4): element mask 0 on the entries whose unit is a model (type 5) with a grey 4U
-    colour (GREY_SPREAD), drawing one of `models` (None = any); an element block shared with another entry is copied to
-    the file end for it first."""
+    colour (GREY_SPREAD; any_colour: whatever its colour), drawing one of `models` (None = any); an element block shared
+    with another entry is copied to the file end for it first."""
     p, p4 = efl_parse(d), efl_parse(d4)
     users = collections.Counter(e[0] >> 8 for e in p['ents'] if e[0] >> 8)
     size = {o: s for o, s, k in p['blocks']}
@@ -962,7 +962,7 @@ def hide_grey_models(d, d4, log=None, models=None):
             continue
         c = struct.unpack_from('<I', d4, (e4[1] >> 8) + 0x30 + 0x48)[0]
         rgb = (c & 0xFF, (c >> 8) & 0xFF, (c >> 16) & 0xFF)
-        if max(rgb) - min(rgb) > GREY_SPREAD or max(rgb) < GREY_MIN:
+        if not any_colour and (max(rgb) - min(rgb) > GREY_SPREAD or max(rgb) < GREY_MIN):
             continue
         if models is not None:
             offs = [(w >> 8) + 0x30 for w in e if w >> 8]

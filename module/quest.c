@@ -283,7 +283,13 @@ static void board_place_ported(void *boards, uint32_t id, uint32_t star)
     if (k == n) return;                       /* not listed (an event board's quest) */
     idx = (s_cur + k) % n;
     s_cur = idx;
-    if (boards != s_boards || idx < s_last || s_last == 0xffffffffu) s_done = s_bseen = 0;   /* a new pass */
+    if (boards != s_boards || idx < s_last || s_last == 0xffffffffu) {      /* a new pass */
+        static uint32_t s_n;
+        if (++s_n <= 8)                       /* the raised caps (build.py QUEST_LIMIT_SITES): loaded quests, and the */
+            logf("mhgu-de: board pass: %u quests loaded (list %u), G4 board %u (previous pass)",   /* fullest board */
+                 FIELD(uint32_t, boards, 0x28), n, qlist_count(boards, QLIST_STAR_LAST));
+        s_done = s_bseen = 0;
+    }
     s_boards = boards, s_last = idx;
     for (int o = 0; o < nb; o++) {
         int b = s_order[o];

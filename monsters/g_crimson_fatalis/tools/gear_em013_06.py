@@ -1,24 +1,22 @@
-"""gear_em013_06.py : G-rank Crimson Fatalis' armor (4U Wroth and GX Fatalis Crimson, 2 series pairs, 20 pieces, crafted
-from its materials in 4U) as records appended to GU's loaded tables -> data file sections TBLA / TXTA / SKIL
-(gen/*-armor.sec, tools/portdata.py; module/gear.c). Formats, 4U records and the shared rules: tools/gear4u.py. Weapons:
-gear_weapons_em013_06.py. Models: build.py step armor (tools/armor4u2gu.py, Wroth's 20 arcs pl_{m,f}_<part>{410,411});
-GX Fatalis Crimson's models 507 / 508 are GU's own arcs.
+"""gear_em013_06.py : G-rank Crimson Fatalis' armor (4U Wroth, 1 series pair, 10 pieces, crafted from its materials in
+4U) as records appended to GU's loaded tables -> data file sections TBLA / TXTA (gen/*-armor.sec, tools/portdata.py;
+module/gear.c). Formats, 4U records and the shared rules: tools/gear4u.py. Weapons: gear_weapons_em013_06.py. Models:
+build.py step armor (tools/armor4u2gu.py, Wroth's 20 arcs pl_{m,f}_<part>{410,411}).
   gear_em013_06.py          write the sections
   gear_em013_06.py show     print them only
-4U data (C, 2026-11-22): the pieces whose 4U create recipes use its materials, per pair the Blademaster piece IDs below
-(Gunner = ID + 1), rarity 10: Wroth (models 410 / 411, no GU armor arc has them) and GX Fatalis Crimson (models 507 /
-508 + the Crimson Fatalis Ticket, items_em013_06.py; GU ships that look as its own "Fatalis Crimson XR" set with
-another recipe and skills: the maintainer chose to port 4U's set beside it, 2026-11-22).
+4U data (C, 2026-11-22): the pieces whose 4U create recipes use its materials: Wroth (Blademaster piece IDs below,
+Gunner = ID + 1, rarity 10, models 410 / 411, no GU armor arc has them) and GX Fatalis Crimson. GX is NOT ported: GU
+already ships it as its own (series 1076 / 1077, models 505 / 506, Capcom's conversion: Arcana -> Elemental, crafted
+with GU's EX C.Fatalis Ticket); a first port of it duplicated GU's set and was dropped (the maintainer, 2026-11-22;
+notes/plan.md 12).
 Choices (the earlier ports' rules, listed for review):
-  - Templates: Wroth = GU Fatalis Crimson (1074 / 1075, G rank, the same species); GX = GU Fatalis Crimson XR (1078 /
-    1079: models 507 / 508, the same look): max level, limit levels, defense table, sound, look.
+  - Template: GU Fatalis Crimson (1074 / 1075, G rank, the same species): max level, limit levels, defense table,
+    sound, look.
   - Defense: 4U defense x the GU / 4U ratio of the G-rank elder sets both games have by name at 4U rarity 10 (ANCHORS:
     Kushala X, Akantor X, Ukanlos X; S): 4U's Fatalis G sets are not in GU by name, GU's Fatalis Crimson is 4U's High
     Rank set re-ranked. On GU's balance as the earlier ports.
-  - Skills by GU tree name; a 4U tree GU lacks is dropped (DROPPED_TREES), a DEVIATION. 4U Arcana (the GX set's
-    tree) is the ported Arcana / Enlightened Blade (tools/gear4u.py arcana, the maintainer's choice 2026-11-22: port
-    the skill), whose records this package ships as Gogmazios' does: the first one loaded appends them.
-  - Level rows: the templates', unchanged: their monster materials are GU's Crimson Fatalis ones = its own (C:
+  - Skills by GU tree name (Wroth's 4U trees all have GU trees of the same name).
+  - Level rows: the template's, unchanged: its monster materials are GU's Crimson Fatalis ones = its own (C:
     items_em013_06.RENAMED), so nothing is swapped (TEMPLATE_WORD None, as Shrouded Nerscylla's).
   - Recipe items: its renamed materials (items_em013_06.RENAMED) by GU's names; items GU lacks -> SUBSTITUTES (the
     maintainer, 2026-11-22: GU stand-ins of the same rarity tier). B.Gravios Pallium is a PACKAGE-SPLIT substitute:
@@ -36,23 +34,14 @@ import gear4u, items_em013_06, portdata           # noqa: E402
 from gear4u import EXE, RomFS, gu_arc, gmd, text4u   # noqa: E402
 NAME = 'g_crimson_fatalis'
 # (pair, 4U Blademaster IDs head / body / arms / waist / legs, GU template pair, model pair)
-PAIRS = [('Wroth', [698, 702, 686, 686, 694], (1074, 1075), (410, 411)),
-         ('GX Fatalis Crimson', [901, 886, 870, 870, 878], (1078, 1079), (507, 508))]
+PAIRS = [('Wroth', [698, 702, 686, 686, 694], (1074, 1075), (410, 411))]
 # 4U G-rank elder sets of GU's names: (Blademaster head, Gunner head) -> GU series
 ANCHOR_NAMES = [('Kushala Glare X', 'Kushala Snarl X'), ('Akantor Mask X', 'Akantor Fangs X'),
                 ('Ukanlos Mask X', 'Ukanlos Fangs X')]
-# 4U Constitutn = GU Constitution (4U's 10-character name, the same description, C). 4U Arcana (GX's set tree, +10 =
-# Enlightened Blade: Awaken + Element Atk Up + Status Atk Up) is the ported tree 206 / skill 328 Gogmazios' armor has
-# (tools/gear4u.py arcana: GU's element and status boosts, GU has no Awaken), its records shipped here too (see there)
-TREE_4U_GU = {'Constitutn': 'Constitution'}
-DROPPED_TREES = {'FreeElemnt'}           # as the earlier ports: GU has no hidden elements
 TEMPLATE_WORD = None                     # the templates' materials are its own (see above)
 SUBSTITUTES = {'B.Gravios Pallium': 'Gravios Pallium',          # package-split (see above; Shrouded Nerscylla's rule)
                'Earth Dragonsphire': 'Heavenly Dragonsphire',   # Dah'ren Mohran's (not in GU)
-               'Skyblade Drgnsphire': 'Azure Dragonsphire',
-               'Dire Blastheart': 'Tigrex Mantle'}              # Molten Tigrex's (not in GU) -> Tigrex's rarest
-# 4U name -> GU name of its renamed materials (the recipes name items by GU's English names)
-RENAMED = {}
+               'Skyblade Drgnsphire': 'Azure Dragonsphire'}
 
 
 def anchors(t4, gn):
@@ -82,11 +71,6 @@ def armor_specs(R, exe):
     gi = gmd(lres['eng\\table\\itemData_eng'])
     renamed = {t4['itemName'][k]: gi[2 * g] for k, g in items_em013_06.RENAMED.items()}
     anch = anchors(t4, gn)
-
-    def tree(tree4, name):
-        if name in DROPPED_TREES: return None
-        if tree4 == gear4u.ARCANA_4U: return gear4u.ARCANA_TREE
-        return gtree[TREE_4U_GU.get(name, name)]
     specs = []
     for pair, parts, tpl, model in PAIRS:
         recipes = []
@@ -96,20 +80,20 @@ def armor_specs(R, exe):
             recipes.append([(SUBSTITUTES.get(n, renamed.get(n, n)), c) for n, c in r])
         defs = [gear4u.armor_4u(exe, 33, parts[0] + g)['defense'] for g in range(2)]
         specs.append(dict(template=tpl, model=model, parts=parts, defense=defense_map(exe, series, defs, anch),
-                          tree=tree, recipes=recipes, scrap=None, level_swap={}, template_word=TEMPLATE_WORD))
+                          tree=lambda tree4, name: gtree[name], recipes=recipes, scrap=None, level_swap={},
+                          template_word=TEMPLATE_WORD))
     return specs
 
 
 def main():
     R = RomFS(gear4u.GU_ROMFS)
     exe = open(EXE, 'rb').read()
-    mats = items_em013_06.materials(R, exe)
+    mats = items_em013_06.materials(R)
     specs = armor_specs(R, exe)
     for (pair, *_), s in zip(PAIRS, specs):
         print('%-18s defense %s' % (pair, s['defense']))
     tables, texts = gear4u.armors(NAME, [mats], specs, R, exe)
-    t, x, skil = gear4u.arcana(gu_arc(R.read('/nativeNX/loc/arc/resident.arc')))    # GX's set tree
-    secs = [portdata.tbla(tables + t), portdata.txta(texts + x), skil]
+    secs = [portdata.tbla(tables), portdata.txta(texts)]
     if sys.argv[1:] == ['show']:
         for s in secs: print(s.tag, portdata.decode(s.tag, s.bytes()))
         return

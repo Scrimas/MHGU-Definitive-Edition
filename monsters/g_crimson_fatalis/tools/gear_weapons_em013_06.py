@@ -132,7 +132,7 @@ def spec(R):
         if nn == 13: c.update(insect=IG_INSECT[w['extra']], insect_4u=w['extra'])
         classes.append(c)
         if 'sharp' in w and w['sharp'] not in kire: kire.append(w['sharp'])
-    return dict(name=NAME, materials=items_em013_06.materials(R, exe), classes=classes, status=STATUS, kire_4u=kire,
+    return dict(name=NAME, materials=items_em013_06.materials(R), classes=classes, status=STATUS, kire_4u=kire,
                 kire_reuse=True, kire_near=KIRE_NEAR, pwl_fix=PWL_FIX, substitutes=subs)
 
 

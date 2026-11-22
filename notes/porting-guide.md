@@ -305,6 +305,9 @@ testable alone (the maintainer checks the smithy or one quest).
   second list of flag 4 (slay-or-repel quests: Fatalis, Jhen / Dah'ren Mohran, Lao-Shan) holds the **repel**
   rewards, drawn instead of the main list; GU's twin is slot 0's condition-4 group, which tools/quest4u.py rem_4u
   writes. Check every 4U event file of the monster (tools/extdata4u.py list): Phase 1 of that port missed one.
+  A hub quest ID must end in 01..99: GU's loader filter 0x3b8090 and is_G 0x3b9e50 reject NN = 00 (11400 never
+  loaded, C). The core lifts GU's hub caps (module/build.py QUEST_LIMIT_SITES: 1024 loaded quests, 255 per star
+  board; GU drops quests past 864 / 99 silently), but free IDs per star stay limited: check them in allocations.toml.
 - **Armor / weapons.** tools/gear_em089.py (armor series 127 B + create / level rows + skill tree / skill +
   Arcane decorations) and tools/gear_weapons_em089.py (14 classes: Base / Level / Msg / Create / Process,
   sharpness, bowgun ammo, bow coatings; one load-exit hook per table class, module/gear_hooks.txt; a weapon
@@ -771,10 +774,13 @@ Notes: monsters/tigerstripe_zamtrios/notes/ (plan, phase1-variant-map, missing-a
 - GU may already ship a 4U monster's materials under other names (em117's Fatalis Flame* = GU's Crimson Fatalis
   Scale .. Wing) and part of its gear (by name, or by model: 4U's GX Fatalis Crimson look is GU's Fatalis Crimson XR).
   Check names AND model numbers before planning gear; map renamed materials explicitly (items_em013_06.RENAMED),
-  never by English name.
+  never by English name. Search GU's whole armor series list for every 4U set name: the first survey compared one
+  look-alike set (XR) and missed that GU already ships 4U's GX Fatalis Crimson itself (series 1076 / 1077, Capcom's
+  conversion: Arcana -> Elemental), so a port of it duplicated a GU set and was dropped after test 1.
 - Package-split substitutes (the maintainer, 2026-11-22: all packages will later ship as one mod): a recipe item that
   only another of our packages appends (B.Gravios Pallium, Black Gravios') gets a GU substitute so the package stays
   standalone; mark each one "PACKAGE-SPLIT" in the builder, so the merge can put the real item back. A ported
-  skill two packages need (Arcana: Gogmazios' and G-rank Crimson Fatalis' armor) is one shared builder
-  (tools/gear4u.py arcana) whose records both ship at the same IDs: module/gear.c appends a TBLA / TXTA block only
-  while the table still has the block's base count, so the first package loaded adds it and the copy is skipped.
+  skill two packages need (Arcana: Gogmazios' armor, today the only one) is one shared builder
+  (tools/gear4u.py arcana) whose records each package ships at the same IDs: module/gear.c appends a TBLA / TXTA
+  block only while the table still has the block's base count, so the first package loaded adds it and the copy is
+  skipped.

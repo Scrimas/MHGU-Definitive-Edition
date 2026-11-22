@@ -39,10 +39,11 @@ Sources (C unless marked):
                q11456's rem_530074 (Triumph / Horns Coins, condition 3) and rem_230077 (condition 5: 3 more draws on
                a slay, GU 0x38236c, C; 4U has no such bonus) are its own quest's extras. No subquest row (GU's
                rem_000000, as q11456). Items (gu_item): its materials 4U 1589..1592 are GU's 1658..1661 under GU's
-               names (C: q11456's rem_230077 is m11036's row A with those IDs, chance for chance), the Crimson Fatalis
-               Ticket (4U 1886) is its appended item (items_em013_06.py), Strong Armor Sphere -> King Armor Sphere
-               (Gogmazios' / Dalamadur's substitute, GU has none), the rest by English name; GU has no Conqueror's
-               Seal G or Immenseness Ticket S: left out, their chance to the row's most likely item (quest4u.rem_4u).
+               names (C: q11456's rem_230077 is m11036's row A with those IDs, chance for chance), Strong Armor
+               Sphere -> King Armor Sphere (Gogmazios' / Dalamadur's substitute, GU has none), the rest by English
+               name; GU has no Conqueror's Seal G or Immenseness Ticket S, and the Crimson Fatalis Ticket (4U 1886)
+               is not ported (items_em013_06.py): left out, their chance to the row's most likely item
+               (quest4u.rem_4u).
 """
 import argparse, os, struct, sys
 
@@ -70,9 +71,8 @@ ICON = alloc.board_byte(alloc.ICON_PAGE2)                # 4U's '?' (module/icon
 REM_EMPTY = struct.pack('<fI', 1.0, 1) + bytes(176)     # GU's rem_000000 (184 B, no group; C: q10706)
 URGENT = 0x1                        # questData +0x16F bit 0 = an urgent (key) quest (Monoblos' builder)
 OTHER_4U_GU = {1589: 1658, 1590: 1659, 1591: 1660, 1592: 1661,   # Flamescale / shell / horn / wing (see above)
-               1643: 351,           # Strong Armor Sphere -> King Armor Sphere
-               1886: ALLOC['items'][0]}   # Crimson Fatalis Ticket: appended (items_em013_06.py)
-NO_GU_4U = {1721, 1724}             # Conqueror's Seal G, Immenseness Ticket S
+               1643: 351}           # Strong Armor Sphere -> King Armor Sphere
+NO_GU_4U = {1721, 1724, 1886}       # Conqueror's Seal G, Immenseness Ticket S, Crimson Fatalis Ticket
 # k = index in allocations.toml quests, num = 4U quest, event = its 4U spawn byte 3
 QUESTS = [dict(k=0, num=11036, event=0), dict(k=1, num=60249, event=1), dict(k=2, num=60215, event=0)]
 

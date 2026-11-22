@@ -15,7 +15,7 @@
  * Haze [0x893f44 spawn, 0x89c1fc per frame, C]: 4U makes a uMhHazeFilter at every Fatalis' spawn, hidden; the zone
  * hit shows it and restarts its 300-frame timer; the strength fades in by 4.25 x dt per frame to 255 while the timer
  * runs, then out to 0, then the filter is hidden. GU's uHazeFilter (newInstance 0x8c090c, 0xc0 bytes) is the
- * framework's shader filter: no colour; its strength is mHazeScale +0x8c / +0x90 (default 0.05), set here to 0.05 x
+ * framework's shader filter: no colour; its strength is mHazeScale +0x8c / +0x90 (default 0.05), set here to HAZE_MAX x
  * strength / 255 (G); it goes on unit line 29 with mask 0x10 as sEffect's own filters (0xb92618) (S); 4U's draw bits
  * +4 0x400 / 0x800 = cUnit +0xc 0x400 / 0x800 (S: both cUnits start from the same flags constant 0xf4ff9). 4U's
  * delete of the filter was not traced: ours is killed with the monster (uEm013_00 destructors, port-only), as
@@ -32,6 +32,8 @@ typedef void (*gcf_unit_add_t)(void *mgr, uint32_t line, void *unit, uint64_t ma
 #define UNIT_FLAGS    0xc
 #define UNIT_KILL     16
 #define HAZE_SCALE    0x8c          /* f32 x 2 mHazeScale */
+#define HAZE_MAX      0.025f        /* mHazeScale at full strength: half GU's default 0.05, which the maintainer found
+                                       too strong in test 1 (2026-11-22; the mapping is a guess, G) */
 #define HAZE_DRAW     0xc00u
 typedef int (*gcf_is_local_t)(void *h);
 #define isLocal       FN(gcf_is_local_t, 0x27bcd0)
@@ -46,7 +48,7 @@ static int haze_alive(void *h) { return h && (FIELD(uint32_t, h, UNIT_FLAGS) & 7
 static void haze_scale(struct gcf *s)
 {
     if (!haze_alive(s->haze)) return;
-    float v = 0.05f * (float)s->haze_a / 255.0f;
+    float v = HAZE_MAX * (float)s->haze_a / 255.0f;
     FIELD(float, s->haze, HAZE_SCALE) = v;
     FIELD(float, s->haze, HAZE_SCALE + 4) = v;
 }

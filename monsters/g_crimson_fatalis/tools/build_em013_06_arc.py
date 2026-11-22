@@ -437,6 +437,15 @@ def effects(S, gfile, code, notes):
                 hide_grey_models='chunks')
     log = []
     out = efl4u2gu.effect_set(spec, log)
+    # the prominence eruption's chunk unit (em117_202 entry 11, cm000_000, posted by code record 4101): 4U tints it
+    # orange and multiplies in the soil colour, so it draws dark; GU washed it out to pale rocks that 4U footage does
+    # not show (the maintainer, test 1, 2026-11-22). Dropped as issue #6's grey chunks, whatever its colour: a
+    # DEVIATION as theirs.
+    k202 = ('effect\\efl\\em\\em117\\em117_202', T4['EFL'])
+    hid = []
+    out[k202] = efl4u2gu.hide_grey_models(out[k202], S[k202], hid, {'cm000_000'}, any_colour=True)
+    assert len(hid) == 1, ('em117_202 chunk units', hid)
+    log += ['EFL em117_202: ' + h for h in hid]
     mine_lists = efl4u2gu.pel_lists(out.pop((PEL_U, T4['PEL'])))
     mine, list2 = mine_lists[1], mine_lists[2]
     known = set(pel_ids(mine[1]))

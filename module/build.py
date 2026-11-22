@@ -381,6 +381,50 @@ WORD_PATCHES = [
     (0x5B0CB8, 0xE355007B, cmp_imm(0xE355007B, NOTES_COUNT)),  # list screen: visible entries in display order
 ]
 
+
+def arm_imm(word, v):
+    """the same ARM data-processing instruction (mov / cmp, any condition) with the modified immediate v"""
+    for rot in range(16):
+        imm8 = ((v << 2 * rot) | (v >> (32 - 2 * rot))) & 0xFFFFFFFF if rot else v
+        if imm8 < 256: return (word & ~0xFFF) | rot << 8 | imm8
+    raise ValueError('%#x is no ARM immediate' % v)
+
+
+def movw_imm(word, v):
+    """the same movw with the 16-bit immediate v"""
+    return (word & 0xFFF0F000) | (v >> 12) << 16 | (v & 0xFFF)
+
+
+# Quest board manager L (loaded quests and star boards; a helper's trace 2026-11-22, C, notes of
+# monsters/g_crimson_fatalis/notes/plan.md 12): GU loads at most 864 quests in a hub (L+0x24, a heap array of
+# resource pointers, past it the loader stops silently) and puts at most 99 on a star board (18 boards of 99 u32 IDs
+# in one heap block at L+0x34, u16 counts; board_put returns silently past 99: G★4 held 98 with our quests). Both
+# raised for the ports' quests, every site of a bound together (a partial patch overruns the heap); the counts and
+# the board list UI are u16 (S), nothing else sized by them.
+QUEST_LOAD_MAX = 1024           # GU 864; each loaded questData stays resident, so not more than needed (G)
+BOARD_QUEST_MAX = 255           # GU 99 per star board
+BOARD_COUNT = 18                # boards in L+0x34's block (allocated in 0x3ba8fc)
+QUEST_LIMIT_SITES = [           # (site, GU word, GU value, our value, encoder)
+    (0x3B7D58, 0xE3A01D36, 864 * 4, QUEST_LOAD_MAX * 4, arm_imm),     # 0x3b7cf8: mov r1, #0xd80 (array size)
+    (0x3B7D64, 0xE3A01D36, 864 * 4, QUEST_LOAD_MAX * 4, arm_imm),     # its clear
+    (0x3B7E70, 0xE3500E36, 864, QUEST_LOAD_MAX, arm_imm),             # loader 0x3b7de8: done at the cap
+    (0x3B7F84, 0xE3500E36, 864, QUEST_LOAD_MAX, arm_imm),             # loader: continue while below it
+    (0x3B6300, 0xE3550E36, 864, QUEST_LOAD_MAX, arm_imm),             # free-all loop 0x3b62d8
+    (0x3B65F0, 0xE3500E36, 864, QUEST_LOAD_MAX, arm_imm),             # incremental release 0x3b651c
+    (0x3B659C, 0xE351001A, 864 // 32 - 1, QUEST_LOAD_MAX // 32 - 1, arm_imm),   # its resume check (idx >> 5)
+    (0x3BA988, 0xE3011BD8, BOARD_COUNT * 99 * 4, BOARD_COUNT * BOARD_QUEST_MAX * 4, movw_imm),   # 0x3ba8fc: block
+    (0x3BA994, 0xE3011BD8, BOARD_COUNT * 99 * 4, BOARD_COUNT * BOARD_QUEST_MAX * 4, movw_imm),   # its clear
+    (0x3BC9C8, 0xA3A00F63, 99 * 4, BOARD_QUEST_MAX * 4, arm_imm),     # board getter 0x3bc96c: board stride
+] + [(s, w, 99 * 4, BOARD_QUEST_MAX * 4, arm_imm)                     # board_put 0x3bb318: the stride per path
+     for s, w in ((0x3BB3CC, 0xE3A02F63), (0x3BB4E4, 0xE3A02F63), (0x3BB5C4, 0xE3A03F63), (0x3BB788, 0xE3A03F63),
+                  (0x3BB848, 0xE3A02F63))] + \
+    [(s, w, 98, BOARD_QUEST_MAX - 1, arm_imm)                          # board_put: count > 98 -> not put
+     for s, w in ((0x3BB3E0, 0xE3510062), (0x3BB4FC, 0xE3520062), (0x3BB5DC, 0xE3520062), (0x3BB7A0, 0xE3520062),
+                  (0x3BB860, 0xE3520062))]
+for _s, _w, _gu, _ours, _enc in QUEST_LIMIT_SITES:
+    assert _enc(_w, _gu) == _w, 'quest limit site %x: GU word does not hold %#x' % (_s, _gu)
+    WORD_PATCHES.append((_s, _w, _enc(_w, _ours)))
+
 # Items appended past GU's 2991 (allocations.toml [monster.append] items; notes/items-append.md): the code that bounds
 # item IDs by the count is raised by the appended count, the per-item heap buffer grows with it, the item box sort and
 # the items-obtained set / clear / test are replaced (items.c: IDs from 3008 use a reserved save block). Nothing

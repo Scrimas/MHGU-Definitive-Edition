@@ -5,8 +5,12 @@
                                             4U DIR4U/pl_<pfx>NNN.arc whose MOD part GU also has (same class and
                                             number, same bones / bounding box / material names)
   weapon4u2gu.py convert NN IN.arc OUT.arc IDX.pkl [--model M] [--alpha-test-4u] [--anim-4u] [--shield-bone0]
+                 [--opaque-4u]
                                             --alpha-test-4u: templates keep the 4U alpha test (pick_template;
                                             off = the Gogmazios / Tigerstripe builds, byte-identical)
+                                            --opaque-4u (with --alpha-test-4u): an opaque 4U material on a non-exact
+                                            template selecting FTransparencyAlpha gets plain FTransparency (convert;
+                                            off = the builds before G-rank Crimson Fatalis, byte-identical)
                                             --anim-4u: a non-exact template gets the 4U material's own animation
                                             (anim_4u), not its own copy; off = byte-identical as above
                                             --shield-bone0: an SnS shield whose bones share bone 0's bind gets every
@@ -347,7 +351,7 @@ def shield_bone0(md):
         all(ib == m['invbind'][0] for ib in m['invbind'])
 
 
-def convert(nn, src, idx, model=None, log=print, alpha=False, anim=False, shield0=False):
+def convert(nn, src, idx, model=None, log=print, alpha=False, anim=False, shield0=False, opaque=False):
     pf = PFX[nn]
     n4 = int(re.search(r'pl_%s(\d+)\.arc$' % pf, src).group(1))
     model = n4 if model is None else model
@@ -435,6 +439,16 @@ def convert(nn, src, idx, model=None, log=print, alpha=False, anim=False, shield
             # Capcom's own reference for that 4U material
             if 'alpha test as 4U' in how and m['words'][7] & mrl_build.W7_ALPHATEST:
                 extra['alpha_ref'] = (m['words'][7] >> mrl_build.W7_REF_SHIFT) & 0xFF
+            # --opaque-4u: an opaque 4U material (BSSolid, no alpha test) on a non-exact template selecting
+            # FTransparencyAlpha gets plain FTransparency. FTransparencyAlpha scales the output by the BM alpha (4U's
+            # specular mask): it cut holes in G-rank Crimson Fatalis' blades (test 1, 2026-11-22), whose GU twin
+            # (Capcom's GS 188, the same 4U look) selects FTransparency, as 3847 of GU's 4150 opaque weapon materials
+            if opaque and 'alpha test as 4U' in how and not m['words'][7] & mrl_build.W7_ALPHATEST:
+                ft = [mrl.rec_name(0x22, p[2]) for p in gm['mats'][t['gu'][2]]['params']
+                      if p[0] == 'FTransparency' and p[1] == 0]
+                if ft and ft[0] != 'FTransparency':
+                    extra['functions'] = {'FTransparency': 'FTransparency'}
+                    log('  %08x: opaque in 4U, template %s -> FTransparency (--opaque-4u)' % (m['name'], ft[0]))
             an, src_an = '', 'GU'
             if anim and not how.startswith('exact+anim'):
                 a4 = anim_4u(d4, m, gw, gblock)
@@ -518,7 +532,7 @@ if __name__ == '__main__':
         a = sys.argv[2:]
         mdl = int(a[a.index('--model') + 1]) if '--model' in a else None
         data = convert(int(a[0]), a[1], pickle.load(open(a[3], 'rb')), model=mdl, alpha='--alpha-test-4u' in a,
-                       anim='--anim-4u' in a, shield0='--shield-bone0' in a)
+                       anim='--anim-4u' in a, shield0='--shield-bone0' in a, opaque='--opaque-4u' in a)
         open(a[2], 'wb').write(data)
         print(len(data), 'bytes ->', a[2])
     elif cmd == 'check':

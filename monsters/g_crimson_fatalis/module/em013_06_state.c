@@ -118,6 +118,15 @@ int em013_06_state_c(uint32_t *regs)           /* GU slot 119 entry 0xd81a08 (r0
     if (!gcf_ours(self)) return 0;
     struct gcf *s = gcf_state(self);
     if (gcf_event_quest()) gcfRageLock(self);
+    uint8_t *rec = GCF_REC(self), rage = rec[0x518];
+    if (rage != s->rage_seen) {                /* test 2: does the event quest's rage ever end? */
+        static uint32_t s_n;
+        if (++s_n <= 40)
+            logf("gcfport: %x rage %u -> %u (lock %u, event %u, words 518..527 %x %x %x)", (uint32_t)self,
+                 s->rage_seen, rage, rec[0x520], gcf_event_quest(), FIELD(uint32_t, rec, 0x518),
+                 FIELD(uint32_t, rec, 0x51c), FIELD(uint32_t, rec, 0x520));
+        s->rage_seen = rage;
+    }
     if (s->zone.marker != 0xff && timerDown(self, &s->zone.timer, 1.0f)) s->zone.marker = 0xff;
     gcf_zone_hunter(self, s);
     uint8_t g = FIELD(uint8_t *, self, GCF_EN_WORK)[0x36];

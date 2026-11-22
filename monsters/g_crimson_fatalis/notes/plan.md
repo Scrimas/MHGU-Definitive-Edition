@@ -311,3 +311,65 @@ substitutes, B.Gravios Pallium being a package-split one (all packages will late
   GU's own GX set's; the ticket after GU's EX ticket (黑龍紅色票券 / 黑龙票券（红）).
 - For the test: smithy lists (2 armor pairs, 8 weapons) and their models (Wroth's converted arcs, the 8 weapon arcs),
   the ticket from 11499, the break rewards, the IG kinsect, the bowguns' ammo.
+
+## 12. Test 1 (2026-11-22, log Ryujinx_1.3.3_2026-11-22_10-41-10; cheats on: Instant Quest Clear used to end 11499)
+
+The maintainer's report, the log and the static checks after it. Nothing fixed yet.
+- 11400 not on the board (C): GU's quest_group loader filter 0x3b8090 (and is_G 0x3b9e50) rejects an ID whose last
+  two digits are 00 ((id % 100 - 1) & 0xff > 0x62). Every other 114NN ID but 11497 is taken. The maintainer: find a
+  way to load more quests than the loader's cap (864 loaded; plan.md of Dalamadur 6) instead of renumbering.
+- Rage on 11499: the spawn logged event 1 and the lock 0xbd100 (rec+0x520 = 1, nothing else) ran every frame. The
+  maintainer: both quests started calm and got enraged; unsure whether 11499's rage ever dropped (it hit harder,
+  roared a lot). Next build: a rage log (state changes, rec+0x518 / +0x520). Open: who reads rec+0x520 in uEm013_00.
+- Heat zone: placed where the wave ends (zone 0 ~3000 ahead of the shot's start, log), as 4U's 0x89e990 (C); the
+  haze holds 300 frames after the last hit, then fades (4U, C). The maintainer: haze too strong, halve it (its 0.05
+  scale is a guess, G); not visible from outside, which matches the little 4U footage they know: check 4U's code
+  for a zone effect anyway.
+- Prominence impact shows rocks that vanish: the scorch, code record 4102 = em117_202 element 1 (k from 4U's mask 2;
+  to recheck against 4U 0xc84300 / 0xc08628).
+- Dalamadur retest: meteors fine, impact effect gone. Its posts are the same as on 2026-11-21 (2930 on the blast
+  shell, valid handle; no Dalamadur code or arc change since): played after a Crimson quest this time, so a leftover
+  of ours is the lead. Arc paths both share are byte-identical (checked).
+- Lower belly not hittable (hits land on legs / tail): skeleton = GU em013_01's (59 bones, same order / positions,
+  C) and 4U em117 used em078's hit data (C, shared_4u). Open: GU's own Crimson the same, or em117's mesh lower.
+- Weapons: holes in almost every blade (screenshot: Flame Fatalis Blade); armor fine. The converted materials have
+  no alpha test (w7 bit 24 clear), unlike Dalamadur's old case: cause open.
+- GX Blademaster skills seen: "Guts, Elemental, some Edge Lore". The maintainer's screenshots (head / chest / arms /
+  legs: EX C.Fatalis Ticket recipes, head Edge Lore 3 / Elemental 2 / Guts 1 / Constitution -3) are GU's OWN set
+  (C): GU v1.4 already ships 4U's GX Fatalis Crimson as series 1076 / 1077 (models 505 / 506, def 132 / 79, Edge
+  Lore + Guts + Elemental 10, Constitution -10: Capcom's conversion, Arcana -> Elemental), which section 11's survey
+  missed (it only compared the XR set 1078 / 1079). Ours (1319 / 1320, same English names, on XR's models 507 / 508,
+  recipe = our ticket 3063) is not listed in the smithy: nobody owns item 3063 yet. So our GX pair duplicates a set GU
+  has. The maintainer (2026-11-22): drop our GX pair AND the Crimson Fatalis Ticket (item 3063, 11499's 5 % row A
+  entry; the Arcana records then ship with Gogmazios only). To do with the other fixes.
+- The repel message on 11499: from Instant Quest Clear (slay-or-repel objective), not a port bug.
+- Ticket (item 5 of the checklist): not checked, next test.
+
+Fixes after test 1 (2026-11-22):
+- GX pair and the ticket dropped (items_em013_06.py: no appended item, BUI4 only; tools/items4u.Materials accepts a
+  monster without an item range; gear_em013_06.py: Wroth only, no SKIL; 11499's row A loses the ticket; zh keys gone).
+- Weapons (C): the holes = FTransparencyAlpha on BSSolid materials whose non-exact template selects it: the shader
+  scales by the BM alpha = 4U's specular mask (41 % of the GS BM below 128). Capcom's GS 188 (the same 4U look)
+  selects plain FTransparency on the same material. tools/weapon4u2gu.py --opaque-4u (opt-in, build.py weapons):
+  10 materials of the 8 weapons switched; the GS now equals Capcom's selection. Other packages' shipped weapons
+  hold 61 such materials (Dalamadur 28, Gogmazios 18, Tigerstripe 10, Black Gravios / Nerscylla 2, Desert Seltas
+  1): unchanged, a follow-up for the maintainer.
+- Effects (a helper's trace, 2026-11-22): the PEL element mask selects EFL entries by their first block's word 0
+  (4U 0xafc574 = GU 0x9be8c4, C), not by the entry's low byte. em117_202: entries 0-1 = 2, entries 2-11 = 1, so
+  4101 (mask 1, the eruption start) carries the ef_em117 flames and the cm000_000 chunks, 4102 (mask 2, the scorch)
+  two billboards: the SELECTION is 4U's (C). The look is not: 4U footage shows no rocks (the maintainer), 4U draws
+  the chunk unit (entry 11, orange x the Ingle Isle soil 63 / 28 / 16) dark, GU washes it to pale rocks (issue #6's
+  effect-model gain). Fix: entry 11 dropped (build_em013_06_arc.py effects(), efl4u2gu.hide_grey_models
+  any_colour), a DEVIATION as issue #6's. The rocks showed away from the scorch because the eruption slides up to
+  1650 along its yaw. Heat zone: 4U 0x89e990 posts nothing (data only; 0x684b00
+  stores it, 0x687280 / 0x89ebdc test it, C): invisible in 4U too, kept. Dalamadur's impact: no leftover found
+  (resources identical in every installed arc, haze killed, no looping records); next test: Dalamadur first after a
+  fresh boot, then after a Crimson quest (lead G: GU's global element skip mask *(sEffect)+0x228).
+- Haze at half strength (em013_06_zone.c HAZE_MAX 0.025). Rage log in slot 119 (rec+0x518 changes, +0x520 lock).
+- Quest loader (a helper's trace, C unless noted): the 864 cap = the loaded-quest pointer array L+0x24 (heap,
+  0x3b7cf8 allocates 0xd80), loads stop silently at 864 (0x3b7e70, 0x3b7f84), bound also at 0x3b6300 / 0x3b65f0 /
+  0x3b659c (idx >> 5 <= 26: to check before raising); scene 7 uses ~855 today. Each star board holds 99 IDs
+  (u16 count L+0x38 + 2 * star, 0x18c-byte arrays in L; board_put 0x3bb318 returns silently past 99); G★4 ~98.
+  The NN = 00 rejection is in 0x3b8090, is_G 0x3b9e50, the rank / availability classifiers and the per-star
+  summary 0x3b85d8 (inline); nothing indexes by NN - 1 for hub IDs (S). The maintainer: lift the 864 cap AND the
+  99-per-board limit; renumber the third quest 11400 -> 11497 (no hook; 11497 was never released).

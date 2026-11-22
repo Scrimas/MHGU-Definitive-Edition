@@ -47,6 +47,7 @@ struct gcf {
     int32_t haze_a;                /* its strength 0..255 [the alpha byte +0x57] */
     float haze_t;                  /* [W+0x34] */
     float heat_t;                  /* the local hunter's 11-frame heat timer [4U player work +0x74] */
+    uint8_t rage_seen;             /* test 2 log: rec+0x518 last seen (0 = calm, as at the spawn) */
 };
 
 struct gcf *gcf_state(void *self);
