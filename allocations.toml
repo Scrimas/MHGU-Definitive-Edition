@@ -713,11 +713,39 @@ quests = [11498, 11499, 11400]          # 4U m11036 "Advanced: A Final Battle Cr
                                         # own map). quests[1] is the event quest of 4U spawn byte 3 (module em013_06)
 quest_append = true                     # new quest list entries after GU's (module/quest.c), no quest_slots
 bgm_ids = [0x904]                       # its own 4U theme bgm_em117.mca (one stream, no _2)
-                                        # Not claimed yet: items and gear (Phase 5b). Its 4U materials 1589..1593 (Fatalis
-                                        # Flamescale .. Devileye+) are GU's 1658..1662 (Crimson Fatalis Scale .. Fatalis
-                                        # Devileye+: the same text, renamed, C), so no material is appended; its 4U gear
-                                        # (Wroth, GX Fatalis Crimson with 4U's ticket 1886, 8 weapons GU lacks by name) is
-                                        # still to decide. No ui_icon yet: 4U's boards show '?' for its quests (+0xE8 = 0)
+items = [3063, 3063]                    # 4U 1886 Crimson Fatalis Ticket (GU has none; 2026-11-22, Phase 5b). Its 4U
+                                        # materials 1589..1593 (Fatalis Flamescale .. Devileye+) are GU's 1658..1662
+                                        # (Crimson Fatalis Scale .. Fatalis Devileye+: the same text, renamed, C), so no
+                                        # material is appended. No ui_icon: 4U's boards show '?' for its quests (+0xE8 = 0)
+armor_models = [410, 411]               # 4U Wroth, Blademaster / Gunner (unused in GU, C); its GX Fatalis Crimson is on
+                                        # 4U's models 507 / 508, which GU ships (its own Fatalis Crimson XR set)
+
+[monster.weapon_models]                 # per weapon class (GU model numbers = 4U's, unused in GU, checked by
+w00 = 108                               # tools/gear_weapons_em013_06.py): the 8 4U weapons GU lacks by name
+w02 = 109
+w06 = 59
+w07 = 91
+w09 = 93
+w10 = 86
+w12 = 79
+w13 = 44
+
+[monster.append]
+items = 1
+armor_series = 4                        # Wroth, GX Fatalis Crimson (Blademaster + Gunner each)
+armor_create = 2
+armor_process = 10                      # the templates' level rows (GU Fatalis Crimson 5 + Fatalis Crimson XR 5;
+                                        # tools/gear_em013_06.py)
+
+[monster.append.weapons]                # BaseData / MsgData / LevelData rows per class: one weapon each
+w00 = 1                                 # (tools/gear_weapons_em013_06.py); no sharpness row of its own (the table is
+w02 = 1                                 # full): mKireType GU's nearest rows, its bars the 4U rows (KIRX)
+w06 = 1
+w07 = 1
+w09 = 1
+w10 = 1
+w12 = 1
+w13 = 1
 
 # ---- maps (maps/<name>): the IDs a map package owns, never a registry index ---------------------------------------
 # A map's Harvest Tours (maps/<map>/package.toml [[tour]]) ship in its package: a monster requiring the map brings them,

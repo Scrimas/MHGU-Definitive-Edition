@@ -768,3 +768,10 @@ Notes: monsters/tigerstripe_zamtrios/notes/ (plan, phase1-variant-map, missing-a
 - Hunter-side 4U code (heat ticks, HP drains) can often run from the monster's own slot 119 for the local hunter:
   4U's player tick is local too, so every machine gets the same result. GU's HP change is 0x2f4930(h, delta) (damage
   lock, Guts, faint; C).
+- GU may already ship a 4U monster's materials under other names (em117's Fatalis Flame* = GU's Crimson Fatalis
+  Scale .. Wing) and part of its gear (by name, or by model: 4U's GX Fatalis Crimson look is GU's Fatalis Crimson XR).
+  Check names AND model numbers before planning gear; map renamed materials explicitly (items_em013_06.RENAMED),
+  never by English name.
+- Package-split substitutes (the maintainer, 2026-11-22: all packages will later ship as one mod): a recipe item that
+  only another of our packages appends (B.Gravios Pallium, Black Gravios') gets a GU substitute so the package stays
+  standalone; mark each one "PACKAGE-SPLIT" in the builder, so the merge can put the real item back.

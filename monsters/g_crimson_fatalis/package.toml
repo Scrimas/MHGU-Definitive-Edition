@@ -4,7 +4,9 @@ name = "g_crimson_fatalis"
 kind = "monster"
 title = "Crimson Fatalis (4U)"
 class = "Elder Dragon"     # its class, GU's name (monsterName 253..267): the installer's subtitle in every language
-version = "0.2.0"          # bump on every published change of this monster's files (data, assets or code); 0.2.0:
+version = "0.3.0"          # bump on every published change of this monster's files (data, assets or code); 0.3.0:
+                           # its gear: Crimson Fatalis Ticket (item 3063), G break rewards, Wroth and GX Fatalis
+                           # Crimson armor, the 8 4U weapons GU lacks; 0.2.0:
                            # its 4U behaviour (module em013_06_*.c), name "Crimson Fatalis (4U)" (NAME, entry
                            # 223) and quests 11498 / 11499 / 11400 (4U m11036, events m60249 / m60215); 0.1.0:
                            # its arc em013_06 (model, sound, effects, AI, tuning, carves), theme, shells and

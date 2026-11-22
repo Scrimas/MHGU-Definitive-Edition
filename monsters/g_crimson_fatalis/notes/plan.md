@@ -130,7 +130,7 @@ from code for 11499 (Gogmazios' way).
   Adamant / Sovereign Orb. m60249 row A Crimson Fatalis Ticket 5 % + the materials; row B (flags 0x8003) Immenseness
   Ticket S, spheres, charms, orbs. No subquest rows. 4U items without a GU item are dropped by quest4u.rem_4u (the
   ticket depends on the gear decision).
-- Gear (open, Phase 5b): 4U's Wroth set (Blademaster / Gunner) and 4U's GX Fatalis Crimson (4U ticket 1886, which GU
+- Gear (decided and built in Phase 5b: section 11): 4U's Wroth set (Blademaster / Gunner) and 4U's GX Fatalis Crimson (4U ticket 1886, which GU
   lacks: GU's "EX C.Fatalis Ticket" is another item) are not in GU; GU has its own Fatalis Crimson, XR and GX sets.
   Weapons: GU has 6 of em117's by name (Destiny's Arm, True Ruiner Sword / Lance / Bane / Reaver, Twinbane Blades);
   8 it lacks: Flame Fatalis Blade, Fatalis Fotia, Hellruin Gunlance, Fatalis Iregard, Fatalis Menace Soul, Hellruin
@@ -281,3 +281,30 @@ Steps `name` and `quest` (tools/name_em013_06.py, tools/build_em013_06_quest.py:
   unrelated key 11371.client (two strings of the same English, "Professor"): restored by hand.
 - For the test: the three quests on the G★4 hub board with '?' icons, their text, a repel ending (HP <= 20 %, as
   GU's q11456) giving row A's repel list, the stand-in swap (0x10d -> 0x60d) and the event behaviour on 11499 only.
+
+## 11. Phase 5b: items, breaks, gear (2026-11-22; built, translate.py check clean; not tested in game)
+
+Steps `items`, `gear`, `armor`, `weapons`, `gearw` (tools/items_em013_06.py, gear_em013_06.py,
+gear_weapons_em013_06.py: the rules are in their docstrings). The maintainer's decisions (2026-11-22): port 4U's GX
+Fatalis Crimson beside GU's own XR set (the same models 507 / 508) with its ticket; recipe items GU lacks -> GU
+substitutes, B.Gravios Pallium being a package-split one (all packages will later ship as one: then the real item).
+- Survey (C): em117's 4U gear = armor Wroth (rarity 10, models 410 / 411) and GX Fatalis Crimson (models 507 / 508,
+  Crimson Fatalis Ticket in every recipe), 9 forged weapons + 5 upgrades. GU has 6 of the weapons by name (its own,
+  untouched) and no Palico gear of em117 exists in 4U.
+- Item: 4U 1886 Crimson Fatalis Ticket appended as GU 3063 (category of GU's EX C.Fatalis Ticket, same icon); 11499's
+  row A gets its 5 % back.
+- Breaks (C): 4U em117's G groups 0..3 = GU Crimson's own bui_s4 record (conds 20 / 30 / 40 / 50, the same items and
+  chances) -> BUI4. Until now the port had none (GU has no record for 0x60d).
+- Armor: templates GU Fatalis Crimson (Wroth) / Fatalis Crimson XR (GX: the same look); defense by the ratio of the
+  G elder X sets both games name (Kushala / Akantor / Ukanlos X): Wroth 148 / 92, GX 136 / 82 (S). Skills by GU
+  name; 4U Constitutn = GU Constitution; 4U Arcana (GX's set tree: Awaken + element + status) -> GU Elemental, a
+  DEVIATION for review (no GU twin). Substitutes: Earth Dragonsphire -> Heavenly Dragonsphire, Skyblade Drgnsphire
+  -> Azure Dragonsphire, Dire Blastheart -> Tigrex Mantle, B.Gravios Pallium -> Gravios Pallium (package-split).
+- Weapons: the 8 GU lacks, one forged weapon each, stand-ins = GU's own Crimson Fatalis weapon of the class (C: its
+  materials in their recipes); Blast = GU 9; raw / element on GU's balance (gu_scale, as the last two ports: GS x1.09
+  .. IG x1.24, a DEVIATION); sharpness: 4U rows in KIRX, GU rows 97 / 128 / 121 the fallbacks, the IG's HR entry =
+  GU row 32; sound sets GU ships (none converted); Dith Valor's 4U ammo index 38 has no GU slot (left out, logged).
+- Chinese (this project's translation, GU's terms): Wroth = 怒焰, GX pieces GX紅龍 + GU piece words, GX descriptions =
+  GU's own GX set's; the ticket after GU's EX ticket (黑龍紅色票券 / 黑龙票券（红）).
+- For the test: smithy lists (2 armor pairs, 8 weapons) and their models (Wroth's converted arcs, the 8 weapon arcs),
+  the ticket from 11499, the break rewards, the IG kinsect, the bowguns' ammo.
