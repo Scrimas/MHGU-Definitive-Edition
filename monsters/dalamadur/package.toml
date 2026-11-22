@@ -7,7 +7,8 @@ title = "Dalamadur"
 class = "Elder Dragon"     # its class, GU's name (monsterName 253..267): the installer's subtitle in every language
 version = "1.0.7"       # bump on every published change of this package's files (data, assets or code); 1.0.7:
                         # 4U's fully random reward lists (flags 0x8003) as GU condition 2 (tools/quest4u.py rem_4u;
-                        # was 1: their first item always drawn): 10792's row B;
+                        # was 1: their first item always drawn): 10792's row B; the meteor impact's explosion
+                        # shown again (module dala_shell003.c: its shell outlives the effect attached to it);
                         # armor defense (issue #50, tools/gear_em090.py): EX Rebellion 79 / 40 (was 73 / 37, below
                         # HR Rebellion), X 134 / 81 and Z 137 / 82 (were 132 / 77, 134 / 78: all four Elder X
                         # anchors); 1.0.6:

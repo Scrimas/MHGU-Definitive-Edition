@@ -16,7 +16,8 @@
  * (power / flag changes, all gated on request flags +0x14 = 0: nothing). Per frame: age += dt; state 2 (end) when
  * the attack slot's active byte (+0x16d) is 0 or age >= 200 (0xc54b88); the active byte drops at the record's window
  * end (start s16 +0, length s16 +2), here taken from the records (GU's own clearing of slot +5 not traced, as
- * Gogmazios' em089_shell005.c). Kill 0xc5598c releases the effect +0x29c (0xc470dc) -> dala_efx_stop.
+ * Gogmazios' em089_shell005.c). Kill 0xc5598c releases the effect +0x29c (0xc470dc) -> dala_efx_stop, the shell
+ * kept until the effect ends (s003_slot_kill: it is attached to the shell, as the meteor's).
  * Records (power / window / volume): 112 = 159: 100, 4 + 20, sphere bone 255 r 450; 113 = 160: 45, 4 + 10, r 450;
  * 114 = 161: 80, 4 + 20, r 700; 126 = 162: 50, 4 + 10, r 450 (all type 2; byte 0x1c = 29, see the build).
  * Effects: 112 / 159 em024_001 / em110_001 mask 1, scale 1.5; 113 / 126 / 160 / 162 em024_005 / em110_005 (group 35 /
@@ -63,7 +64,10 @@ typedef int (*shell_setup_t)(void *self, void *param);
 #define B_END     (DALA_SH_FIELDS + 0x10)   /* float window end (record start + length) */
 #define B_EFX     (DALA_SH_FIELDS + 0x14)   /* void * [+0x29c] */
 #define B_START   (DALA_SH_FIELDS + 0x18)   /* float[3] request position */
+#define B_DYING   (DALA_SH_FIELDS + 0x24)   /* u8 1 = killed, waiting for the effect */
+#define B_DIE_T   (DALA_SH_FIELDS + 0x28)   /* float frames spent waiting for the effect to end */
 #define B_SIZE    (DALA_SH_FIELDS + 0x30)
+#define EFX_DIE_MAX 300.0f                  /* dala_meteor.c's bound before a forced stop */
 
 typedef struct { uint8_t sub, hds, shah; uint16_t efx; float end; } s003_t;
 static const s003_t k_s003[] = {
@@ -92,12 +96,46 @@ static void s003_end(void *self, const char *why)
     VCALL0(self, SLOT_KILL);
 }
 
-/* slot 16 = 4U slot 24 0xc5598c: the effect is released, then the base kill */
+/* slot 16 = 4U slot 24 0xc5598c: the effect is released (0xc470dc), then the base kill. The blast's effect is
+ * attached to this shell (posted on it so it shows at the impact) and reads it every frame, so the shell outlives it
+ * as the meteor's (dala_meteor.c shell_slot_kill): stopped, attack slots off, base kill once the effect is dead
+ * (s003_dying). Until 2026-11-22 the shell died with its 14-frame attack window and took the explosion with it (the
+ * maintainer: "the impact effect is gone"). */
 static void s003_slot_kill(void *self)
 {
     void *h = FIELD(void *, self, B_EFX);
-    if (dala_efx_alive(h)) dala_efx_stop(h);
+    if (h && !dala_efx_alive(h)) FIELD(void *, self, B_EFX) = h = 0;
+    if (!h) { FIELD(uint8_t, self, B_DYING) = 0; uShell_kill(self); return; }
+    if (FIELD(uint8_t, self, B_DYING)) return;
+    FIELD(uint8_t, self, B_DYING) = 1;
+    FIELD(uint8_t, self, B_STATE) = 2;
+    FIELD(float, self, B_DIE_T) = 0.0f;
+    FIELD(uint8_t, self, 0x13ae) = 255; FIELD(uint8_t, self, 0x13ad) = 0;   /* 0x4a247c: attack slots 0..2 off */
+    FIELD(uint8_t, self, 0x1466) = 255; FIELD(uint8_t, self, 0x1465) = 0;
+    FIELD(uint8_t, self, 0x151e) = 255; FIELD(uint8_t, self, 0x151d) = 0;
+    dala_efx_stop(h);
+}
+
+/* per frame while B_DYING: base kill once the effect is dead (forced stop after EFX_DIE_MAX frames) */
+static void s003_dying(void *self)
+{
+    void *h = FIELD(void *, self, B_EFX);
+    float *t = &FIELD(float, self, B_DIE_T);
+    *t += shell_dt(self);
+    if (h && dala_efx_alive(h) && *t >= EFX_DIE_MAX && *t < EFX_DIE_MAX + 1000.0f) {
+        static uint32_t s_n;
+        if (++s_n <= 20) logf("dalaport: blast %u: effect still alive after %d frames, forced stop",
+                              FIELD(uint32_t, self, B_SERIAL), (int32_t)EFX_DIE_MAX);
+        dala_efx_kill(h);
+        *t = EFX_DIE_MAX + 1000.0f;           /* one more frame for the effect's own kill, then the shell goes */
+        return;
+    }
+    if (h && dala_efx_alive(h) && *t < EFX_DIE_MAX + 1000.0f + 30.0f) return;
+    static uint32_t s_n;
+    if (++s_n <= 20) logf("dalaport: blast %u: effect ended %d frames after the window", FIELD(uint32_t, self, B_SERIAL),
+                          (int32_t)*t);
     FIELD(void *, self, B_EFX) = 0;
+    FIELD(uint8_t, self, B_DYING) = 0;
     uShell_kill(self);
 }
 
@@ -133,6 +171,7 @@ static void s003_move(void *self)
 {
     if (FIELD(void *, self, B_EFX) && !dala_efx_alive(FIELD(void *, self, B_EFX))) FIELD(void *, self, B_EFX) = 0;
     uShell_move(self);
+    if (FIELD(uint8_t, self, B_DYING)) { s003_dying(self); return; }
     if (!shell_live(self) || FIELD(uint8_t, self, B_STATE) != 1) return;
     float *age = &FIELD(float, self, B_AGE);
     *age += shell_dt(self);
