@@ -898,9 +898,6 @@ def install():
         shutil.copy(src, os.path.join(dst, 'nativeNX', 'mhgu_de'))
     for name in ui_icons.FILES:
         shutil.copy(os.path.join(OUT, name), os.path.join(dst, 'nativeNX', 'mhgu_de'))
-    if 'TEST_NEXT_ACTION' in os.environ.get('GOG_DEFINES', '').split():   # its request file (nextact.c): the size
-        with open(os.path.join(dst, 'nativeNX', 'mhgu_de', 'nextact.txt'), 'w', newline='\n') as f:   # stays fixed
-            f.write('seq=0 em=0x0 cat=0 num=0'.ljust(63) + '\n')          # (tools/nextact.py rewrites it in place)
     sel = os.environ.get('PORT_ASSETS', 'all')          # package names (an entry name selects its package; a monster
     names = alloc.packages() if sel == 'all' else [] if sel == 'none' else \
         list(dict.fromkeys(paths.package(n) for n in sel.split(',')))   # brings the maps it requires)

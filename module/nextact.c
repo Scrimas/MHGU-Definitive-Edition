@@ -8,13 +8,13 @@
  * pair) and no chained step does (setActionNext, the end slots 247..250 and class code call setAction themselves).
  * It runs only where the monster is controlled: online, the request applies on the machine that runs that monster,
  * and GU replicates the action to the others (S).
- * The request: romfs/nativeNX/mhgu_de/nextact.txt in the mod folder, 64 bytes, written by module/build.py install for
- * this switch and rewritten IN PLACE (same size) by tools/nextact.py: one line `seq=N em=0xID cat=C num=N`. Ryujinx
- * serves a mod's RomFS file from the host file when the game reads it (its size fixed at launch, S), so a fresh
- * request shows on the next read. Read at each AI pick; a seq applies once, to the first monster of that ID that
- * picks; the seq found at the first read counts as old (no replay of a previous session's request). Before it: the
- * SD card (nn::fs::MountSdCard / ...ForDebug imported from the sdk NSO): Ryujinx refused both, FS 6400 permission
- * denied (result 0x320002, test 2026-11-22: main.npdm has no SdCard permission).
+ * The request: a UDP datagram to 127.0.0.1:47123 from tools/nextact.py, one line `seq=N em=0xID cat=C num=N`. The
+ * module keeps one reference of GU's socket service through GU's own counted wrapper (0x813b44(obj, &result): the
+ * first reference runs nn::socket::Initialize, 0x813bb4 releases; obj = [0x1840900]+0x2c via 0x8110e0, as GU's online
+ * code calls it, C), so GU's own online start / stop keeps working; the socket is non-blocking and drained at each AI
+ * pick (the last request wins). A seq applies once, to the first monster of that ID that picks. Tried before (test
+ * 2026-11-22): the SD card (Ryujinx refused it: FS 6400, main.npdm has no SdCard permission) and a mod RomFS file
+ * rewritten in place (Ryujinx keeps the launch copy: the game never saw the change).
  * Limits: a combo script passes here at each step (the request replaces the next one, the rest of the script goes
  * on); idle picks (0, 0xff) do not pass here; a pair outside the monster's state (flying, its rider, Dalamadur's
  * halves) can misbehave; online, setAction mode 0 runs the class's remap slot 127. Log: "nextact:" (every pick, every
@@ -26,24 +26,35 @@
 
 enum { R0, R1, R2, R3, R4, R5, R12, LR };
 
-typedef struct { void *h; } fs_file;
-typedef uint32_t (*fs_open_t)(fs_file *out, const char *path, int mode);
-typedef uint32_t (*fs_size_t)(int64_t *out, fs_file f);
-typedef uint32_t (*fs_read_t)(uint32_t *out, fs_file f, int64_t offset, void *buf, uint32_t size);
-typedef void (*fs_close_t)(fs_file f);
-#define fs_open FN(fs_open_t, 0x13f04b4)       /* GU's nn::fs imports (savefile.c) */
-#define fs_size FN(fs_size_t, 0x13f043c)
-#define fs_read FN(fs_read_t, 0x13f0448)
-#define fs_close FN(fs_close_t, 0x13f046c)
+/* GU's nn::socket imports (dump/gu_plt.json) and its counted service start (C) */
+typedef int (*sock_socket_t)(int domain, int type, int proto);
+typedef int (*sock_bind_t)(int fd, const void *addr, uint32_t len);
+typedef int (*sock_recv_t)(int fd, void *buf, uint32_t len, int flags);
+typedef int (*sock_fcntl_t)(int fd, int cmd, ...);
+typedef int (*sock_errno_t)(void);
+typedef void (*sock_ref_t)(void *obj, int32_t *result);
+typedef void *(*sock_obj_t)(void *mgr);
+#define sock_socket FN(sock_socket_t, 0x13f0508)   /* nn::socket::Socket */
+#define sock_bind   FN(sock_bind_t, 0x13f0574)     /* nn::socket::Bind */
+#define sock_recv   FN(sock_recv_t, 0x13f05a4)     /* nn::socket::Recv */
+#define sock_fcntl  FN(sock_fcntl_t, 0x13f0520)    /* nn::socket::Fcntl */
+#define sock_errno  FN(sock_errno_t, 0x13f0514)    /* nn::socket::GetLastErrno */
+#define sock_ref    FN(sock_ref_t, 0x813b44)       /* GU: socket service reference (Initialize at the first) */
+#define sock_obj    FN(sock_obj_t, 0x8110e0)       /* GU: its owner from [0x1840900] (ldr r0, [r0, #0x2c]) */
+#define AF_INET_ 2
+#define SOCK_DGRAM_ 2
+#define F_SETFL_ 4
+#define O_NONBLOCK_ 4                              /* the BSD values nn::socket takes */
+#define MSG_DONTWAIT_ 0x80
+#define REQ_PORT 47123
 
 #define ENEMY_MGR 0x1851fe0u            /* the enemy manager (module/main.c) */
 typedef uint8_t *(*enemy_at_t)(void *mgr, uint32_t k);
 #define enemyAt FN(enemy_at_t, 0x5ceb4) /* the k-th of the 10 monster slots, or 0 */
-#define REQ_PATH "app:/nativeNX/mhgu_de/nextact.txt"
 
 struct req { uint32_t seq, em, cat, num; };
 
-static int s_first = 1;                 /* the first read: its seq is old */
+static int s_fd = -2;                   /* -2 not opened yet, -1 failed */
 static uint32_t s_done = 0xffffffffu;   /* the last seq applied (or found old) */
 
 static int slot_of(void *self)
@@ -85,31 +96,35 @@ static int parse(const char *s, struct req *r)
     return got == 15;
 }
 
-/* 1 = a request parsed; every change of what the read returns is logged (open / size / read results, the text) */
+static void open_socket(void)
+{
+    void *mgr = *(void **)MAIN(0x1840900u);
+    int32_t res = -1;
+    s_fd = -1;
+    if (!mgr) { logf("nextact: no network manager yet (0x1840900): requests off"); return; }
+    sock_ref(sock_obj(mgr), &res);                  /* kept for the session: GU's own stop leaves the service up */
+    int fd = sock_socket(AF_INET_, SOCK_DGRAM_, 0);
+    struct { uint8_t len, family; uint16_t port; uint32_t addr; uint8_t zero[8]; } sa = {
+        16, AF_INET_, (uint16_t)(REQ_PORT >> 8 | (REQ_PORT & 0xff) << 8), 0x0100007fu, {0}};   /* network order */
+    int b = fd < 0 ? -1 : sock_bind(fd, &sa, sizeof sa);
+    int f = fd < 0 ? -1 : sock_fcntl(fd, F_SETFL_, O_NONBLOCK_);
+    logf("nextact: socket service reference %x, UDP socket %d, bind 127.0.0.1:%d %d, non-blocking %d (errno %d)%s",
+         (uint32_t)res, fd, REQ_PORT, b, f, sock_errno(), fd >= 0 && b == 0 ? ": requests on" : ": requests OFF");
+    if (fd >= 0 && b == 0) s_fd = fd;
+}
+
+/* 1 = a request: the last datagram waiting (each logged) */
 static int read_req(struct req *r)
 {
-    fs_file h;
-    int64_t size = 0;
-    uint32_t n = 0, e_open, e_size = 0, e_read = 0;
-    char buf[80];
-    buf[0] = 0;
-    if (!(e_open = fs_open(&h, REQ_PATH, 1))) {
-        if (!(e_size = fs_size(&size, h)) && size > 0) {
-            if (size > (int64_t)sizeof buf - 1) size = sizeof buf - 1;
-            e_read = fs_read(&n, h, 0, buf, (uint32_t)size);
-            buf[e_read ? 0 : n < sizeof buf ? n : sizeof buf - 1] = 0;
-        }
-        fs_close(h);
-    }
-    int ok = parse(buf, r);
-    static uint32_t s_sum = 1, s_n;           /* FNV of the outcome: log only what changed */
-    uint32_t sum = 2166136261u ^ e_open ^ (e_size << 8) ^ (e_read << 16) ^ (uint32_t)size;
-    for (const char *c = buf; *c; c++) sum = (sum ^ (uint8_t)*c) * 16777619u;
-    if (sum != s_sum && ++s_n <= 40) {
-        s_sum = sum;
+    char buf[96];
+    int ok = 0, n;
+    while ((n = sock_recv(s_fd, buf, sizeof buf - 1, MSG_DONTWAIT_)) > 0) {
+        buf[n] = 0;
         for (char *c = buf; *c; c++) if (*c == '\n' || *c == '\r') *c = 0;
-        logf("nextact: read " REQ_PATH ": open %x size %d read %x bytes %u -> %s \"%s\"", e_open, (int32_t)size, e_read,
-             n, ok ? "request" : "no request", buf);
+        struct req q;
+        int good = parse(buf, &q);
+        logf("nextact: datagram \"%s\" -> %s", buf, good ? "request" : "not a request");
+        if (good) *r = q, ok = 1;
     }
     return ok;
 }
@@ -119,16 +134,14 @@ int nextact_pick_c(uint32_t *regs)          /* 0x85a10, before setAction(this, c
     void *self = (void *)regs[R0];
     uint32_t em = FIELD(uint16_t, self, EN_ID), cat = regs[R1], num = regs[R2];
     int slot = slot_of(self);
-    struct req q;
-    int ok = read_req(&q);
-    if (s_first) {
-        s_first = 0;
-        if (ok) s_done = q.seq;
-        logf("nextact: request file " REQ_PATH " %s (seq %u, old)", ok ? "read" : "NOT readable or no request (the read "
-             "line above says which; build.py install with TEST_NEXT_ACTION writes it)", ok ? q.seq : 0);
-    }
+    if (s_fd == -2) open_socket();
+    static struct req q;                       /* the latest request read, kept until its monster picks */
+    static int have;
+    struct req got;
+    if (s_fd >= 0 && read_req(&got)) q = got, have = 1;
+    int ok = have;
     static uint32_t s_seen;
-    if (ok && q.seq != s_done && q.seq != s_seen) {     /* the file is read live: say so before the monster picks */
+    if (ok && q.seq != s_done && q.seq != s_seen) {     /* in: say so before the monster picks */
         s_seen = q.seq;
         logf("nextact: request %u seen (em %x %u/%u), waiting for that monster's next AI pick", q.seq, q.em, q.cat, q.num);
     }

@@ -2,52 +2,38 @@
 TEST_NEXT_ACTION).
 
 Pause the game, pick the monster and the action here, unpause: the module swaps the monster's next AI pick for it (once).
-The request is the 64-byte file romfs/nativeNX/mhgu_de/nextact.txt of the installed mod (module/build.py install with
-the switch writes it), rewritten in place: Ryujinx reads a mod's RomFS file from disk when the game reads it, its size
-fixed at launch (the SD card is refused: GU has no SdCard permission). What the monsters pick, and when a request
-applied, comes from the module's "nextact:" lines in the latest Ryujinx log. Action lists and names: tools/actions.py
+The request is one UDP datagram to 127.0.0.1:47123 (the module listens there; Ryujinx's sockets are the PC's), so
+it reaches the game at once. What the monsters pick, and when a request applied, comes from the module's "nextact:" lines in the latest Ryujinx log. Action lists and names: tools/actions.py
 (a port's monsters/<package>/actions.toml, GU's own from its AI table).
 
   nextact.py                          the GUI (Textual): monsters seen in the log, their actions, Enter = request
   nextact.py set 0x60d 7 74           write a request without the GUI
   options: --mods DIR                 the emulator's mods folder (default: GOG_MOD_ROOT, else ~/.config/Ryujinx/mods);
                                       the Ryujinx log folder is its sibling Logs/
+           --port N                   the module's port (default 47123, module/nextact.c REQ_PORT)
 """
-import argparse, glob, os, re, sys, time
+import argparse, glob, os, re, socket, sys, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import actions   # noqa: E402
 
-MOD_NAME = 'MHGU Definitive Edition'   # module/build.py MOD_DIR
-REQ_SIZE = 64
+PORT = 47123                           # module/nextact.c REQ_PORT
 PICK = re.compile(r'nextact: slot (-?\d+) em ([0-9a-f]+): AI pick (\d+)/(\d+)(?: -> (\d+)/(\d+) \(request (\d+)\))?')
-CARD = re.compile(r'nextact: (request file .*)$')
+CARD = re.compile(r'nextact: (socket service .*|no network manager.*)$')
 SEEN = re.compile(r'nextact: request (\d+) seen')
-READ = re.compile(r'nextact: (read .*)$')
+READ = re.compile(r'nextact: (datagram .*)$')
 
 
 def mods_dir(arg):
     return os.path.abspath(os.path.expanduser(arg or os.environ.get('GOG_MOD_ROOT') or '~/.config/Ryujinx/mods'))
 
 
-def req_path(mods):
-    return os.path.join(mods, 'contents', '0100770008dd8000', MOD_NAME, 'romfs', 'nativeNX', 'mhgu_de', 'nextact.txt')
-
-
-def write_request(mods, em, cat, num):
-    """rewrite the request file in place (same inode, same size: the emulator fixed its size at launch); returns the
-    seq (seconds, so a new one never equals an old one)"""
-    path = req_path(mods)
-    if not os.path.exists(path) or os.path.getsize(path) != REQ_SIZE:
-        sys.exit('%s: missing or not %d bytes: install the module with GOG_DEFINES=TEST_NEXT_ACTION, then restart '
-                 'the game' % (path, REQ_SIZE))
+def send_request(em, cat, num, port=PORT):
+    """one datagram to the module; returns its seq (seconds, so a new one never equals an old one)"""
     seq = int(time.time())
-    line = ('seq=%d em=0x%x cat=%d num=%d' % (seq, em, cat, num)).ljust(REQ_SIZE - 1) + '\n'
-    with open(path, 'r+b') as f:
-        f.write(line.encode('ascii'))
-        f.flush()
-        os.fsync(f.fileno())
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as so:
+        so.sendto(('seq=%d em=0x%x cat=%d num=%d' % (seq, em, cat, num)).encode('ascii'), ('127.0.0.1', port))
     return seq
 
 
@@ -56,7 +42,7 @@ def monster_name(em):
     return m['name'] if m else 'GU ' + actions.arc_name(em)
 
 
-def main_gui(mods):
+def main_gui(mods, port=PORT):
     root = os.path.dirname(mods)                 # the Ryujinx folder: Logs/ beside mods/
     from textual.app import App, ComposeResult
     from textual.containers import Horizontal, Vertical
@@ -156,7 +142,7 @@ def main_gui(mods):
             if self.sel is None and rows: self.select(rows[0][0])
             pend = ('waiting: %s %d/%d (request %d, %s), applies at its next AI pick' % (
                 monster_name(self.pending[1]), self.pending[2], self.pending[3], self.pending[0],
-                'read by the game' if self.seen == self.pending[0] else 'not read by the game yet')
+                'received by the game' if self.seen == self.pending[0] else 'not received by the game yet')
                 if self.pending else 'no request waiting')
             self.query_one('#status', Static).update('%s\n%s\nEnter on an action = request it for the selected '
                                                      'monster (pause the game first)' % (self.card, pend))
@@ -196,9 +182,9 @@ def main_gui(mods):
         def on_data_table_row_selected(self, event):
             if event.data_table.id != 'actlist' or self.sel is None: return
             cat, num = map(int, event.row_key.value.split('/'))
-            seq = write_request(mods, self.sel, cat, num)
+            seq = send_request(self.sel, cat, num, port)
             self.pending = (seq, self.sel, cat, num)
-            self.query_one('#events', RichLog).write('%s request %d: %s %d/%d written (unpause: it applies at its next '
+            self.query_one('#events', RichLog).write('%s request %d: %s %d/%d sent (unpause: it applies at its next '
                                                      'AI pick)' % (time.strftime('%H:%M:%S'), seq,
                                                                    monster_name(self.sel), cat, num))
             self.redraw()
@@ -209,18 +195,19 @@ def main_gui(mods):
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--mods')
+    ap.add_argument('--port', type=int, default=PORT)
     ap.add_argument('cmd', nargs='*')
     a = ap.parse_args(argv)
     mods = mods_dir(a.mods)
     if a.cmd[:1] == ['set'] and len(a.cmd) == 4:
         em, cat, num = int(a.cmd[1], 0), int(a.cmd[2], 0), int(a.cmd[3], 0)
-        seq = write_request(mods, em, cat, num)
-        print('request %d: %s %d/%d -> %s' % (seq, monster_name(em), cat, num, req_path(mods)))
+        seq = send_request(em, cat, num, a.port)
+        print('request %d: %s %d/%d sent to 127.0.0.1:%d' % (seq, monster_name(em), cat, num, a.port))
         return 0
     if a.cmd:
         print(__doc__)
         return 2
-    main_gui(mods)
+    main_gui(mods, a.port)
     return 0
 
 
