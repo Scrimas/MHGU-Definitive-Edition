@@ -8,11 +8,15 @@
  * pair) and no chained step does (setActionNext, the end slots 247..250 and class code call setAction themselves).
  * It runs only where the monster is controlled: online, the request applies on the machine that runs that monster,
  * and GU replicates the action to the others (S).
- * The request: a UDP datagram to 127.0.0.1:47123 from tools/nextact.py, one line `seq=N em=0xID cat=C num=N`. The
- * module keeps one reference of GU's socket service through GU's own counted wrapper (0x813b44(obj, &result): the
- * first reference runs nn::socket::Initialize, 0x813bb4 releases; obj = [0x1840900]+0x2c via 0x8110e0, as GU's online
- * code calls it, C), so GU's own online start / stop keeps working; the socket is non-blocking and drained at each AI
- * pick (the last request wins). A seq applies once, to the first monster of that ID that picks. Tried before (test
+ * The request: a UDP datagram to 127.0.0.1:47123 from tools/nextact.py, one line `seq=N em=0xID cat=C num=N`, on a
+ * non-blocking socket drained at each AI pick (the last request wins). GU starts nn::socket through a counted wrapper
+ * (0x813b44(obj, &result): Initialize(obj+0x16c pool, 0x600000, 0x20000, 14) at the first reference, count obj+0x53c,
+ * 0x813bb4 releases and Finalizes at 0; obj = [0x1840900]+0x2c via 0x8110e0, C). Offline its pool is not set up and
+ * the SDK aborted that Initialize (InitializeCommon, test 2026-11-22: crash at quest load). So: GU's service running
+ * (count > 0) -> one more reference through the wrapper; else the module starts it on its own pool (the SDK's checks,
+ * C: 4 KB aligned, size >= 0xC0000, allocation pool smaller, concurrency 1..14) and sets the count to 1 as the
+ * wrapper does after its own start, so GU later takes references instead of a second Initialize (G: GU's online play
+ * then runs on this smaller pool; test builds only). A seq applies once, to the first monster of that ID that picks. Tried before (test
  * 2026-11-22): the SD card (Ryujinx refused it: FS 6400, main.npdm has no SdCard permission) and a mod RomFS file
  * rewritten in place (Ryujinx keeps the launch copy: the game never saw the change).
  * Limits: a combo script passes here at each step (the request replaces the next one, the rest of the script goes
@@ -34,6 +38,7 @@ typedef int (*sock_fcntl_t)(int fd, int cmd, ...);
 typedef int (*sock_errno_t)(void);
 typedef void (*sock_ref_t)(void *obj, int32_t *result);
 typedef void *(*sock_obj_t)(void *mgr);
+typedef int32_t (*sock_init_t)(void *pool, uint32_t size, uint32_t alloc, int concurrency);
 #define sock_socket FN(sock_socket_t, 0x13f0508)   /* nn::socket::Socket */
 #define sock_bind   FN(sock_bind_t, 0x13f0574)     /* nn::socket::Bind */
 #define sock_recv   FN(sock_recv_t, 0x13f05a4)     /* nn::socket::Recv */
@@ -41,6 +46,9 @@ typedef void *(*sock_obj_t)(void *mgr);
 #define sock_errno  FN(sock_errno_t, 0x13f0514)    /* nn::socket::GetLastErrno */
 #define sock_ref    FN(sock_ref_t, 0x813b44)       /* GU: socket service reference (Initialize at the first) */
 #define sock_obj    FN(sock_obj_t, 0x8110e0)       /* GU: its owner from [0x1840900] (ldr r0, [r0, #0x2c]) */
+#define sock_init   FN(sock_init_t, 0x13f02e0)     /* nn::socket::Initialize(pool, size, alloc size, concurrency) */
+#define SOCK_COUNT  0x53c                          /* GU's reference count in obj */
+#define POOL_SIZE   0xC0000u                       /* the SDK's smallest pool without its special flag */
 #define AF_INET_ 2
 #define SOCK_DGRAM_ 2
 #define F_SETFL_ 4
@@ -102,7 +110,13 @@ static void open_socket(void)
     int32_t res = -1;
     s_fd = -1;
     if (!mgr) { logf("nextact: no network manager yet (0x1840900): requests off"); return; }
-    sock_ref(sock_obj(mgr), &res);                  /* kept for the session: GU's own stop leaves the service up */
+    void *obj = sock_obj(mgr);
+    static uint8_t s_pool[POOL_SIZE] __attribute__((aligned(0x1000)));
+    int32_t count = FIELD(int32_t, obj, SOCK_COUNT);
+    if (count > 0) sock_ref(obj, &res);             /* GU's service is up: one more reference, kept */
+    else if (!(res = sock_init(s_pool, POOL_SIZE, 0x20000, 4))) FIELD(int32_t, obj, SOCK_COUNT) = 1;
+    logf("nextact: GU socket references %d -> %d (%s)", count, FIELD(int32_t, obj, SOCK_COUNT),
+         count > 0 ? "GU's service" : "started on the module's pool");
     int fd = sock_socket(AF_INET_, SOCK_DGRAM_, 0);
     struct { uint8_t len, family; uint16_t port; uint32_t addr; uint8_t zero[8]; } sa = {
         16, AF_INET_, (uint16_t)(REQ_PORT >> 8 | (REQ_PORT & 0xff) << 8), 0x0100007fu, {0}};   /* network order */
