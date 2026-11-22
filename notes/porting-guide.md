@@ -301,7 +301,10 @@ testable alone (the maintainer checks the smithy or one quest).
 - **Quests.** tools/build_gog_quest.py --source <4U quest> (fee, rewards, HRP, subquest = GU type 8, digit = break
   group or 7 tail sever); board slots by renaming DUMMY quest_group entries (allocations.toml quest_slots,
   module/quest.c, only while the monster is installed); 4U spawn byte 3 sits where GU keeps the Hyper flag: keep
-  GU's 0 and return 4U's value from code.
+  GU's 0 and return 4U's value from code. Reward lists (C, G-rank Crimson Fatalis' plan.md 10): a 4U row A with a
+  second list of flag 4 (slay-or-repel quests: Fatalis, Jhen / Dah'ren Mohran, Lao-Shan) holds the **repel**
+  rewards, drawn instead of the main list; GU's twin is slot 0's condition-4 group, which tools/quest4u.py rem_4u
+  writes. Check every 4U event file of the monster (tools/extdata4u.py list): Phase 1 of that port missed one.
 - **Armor / weapons.** tools/gear_em089.py (armor series 127 B + create / level rows + skill tree / skill +
   Arcane decorations) and tools/gear_weapons_em089.py (14 classes: Base / Level / Msg / Create / Process,
   sharpness, bowgun ammo, bow coatings; one load-exit hook per table class, module/gear_hooks.txt; a weapon

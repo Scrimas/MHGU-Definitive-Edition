@@ -4,10 +4,13 @@ name = "g_crimson_fatalis"
 kind = "monster"
 title = "Crimson Fatalis (4U)"
 class = "Elder Dragon"     # its class, GU's name (monsterName 253..267): the installer's subtitle in every language
-version = "0.1.0"          # bump on every published change of this monster's files (data, assets or code); 0.1.0:
+version = "0.2.0"          # bump on every published change of this monster's files (data, assets or code); 0.2.0:
+                           # its 4U behaviour (module em013_06_*.c), name "Crimson Fatalis (4U)" (NAME, entry
+                           # 223) and quests 11498 / 11499 / 11400 (4U m11036, events m60249 / m60215); 0.1.0:
                            # its arc em013_06 (model, sound, effects, AI, tuning, carves), theme, shells and
                            # variant aliases; 0.0.1: its IDs claimed in allocations.toml, nothing built yet
-requires_core = "3.1.0"    # oldest core module (exefs) that runs this version: its shells and variant 6 aliases
+requires_core = "3.1.0"    # oldest core module (exefs) that runs this version: its shells, variant 6 aliases and
+                           # appended quests
 requires = []              # packages it needs besides the core: none, GU's own Ingle Isle (stage 19) hosts it
 code = "em013_06"          # C prefix of its module code (hooks gated on GU variant 6)
 gu_class = "uEm013_00"     # GU's Fatalis class runs it as variant 6 (module/build.py: registry DTI = donor's)

@@ -91,10 +91,29 @@ def rem_4u(q, row, gu_item):
     gu_item(4U id) -> GU id or None: a 4U item with no GU item is left out and its chance goes to the row's most likely
     item (the row stays 100 %). 4U list flags: 0x8000, or 0x8003 on 130 of the 4U row-B lists (gathering items, ores,
     spheres; meaning not traced) -> condition 1 too: GU's hunts put that kind of row B under condition 1 (G Zamtrios
-    11207: spheres, charms, jewels); GU's condition-2 rows B are on its other quest types."""
+    11207: spheres, charms, jewels); GU's condition-2 rows B are on its other quest types.
+    A second list of flag 4 (row A of 4U's slay-or-repel quests, objective 0x101: Fatalis, Jhen / Dah'ren Mohran,
+    Lao-Shan) is the repel list (C: 4U 0xaaeffc draws it instead of the main list when the quest state sQuest+0xad2a
+    is 1 / 2; GU 0x381d30 draws slot 0's condition-4 group in the same states of sQuest+0x52, its first entry fixed as
+    4U's): it becomes a condition-4 group after the main one, as GU's own Fatalis rows (q11456 rem_131131)."""
     lst = struct.unpack_from('<I', q, row)[0]
     flags, off = struct.unpack_from('<II', q, lst)
-    assert flags in (0x8000, 0x8003) and struct.unpack_from('<H', q, lst + 8)[0] == 0xFFFF, 'unexpected 4U reward list'
+    assert flags in (0x8000, 0x8003), 'unexpected 4U reward list'
+    groups = [(1, _rem_group(q, row, off, gu_item))]
+    if struct.unpack_from('<H', q, lst + 8)[0] != 0xFFFF:
+        flags, off = struct.unpack_from('<II', q, lst + 8)
+        assert row == 0x1c and flags == 4 and struct.unpack_from('<H', q, lst + 16)[0] == 0xFFFF, \
+            'unexpected 4U reward list'
+        groups.append((4, _rem_group(q, row, off, gu_item)))
+    head = b''.join(bytes([c, len(e)]) for c, e in groups)
+    body = b''.join(b''.join(struct.pack('<HBB', *x) for x in e) + struct.pack('<HBB', 0, 0, 0xFF) for _, e in groups)
+    d = struct.pack('<fI', 1.0, 1) + head + bytes(16 - len(head)) + body
+    assert len(d) <= 184, (row, len(d))
+    return d + bytes(184 - len(d))
+
+
+def _rem_group(q, row, off, gu_item):
+    """one 4U reward list's table at off -> GU group entries [[GU item, count, chance]] (rem_4u)"""
     ents, lost = [], 0
     while struct.unpack_from('<H', q, off)[0] != 0xFFFF:
         chance, item, count = struct.unpack_from('<HHH', q, off)
@@ -117,9 +136,7 @@ def rem_4u(q, row, gu_item):
             if e[2]: kept.append(e)
         ents = kept
     assert sum(e[2] for e in ents) == 100 and len(ents) <= 40, ents
-    body = b''.join(struct.pack('<HBB', *e) for e in ents)
-    d = struct.pack('<fI', 1.0, 1) + bytes([1, len(ents)]) + bytes(14) + body + struct.pack('<HBB', 0, 0, 0xFF)
-    return d + bytes(184 - len(d))
+    return ents
 
 
 # Supply box (issue #11). 4U quest header +0x08 -> list of 8-byte {u8 kind, u8 slots, u16, u32 table} closed by kind

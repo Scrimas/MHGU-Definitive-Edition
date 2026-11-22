@@ -118,7 +118,7 @@ from code for 11499 (Gogmazios' way).
 - Name "Crimson Fatalis (4U)" (the maintainer). No Hunter's Notes entry: GU has one Fatalis entry (120) for its three.
 - Quests: m11036 "Advanced: A Final Battle Cry" (guild G3, fee 5800, reward 57900, 35 min, rows 71 / 115 / 85) -> 11498;
   event m60249 "Beyond the Crimson Veil" (G3, the same fee / reward, rows 78 / 119 / 87, Crimson Fatalis Ticket) ->
-  11499; both hub G4 after GU's q11456. Stats: the maintainer's ratio rule with GU's floor: em117 over em077 at 4U
+  11499; both hub G4 after GU's q11456 (and a third, event m60215 -> 11400: section 10). Stats: the maintainer's ratio rule with GU's floor: em117 over em077 at 4U
   G3 (event over event: m60249 / m60211 78 / 115 / 87), applied to q11456's rows 100 / 115 / 98, never below them.
 - Materials: 4U 1589..1593 (Fatalis Flamescale, Flameshell, Flamehorn, Flamewing, Devileye+) are GU's 1658..1662
   (Crimson Fatalis Scale, Shell, Horn, Wing, Fatalis Devileye+): the same text, renamed (C).
@@ -250,3 +250,34 @@ the W+0x2c object is a uMhHazeFilter made for every species.
   4U P+0x7fe (stops a hot area's drain inside the zone; Ingle Isle is not hot).
 - For the first test (logged): the haze draws at all and looks like 4U's (strength / range), its delete at quest
   end; the stepfire on every footstep (one post per PSL section); the prominence grid on slopes; the m51 / m52 glow.
+
+## 10. Phase 5: name and quests (2026-11-22; built, translate.py check clean; not tested in game)
+
+Steps `name` and `quest` (tools/name_em013_06.py, tools/build_em013_06_quest.py: the rules are in their docstrings).
+- Third quest (C): the maintainer's extdata holds a second em117 event, m60215 "A Feast for the Departed" (star 10,
+  Ingle Isle, fee 4900 / 48300, rows 73 / 115 / 85, spawn byte 3 = 0), which Phase 1 missed (section 5 listed two).
+  The maintainer: port it as 11400 (checked free: no file, no quest_group entry, not in the catalog 0x1595e98; the
+  last free 114NN ID). allocations.toml quests = [11498, 11499, 11400]: quests[1] stays the spawn-byte-3 event.
+- Name (C): GU names its three forms "Fatalis" in the western languages (monsterName 117..119), as 4U does em117, so
+  "Crimson Fatalis (4U)" is built from GU's own words of its Crimson Fatalis items per language; Chinese 紅龍 / 红龙
+  (GU's chT / chS do tell the forms apart) + full-width "（4U）".
+- Quests: template, stat base, box and spawn = GU's q11456; 4U's money; stats by the ratio rule over m60211 with
+  GU's floor: 11498 / 11400 = q11456's 100 / 115 / 98 (r HP 0.914 / 0.939, attack 1.0), 11499 attack row 119
+  (r 1.16). Spawn = q11456's record (Capcom moved 4U's shared point for its Crimson; S).
+- Rewards (C, a helper's trace, 2026-11-22): every 4U em117 quest's row A has a second list of flag 4 (also on
+  Jhen / Dah'ren Mohran, Lao-Shan and the Fatalis trio, objective 0x101 "slay or repel"). 4U 0xaaeffc draws it
+  **instead of** the main list when the quest state sQuest+0xad2a is 1 / 2 (repel: 0x69acac sets 1 at HP <= 20 %
+  with quest flag 0x400), the first entry fixed; GU 0x381d30 does the same with slot 0's condition-4 group (state
+  sQuest+0x52). quest4u.rem_4u writes it so (byte-identical on every single-list row, 1468 checked). GU's q11456
+  also gives a slain Fatalis 3 bonus draws (slot 3 condition 5, 0x38236c) that 4U lacks: not ported (empty slots
+  3 / 4). Items: Flamescale .. Flamewing = GU 1658..1661 (C: q11456's rem_230077 is m11036's row A with these IDs),
+  Strong Armor Sphere -> King Armor Sphere; no GU item for Conqueror's Seal G, Immenseness Ticket S, Crimson Fatalis
+  Ticket (4U 1886; Phase 5b may add it): left out.
+- Chinese quest text: lang/zh_*.toml [quests] 11400 / 11498 / 11499 (this project's translation; the objective is GU
+  q11456's own string, the same English).
+- Follow-ups, not changed: quest4u.rem_4u maps 4U's 0x8003 lists to condition 1, which fixes the first draw (GU
+  0x38211c); 4U draws 0x8003 fully at random (0xaad870), so condition 2 is the faithful value (11499's row B here,
+  and every earlier port's 0x8003 rows: changing it changes shipped quests). translate.py apply rewrote the
+  unrelated key 11371.client (two strings of the same English, "Professor"): restored by hand.
+- For the test: the three quests on the G★4 hub board with '?' icons, their text, a repel ending (HP <= 20 %, as
+  GU's q11456) giving row A's repel list, the stand-in swap (0x10d -> 0x60d) and the event behaviour on 11499 only.

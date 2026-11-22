@@ -15,6 +15,7 @@ tidal_najarala = "水蛇龙"  # community (monsterhunterwiki.org): no Chinese re
 tigerstripe_zamtrios = "变形虎鲨" # community (monsterhunterwiki.org), GU's own Zamtrios pattern (冰鮫鯊 / 变形冰鲨)
 desert_seltas = "沙漠穿甲虫" # this project's: GU's 沙漠 (its "Desert") + GU's Seltas 徹甲蟲 / 穿甲虫; no Chinese release or fan name found
 desert_seltas_queen = "沙漠重甲虫" # this project's: GU's 沙漠 + GU's Seltas Queen 重甲蟲 / 重甲虫; no Chinese release or fan name found
+g_crimson_fatalis = "红龙（4U）" # GU's own Crimson Fatalis (monsterName 118) + the maintainer's "(4U)", full-width (GU's chS has no ASCII parentheses)
 
 [maps]                     # board = the quest board's and the installer's name (4U has none in Chinese),
                            # full = the full name; community (no Chinese release names them): 天空山 the 4G kanji; 千剑山 moegirl, 战斗街 baike.baidu.com
@@ -2165,6 +2166,13 @@ speartip_crag = { board = "千剑山", full = "千剑山" }
 "11374.other" = { text = "背甲龙\r\n飞甲虫", en = "cc9dd247" }
 "11374.sub" = { text = "破坏沙漠重甲虫的尾巴", en = "556d2db5" }
 "11374.title" = { text = "恼人的害虫", en = "482fe306" }
+"11400.client" = { text = "谜之红衣男子", en = "22966381" }
+"11400.desc" = { text = "赤红的恐惧\r\n已然现身。\r\n猎人啊，你愿意\r\n挺身对抗它吗？\r\n毕竟我们故事的结局\r\n尚未写下。", en = "05194dc6" }
+"11400.fail" = { text = "报酬金额为零\r\n时间耗尽", en = "2cfc371e" }
+"11400.obj" = { text = "讨伐或者击退\r\n红龙", en = "8776a0c1" }
+"11400.other" = { text = "无", en = "6eef6648" }
+"11400.sub" = { text = "无", en = "6eef6648" }
+"11400.title" = { text = "亡者的盛宴", en = "e661f3dc" }
 "11426.client" = { text = "火之国的公主", en = "d492c4c0" }
 "11426.desc" = { text = "人民的伤痕还未痊愈……\r\n又有飞龙来到了\r\n地底火山。\r\n火神抛弃我们了吗？\r\n……猎人，我求求你，\r\n别让我们的和平\r\n这么快就被打碎。", en = "393a1777" }
 "11426.fail" = { text = "报酬金额为零\r\n时间耗尽", en = "2cfc371e" }
@@ -2263,6 +2271,20 @@ speartip_crag = { board = "千剑山", full = "千剑山" }
 "11496.other" = { text = "无", en = "6eef6648" }
 "11496.sub" = { text = "切断蛇帝龙尾巴", en = "8e4c626f" }
 "11496.title" = { text = "绯红之帝", en = "4ca4e17f" }
+"11498.client" = { text = "至尊大人", en = "8cd620c0" }
+"11498.desc" = { text = "幸会，勇敢的猎人。\r\n你解读的文献记载着\r\n一头带来浩劫的红龙\r\n即将降临熔岩岛。\r\n长老会已将它\r\n列为讨伐目标。\r\n我相信你一定能成功。", en = "1fbf1d6b" }
+"11498.fail" = { text = "报酬金额为零\r\n时间耗尽", en = "2cfc371e" }
+"11498.obj" = { text = "讨伐或者击退\r\n红龙", en = "8776a0c1" }
+"11498.other" = { text = "无", en = "6eef6648" }
+"11498.sub" = { text = "无", en = "6eef6648" }
+"11498.title" = { text = "高难度：最后的战吼", en = "b53fd70b" }
+"11499.client" = { text = "谜之红衣男子", en = "22966381" }
+"11499.desc" = { text = "这个时刻终于来临了。\r\n看啊！赤红的鳞片\r\n覆满了红龙全身。\r\n最终的舞台已经备妥，\r\n猎人啊，去迎接\r\n死亡本身吧！", en = "80328636" }
+"11499.fail" = { text = "报酬金额为零\r\n时间耗尽", en = "2cfc371e" }
+"11499.obj" = { text = "讨伐或者击退\r\n红龙", en = "8776a0c1" }
+"11499.other" = { text = "无", en = "6eef6648" }
+"11499.sub" = { text = "无", en = "6eef6648" }
+"11499.title" = { text = "赤红帷幕的彼方", en = "c154d152" }
 "841.client" = { text = "艾露猫导游", en = "667ec511" }
 "841.desc" = { text = "听好了喵！想在天空山\r\n尽情采集的话，\r\n这个任务最适合不过了喵！\r\n两分钟后就会送来\r\n猫车票券，\r\n把它缴纳掉，\r\n马上就能回家喵！", en = "40615759" }
 "841.fail" = { text = "报酬金额为零", en = "37e1b6a8" }
