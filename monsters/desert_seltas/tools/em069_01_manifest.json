@@ -511,6 +511,7 @@
   "  own rock model ef_em095 in em095_014: entry 9: grey model ff787878 hidden",
   "  own rock model ef_em095 in em095_014: entry 10: grey model ff787878 hidden",
   "effects: 34 records on the ground [6, 7, 15, 17, 21, 23, 25, 26, 101, 500, 501, 502, 503, 504, 507, 508, 509, 510, 511, 512, 513, 514, 517, 519, 520, 521, 522, 523, 524, 525, 526, 527, 528, 534] (world posts, module/seltas_fx.c), 12 records end with their event range, one-shots (slot mode 0) freed from the follow tail's end mode 1: [1, 530, 531, 532, 533, 1004, 1006, 1009, 1010, 1017]",
+  "effects: Capcom's GU tails for the same 4U records (our id, GU id): [(1, 260)]",
   "effects bank 0: GU's common effects in 18 motions; their own 4U sand left out for GU's dust in {'8': [517], '48': [7]}",
   "effects bank 3: GU's common effects in 17 motions; their own 4U sand left out for GU's dust in {}",
   "effects bank 4: GU's common effects in 49 motions; their own 4U sand left out for GU's dust in {'403': [501], '419': [501], '422': [522, 523], '424': [21, 17], '425': [21, 17], '42b': [522, 523]}",

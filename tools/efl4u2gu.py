@@ -460,12 +460,14 @@ EFX_GU, EFX_GU_STRIDE = 0x207D603B, 24      # GU effect format (S: 12k GU effect
                                             # f16 uv, u8 RGBA (sample normals decode to unit length, e.g. (0,0,-1))
 
 
-def convert_effect_mod(d, white_mats=(), solid_fill=(255, 255, 255, 255)):
+def convert_effect_mod(d, white_mats=(), solid_fill=(255, 255, 255, 255), blend_fill=None):
     """boneless 4U effect MOD (0xE6) -> GU MOD (0xD4), every mesh in GU's effect vertex format 0x207D603B
     (4U vertex colour kept; the colourless 0x82917009 meshes get (0, 0, 0, 255), or solid_fill when their material
     index is in white_mats; uv v -> 1 - v as mod4u2gu). solid_fill: a set can ask for (127, 127, 127, 255), vertex
     RGB 127 = 1.0 in both games (stage4u2gu VCOL_FLOOR), where white draws at 2x (Tidal Najarala's scale, test
-    2026-11-06: a flat white block); the default stays white so that the shipped sets do not change."""
+    2026-11-06: a flat white block); the default stays white so that the shipped sets do not change. blend_fill: the
+    colourless meshes of the other (blended) materials, default (0, 0, 0, 255) (see below); a set can ask for
+    (127, 127, 127, 255) = 1.0, 4U's colourless draw (the Desert Seltas Queen's water bullets, 2026-11-22)."""
     import numpy as np
     m = modlib.parse(d)
     assert m['version'] == 0xE6 and m['bones'] == 0, 'effect models are boneless'
@@ -487,7 +489,7 @@ def convert_effect_mod(d, white_mats=(), solid_fill=(255, 255, 255, 255)):
         # constant white colour (0 of 274 in 60 enemy arcs, 22 constant (0, 0, 0, 255)). The GU effect material
         # (FDiffuseVertexColorMD) doubles the vertex colour: the old white fill drew these meshes at 2x = saturated
         # white (test 10: ef_em089 heap disc em089_015 u1, explosion smoke)
-        fill = solid_fill if x['material'] in white_mats else (0, 0, 0, 255)
+        fill = solid_fill if x['material'] in white_mats else (blend_fill or (0, 0, 0, 255))
         col = v[:, 24:28] if st == 28 else np.tile(np.array(fill, np.uint8), (n, 1))
         q = np.clip(np.round((nrm + 1.0) * 0.5 * 1023), 0, 1023).astype(np.uint32)
         nw = q[:, 0] | (q[:, 1] << 10) | (q[:, 2] << 20) | (3 << 30)
@@ -539,7 +541,7 @@ def convert_effect_mod(d, white_mats=(), solid_fill=(255, 255, 255, 255)):
     return hdr + groups + mats + b''.join(meshes) + b''.join(envs) + bytes(vb) + ib + b'\0' * 4
 
 
-def convert_model(path, mod4, mrl4, solid_fill=(255, 255, 255, 255), solid_template=None):
+def convert_model(path, mod4, mrl4, solid_fill=(255, 255, 255, 255), solid_template=None, blend_fill=None):
     """effect MOD + MRL -> GU. Materials: GU effect template (efx_solid + the 4U CBMaterialStd constants for 4U
     BSSolid materials, else efx_blend), 4U blend/depth/raster states, 4U textures. solid_template: a template key
     used for the BSSolid materials with its own constants instead, when Capcom's conversion of the same 4U model
@@ -554,7 +556,7 @@ def convert_model(path, mod4, mrl4, solid_fill=(255, 255, 255, 255), solid_templ
     names = modlib.parse(mod4)['material_names']
     white = {i for i, n in enumerate(names)
              if 'BSSolid' in by_hash.get(mrl_build.name_hash(n), {}).get('states', ())}
-    gmod = convert_effect_mod(mod4, white, solid_fill)
+    gmod = convert_effect_mod(mod4, white, solid_fill, blend_fill)
     # 4U texture table: (type, path), type 0 = reserved slot (LUT samplers); keep the real textures, renumber
     tex_paths, newidx = [], {}
     for i, (ty, p) in enumerate(r4['textures']):
@@ -1022,7 +1024,8 @@ def effect_set(spec, log):
     list 2 holds our records too, or (count, record bytes) of a GU PEL's list 2: the GU class posts its own ids),
     optional extra2 [(EFL path, record)] (code posts appended to that GU list 2 only), solid_fill (convert_effect_mod),
     solid_fills {model path: fill} (per model, over solid_fill), solid_templates {model path: template key}
-    (convert_model), intensity (intensity_bake), world (ids of the MEF / extra records the port's code posts at a
+    (convert_model), blend_fill (the vertex colour of colourless meshes of blended materials, convert_effect_mod;
+    default (0, 0, 0, 255)), intensity (intensity_bake), world (ids of the MEF / extra records the port's code posts at a
     point it computes itself: GU's world tail, no joint, offset or rotation) and mef_rotation (list 1's joint records
     take their rotation source from MEF_BODY)."""
     S = sources(spec['arc'], spec['stage_unpacked'])
@@ -1078,7 +1081,8 @@ def effect_set(spec, log):
                 mrl4 = S.get((p, T['MRL']))
                 try:
                     fill = spec.get('solid_fills', {}).get(p, spec.get('solid_fill', (255, 255, 255, 255)))
-                    gmod, gmrl, mtex = convert_model(p, S[(p, t)], mrl4, fill, spec.get('solid_templates', {}).get(p))
+                    gmod, gmrl, mtex = convert_model(p, S[(p, t)], mrl4, fill, spec.get('solid_templates', {}).get(p),
+                                                     spec.get('blend_fill'))
                 except (Exception, SystemExit) as e:
                     log.append('MODEL %s NOT converted: %s' % (p, e)); continue
                 conv['MOD'][p], conv['MRL'][p] = gmod, gmrl

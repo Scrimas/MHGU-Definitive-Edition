@@ -75,6 +75,11 @@ DUST_1X = tuple('qe006_%03d' % k for k in range(64))
 # brightness, for GU's look (the dust's lesson: 4U's x2 draws too bright in GU).
 SHOT_1X = ('em095_020', 'em095_021')
 SOLID_FILL = (127, 127, 127, 255)       # colourless 4U solid effect meshes: vertex RGB 127 = 1.0
+# Colourless 4U meshes of blended materials too (2026-11-22, her 7/15 / 7/34 water bullets: em095_005 entry 0 = ten
+# cm000_000 balls in 79b2b2b2, entries 2 / 5 qe001_000, all blended): 4U draws them in the unit colour, efl4u2gu's
+# default (0, 0, 0, 255) times GU's x2 vertex colour drew them black (as their rock units, 0.1.16). Capcom's model for
+# the same bullets in GU (cm101_000, em069_00_003 entry 10) carries RGB 127 on its translucent groups.
+BLEND_FILL = (127, 127, 127, 255)
 # Her underside glow 'XfB__m03_add' (0.1.17; the contributor on 0.1.16: "on the Queen's tail the textures on its underside look odd"):
 # a 4U constant-colour additive overlay (CBMaterialConstant, RSMeshBias10; mesh 29, g14: 112 vertices on the underside of her thorax and abdomen, 90 of
 # them on body vertices). 4U em095's material = 4U em026's (the Seltas Queen) byte for byte, its 4 animations too, and Capcom's GU em069_00 draws it
@@ -560,6 +565,48 @@ def pel_ground_records(e, pel, S, notes):
     return res
 
 
+# Capcom's own tail for the same 4U record (2026-11-22): her 7/15 / 7/34 bullet, id 1 of motion 0x426 (em095_005), is
+# the normal Queen's 4U record byte for byte (4U em026 id 1: em026_005, slot mode 0, joint 1, flags 0x224, k 0, the
+# same LMT slot and run), and Capcom gave that record GU em069_00u list-1 record 260 (em069_00_003, the same motion's
+# 1-frame run): +0x36 1 (placed), +0x38 1 (the body's rotation, 4U MEF flag 4), +0x3a 0, +0x86 1. Our follow tail
+# turned it with joint 1 and followed the joint. id -> GU record id; offset, scale, id, joint and mask stay ours.
+CAPCOM_TAILS = {'em069_01': {1: 260}}
+
+
+def capcom_tails(e, pel, gu_pel_u, notes):
+    """PEL list 1 with the tails of CAPCOM_TAILS (bytes 0x34.. of the GU record, our element mask +0x48 kept)"""
+    want = CAPCOM_TAILS.get(e.c['ours'])
+    if not want:
+        return pel
+    gn, gb = efl4u2gu.pel_lists(gu_pel_u)[1]
+    gu, i = {}, 0
+    for _ in range(gn):
+        L = gb[i]
+        gu[struct.unpack_from('<H', gb, i + 3 + L + 0x30)[0]] = (gb[i + 1:i + 1 + L].decode('ascii'), gb[i + 3 + L:i + 3 + L + 160])
+        i += 3 + L + 160
+    lists = efl4u2gu.pel_lists(pel)
+    n, body = lists[1]
+    out, i, done = bytearray(body), 0, []
+    for _ in range(n):
+        L = out[i]
+        st = i + 3 + L
+        rid = struct.unpack_from('<H', out, st + 0x30)[0]
+        if rid in want:
+            path, src = gu[want[rid]]
+            assert path.endswith('em069_00_003') and out[i + 1:i + 1 + L].endswith(b'em095_005'), (rid, path)
+            msk = bytes(out[st + 0x48:st + 0x4c])
+            out[st + 0x34:st + 160] = src[0x34:]
+            out[st + 0x48:st + 0x4c] = msk
+            done.append((rid, want[rid]))
+        i = st + 160
+    assert sorted(r for r, _ in done) == sorted(want), ('CAPCOM_TAILS: a record is missing', done)
+    notes.append('effects: Capcom\'s GU tails for the same 4U records (our id, GU id): %s' % done)
+    res = pel[:8]
+    for k, (cnt, b) in enumerate(lists):
+        res += struct.pack('<I', cnt) + (bytes(out) if k == 1 else b)
+    return res
+
+
 def soil_units(d):
     """(units 4U multiplies by the area (soil) colour, other units with an Intensity level) of a 4U EFL: an area colour block (header +0x2c
     word 0 bit 4, +0xc byte 2 = 0) multiplies its mode-0 / mode-5 units, else only mode-5 units take it (tools/efl4u2gu.py convert_efl)"""
@@ -609,7 +656,8 @@ def effects(e, S, gu_pel_u, gu_pel_c, gu_psls, soil, notes):
     spec = dict(arc=e.src4u, stage_unpacked=[], mef=e.c['mef'], em_efl=e.c['efl_dir'], groups=groups, extra=[],
                 lmts=[(e.c['mot4u'] % b, e.psl % b) for b in e.c['banks']], pel=e.pel_u, soil=soil,
                 list2=efl4u2gu.pel_lists(gu_pel_u)[2], solid_fill=SOLID_FILL, intensity=True, intensity_skip=DUST_1X + sand + SHOT_1X,
-                hide_grey_models='opaque_chunks')   # issue #6's rule, but translucent models in their own colour stay (efl4u2gu keep_translucent)
+                hide_grey_models='opaque_chunks',   # issue #6's rule, but translucent models in their own colour stay (efl4u2gu keep_translucent)
+                blend_fill=BLEND_FILL)
     log = []
     out = efl4u2gu.effect_set(spec, log)
     # Their own rock model (0.1.16; the contributor on 0.1.15: at one of her moves "stones on the ground, completely black"): their
@@ -626,6 +674,7 @@ def effects(e, S, gu_pel_u, gu_pel_c, gu_psls, soil, notes):
             out[k] = efl4u2gu.hide_grey_models(out[k], S[k], hid, {model})
             notes += ['  own rock model %s in %s: %s' % (model, name, h) for h in hid]
     out[(e.pel_u, efl4u2gu.T['PEL'])] = pel_ground_records(e, out[(e.pel_u, efl4u2gu.T['PEL'])], S, notes)
+    out[(e.pel_u, efl4u2gu.T['PEL'])] = capcom_tails(e, out[(e.pel_u, efl4u2gu.T['PEL'])], gu_pel_u, notes)
     her_u, gu_c = pel_names(out[(e.pel_u, efl4u2gu.T['PEL'])], 1), {}
     for li in (1, 2):
         gu_c.update(pel_names(gu_pel_c, li))

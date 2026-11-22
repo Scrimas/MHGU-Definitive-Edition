@@ -199,7 +199,18 @@ S = strong, G = guess. 4U addresses: the v1.1 exe (dump/exefs_v11), read 2026-11
   stay; rocks are opaque or ground-coloured. Five entries come back: em095_005 0, em095_009 2, em095_015 4,
   em095_018 0, em095_021 2 (her shot hit). A core option, so other ports' arcs stay as they are (Dalamadur, Black
   Gravios, Stygian Zinogre hide such models too: qe013_003 / 004, em048_004). Log "dsport: motion post" (each
-  record + motion once) shows whether ids 1 / 8 post. Not seen in the game yet.
+  record + motion once) shows whether ids 1 / 8 post. Test 2026-11-22 (17-33-35): ids 8 / 1 post at frames 40 / 101,
+  still no bullet. Test 2026-11-22 (18-19-37, diagnostic build): the maintainer sees the charge glow (id 8) and the
+  burst at the shot (id 1), only the bullets are missing; both effects live ~4 s. 4U's dispatch 0x793b30 (table at
+  0x793b54, on +0x1cb): 7/9 -> shot mode 0, 7/15 -> 1, 7/34 -> 2, 7/79 -> 3; modes 1 / 2 set 0x426 and call attackEx
+  0x933144 (attacks 20 / 49 / 48), no shell. Anim 38's group-2 id 1100 is a marker (4U 0x39170c clears obj+0x11),
+  not an effect. So the bullets are units of em095_005 element 0 (S): entry 0, ten cm000_000 balls in 79b2b2b2 over
+  30 frames (t17 [2, 10, 30]), as Capcom's em069_00_003 entry 10 (cm101_000, 78a4a4a4, [4, 10, 30]). Their meshes
+  are colourless in 4U (drawn at 1.0); efl4u2gu filled them (0, 0, 0, 255), which GU draws black (C: 0.1.16's black
+  stones), while Capcom's cm101_000 carries RGB 127 (= 1.0) on its translucent groups. Now the opt-in blend_fill
+  (127, 127, 127, 255) for this package (cm000_000, qe001_000, one group of ef_em095 in both arcs; other ports
+  unchanged). Also Capcom's tail for id 1 (CAPCOM_TAILS: GU record 260's +0x34.. of the same 4U record: placed, body
+  rotation, end mode 0). Not seen in the game yet; if the bullets still miss, the units' motion fields are next.
 
 ## Routes (C)
 - tools/routes_seltas.py: their 4U maps on GU's maps (area_link / area_eat / map_info / area_select): Desert Seltas
