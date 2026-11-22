@@ -40,7 +40,7 @@ typedef float (*size_factor_t)(void *self);
 
 #define VEC(p, off) (&FIELD(float, p, off))
 
-static dala_shcls_t s_cls;
+static shcls_t s_cls;
 static uint32_t s_serial;
 
 static void s005_end(void *self, const char *why)
@@ -62,7 +62,7 @@ static int s005_setup(void *self, void *param)
     FIELD(uint8_t, self, S_STATE) = 1;
     FIELD(float, self, S_LIFE) = 100.0f;
     uint32_t sub = FIELD(uint8_t, self, S_SUB);
-    if (dala_shell_arm(self, DALA_HDS_S005_4, (sub == 5 || sub == 9 || sub == 13) ? 5 : 7, 2, 0xffff))
+    if (shell_arm(&dala_shells, self, DALA_HDS_S005_4, (sub == 5 || sub == 9 || sub == 13) ? 5 : 7, 2, 0xffff))
         FIELD(uint8_t, self, S_ARMED) = 1;
     /* +0x17c = +0x270: the slot scale (times the value GU leaves there after arming, as em089_shell005.c) */
     FIELD(float, self, SH_ATK0 + ATK_F14) = FIELD(float, self, SH_ATK0 + ATK_F14) * FIELD(float, self, S_SCALE);
@@ -77,16 +77,16 @@ static int s005_setup(void *self, void *param)
 static void s005_move(void *self)
 {
     uShell_move(self);                                      /* owner gone -> kill */
-    if (!dala_shell_live(self) || FIELD(uint8_t, self, S_STATE) != 1) return;
+    if (!shell_live(self) || FIELD(uint8_t, self, S_STATE) != 1) return;
     float *life = &FIELD(float, self, S_LIFE);
-    *life -= dala_shell_dt(self);
+    *life -= shell_dt(self);
     if (*life <= 0.0f) { s005_end(self, "life out"); return; }
     if (100.0f - *life >= WINDOW_END) s005_end(self, "attack window over");
 }
 
-static void *s005_new(MtDTI *dti) { (void)dti; return dala_shell_new(&s_cls); }
+static void *s005_new(MtDTI *dti) { (void)dti; return shell_new(&s_cls); }
 static MtDTI *s005_dti(void *self) { (void)self; return &s_cls.dti; }
-static void s005_delete(void *self) { dala_shell_free(&s_cls, self); }
+static void s005_delete(void *self) { shell_free(&s_cls, self); }
 
 void *dala_shell005_post(void *owner, uint32_t subtype, const float *pos, float scale)
 {
@@ -96,15 +96,16 @@ void *dala_shell005_post(void *owner, uint32_t subtype, const float *pos, float 
         return 0;
     }
     if (!s_cls.registered)
-        dala_shell_register(&s_cls, "uShellDala005", SHELL_SIZE, s005_new, s005_delete, s005_dti, s005_move, s005_setup, 0);
-    void *param = dala_shell_param(owner, "tremor");
+        shell_register(&s_cls, &dala_shells, "uShellDala005", SHELL_SIZE, s005_new, s005_delete, s005_dti, s005_move,
+                       s005_setup, 0);
+    void *param = shell_param(&dala_shells, owner, "tremor");
     if (!param) return 0;
-    void *shell = dala_shell_new(&s_cls);
-    if (!shell) { dala_shell_param_free(param); return 0; }
+    void *shell = shell_new(&s_cls);
+    if (!shell) { shell_param_free(param); return 0; }
     FIELD(uint8_t, shell, S_SUB) = (uint8_t)subtype;
     FIELD(float, shell, S_SCALE) = sizeFactor(owner) * scale;   /* ctor 0xc59a20 */
     float *st = VEC(shell, S_START);
     st[0] = pos[0]; st[1] = pos[1]; st[2] = pos[2];
     FIELD(uint32_t, shell, S_SERIAL) = ++s_serial;
-    return dala_shell_start(shell, param, "tremor");
+    return shell_start(&dala_shells, shell, param, "tremor");
 }

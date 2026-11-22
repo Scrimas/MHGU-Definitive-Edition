@@ -65,7 +65,7 @@ typedef int (*shell_setup_t)(void *self, void *param);
 #define SND_END   214u                      /* 4U request id, as dala_meteor.c's 213 / 204 */
 #define LOG_MAX   40
 
-static dala_shcls_t s_cls;
+static shcls_t s_cls;
 static uint32_t s_serial, s_log, s_live;   /* s_live: scales between set-up and kill / delete */
 
 uint32_t dala_shell038_alive(void) { return s_live; }
@@ -98,7 +98,7 @@ static void s038_end(void *self, const char *why)
 static void s038_step(void *self, void *owner)
 {
     if (!owner_ok(owner)) { s038_end(self, "owner gone or dead"); return; }
-    if (dala_shell_timer(self, &FIELD(float, self, G_TIME))) { s038_end(self, "1800 frames"); return; }
+    if (shell_timer(self, &FIELD(float, self, G_TIME))) { s038_end(self, "1800 frames"); return; }
     if (FIELD(uint8_t, self, G_GROUND) && !ground_at(self)) s038_end(self, "the floor under it broke (no ground)");
 }
 
@@ -107,15 +107,15 @@ static void s038_slot_kill(void *self)
 {
     if (FIELD(uint8_t, self, G_STATE) != 3) {
         const char *why = FIELD(const char *, self, G_WHY) ? FIELD(const char *, self, G_WHY) : "killed (owner gone)";
-        void *owner = dala_shell_owner(self);
-        int live = dala_shell_live(owner);
+        void *owner = shell_owner(self);
+        int live = shell_live(owner);
         const float *pos = VEC(self, SH_POS);
         uint32_t area = FIELD(uint8_t, self, SH_AREA);
         FIELD(uint8_t, self, G_STATE) = 3;
         if (s_live) s_live--;
         /* the owner's PEL; posted as the scale (setup): a plain world post lands on the owner's model (dala_shell003.c) */
         void *e = live ? dala_efx_post_beam(owner, DALA_EFX_SCALE_END, pos, 0, FIELD(uint32_t, self, SH_ANGLES + 4)) : 0;
-        if (live) dala_snd_pos(owner, SND_END, pos, area);
+        if (live) shell_snd_pos(owner, SND_END, pos, area);
         dala_gather_free(FIELD(int32_t, self, G_POINT), why);
         FIELD(int32_t, self, G_POINT) = -1;
         void *h = FIELD(void *, self, G_EFX);
@@ -171,14 +171,14 @@ static void s038_move(void *self)
              (int)(G_LIFE - FIELD(float, self, G_TIME)), FIELD(uint8_t, self, G_STATE), s_live);
     }
     uShell_move(self);                                     /* owner gone -> slot 16 */
-    if (!dala_shell_live(self)) return;
+    if (!shell_live(self)) return;
     if (FIELD(void *, self, G_EFX))                         /* the beam's rule (setup): placed every frame */
         dala_efx_place(FIELD(void *, self, G_EFX), VEC(self, SH_POS), 0, FIELD(uint32_t, self, SH_ANGLES + 4));
-    if (FIELD(uint8_t, self, G_STATE) == 1) s038_step(self, dala_shell_owner(self));
+    if (FIELD(uint8_t, self, G_STATE) == 1) s038_step(self, shell_owner(self));
     if (FIELD(uint8_t, self, G_STATE) == 2) VCALL0(self, SLOT_KILL);
 }
 
-static void *s038_new(MtDTI *dti) { (void)dti; return dala_shell_new(&s_cls); }
+static void *s038_new(MtDTI *dti) { (void)dti; return shell_new(&s_cls); }
 static MtDTI *s038_dti(void *self) { (void)self; return &s_cls.dti; }
 
 /* slot 1: deleted without a kill (area / quest teardown): no point or effect handle outlives the shell */
@@ -190,19 +190,19 @@ static void s038_delete(void *self)
     void *h = FIELD(void *, self, G_EFX);
     if (dala_efx_alive(h)) dala_efx_kill(h);
     FIELD(void *, self, G_EFX) = 0;
-    dala_shell_free(&s_cls, self);
+    shell_free(&s_cls, self);
 }
 
 void *dala_shell038_post(void *owner, uint32_t kind, const float *pos, uint32_t area, uint32_t yaw)
 {
     if (kind > 1 || !pos) return 0;
     if (!s_cls.registered)
-        dala_shell_register(&s_cls, "uShellDala038", G_SIZE, s038_new, s038_delete, s038_dti, s038_move, s038_setup,
-                            s038_slot_kill);
-    void *param = dala_shell_param(owner, "meteor scale");
+        shell_register(&s_cls, &dala_shells, "uShellDala038", G_SIZE, s038_new, s038_delete, s038_dti, s038_move,
+                       s038_setup, s038_slot_kill);
+    void *param = shell_param(&dala_shells, owner, "meteor scale");
     if (!param) return 0;
-    void *shell = dala_shell_new(&s_cls);
-    if (!shell) { dala_shell_param_free(param); return 0; }
+    void *shell = shell_new(&s_cls);
+    if (!shell) { shell_param_free(param); return 0; }
     FIELD(uint8_t, shell, G_KIND) = (uint8_t)kind;
     FIELD(uint8_t, shell, G_AREA) = (uint8_t)area;
     FIELD(int32_t, shell, G_POINT) = -1;
@@ -210,5 +210,5 @@ void *dala_shell038_post(void *owner, uint32_t kind, const float *pos, uint32_t 
     float *st = VEC(shell, G_START);
     st[0] = pos[0]; st[1] = pos[1]; st[2] = pos[2];
     FIELD(uint32_t, shell, G_SERIAL) = ++s_serial;
-    return dala_shell_start(shell, param, "meteor scale");
+    return shell_start(&dala_shells, shell, param, "meteor scale");
 }

@@ -731,7 +731,7 @@ def main():
     incs = ['-I', OUT, '-I', HERE] + [a for d in mods for a in ('-I', d)]
     srcs = [os.path.join(HERE, f) for f in ('crt0.S', 'main.c', 'util.c', 'port.c', 'quest.c', 'items.c', 'gear.c',
                                             'notes.c', 'stage_alias.c', 'bgm.c', 'icons.c', 'save.c',
-                                            'modsave.c', 'savefile.c', 'b0gate.c')]
+                                            'modsave.c', 'savefile.c', 'b0gate.c', 'shell.c')]
     for d in mods:                                     # every registered monster's code, registry order
         srcs += sorted(glob.glob(os.path.join(d, '*.c')))
     srcs += [os.path.join(OUT, 'port_monsters.c'), os.path.join(OUT, 'tables.S')]

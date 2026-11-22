@@ -62,7 +62,7 @@ typedef int (*shell_setup_t)(void *self, void *param);
 
 #define VEC(p, off) (&FIELD(float, p, off))
 
-static dala_shcls_t s_cls;
+static shcls_t s_cls;
 static uint32_t s_serial;
 
 static float ang_rad(uint32_t a) { return (float)(a & 0xffff) * (6.28318531f / 65536.0f); }
@@ -108,10 +108,10 @@ static void s016_orient(void *self)
 static void s016_sound(void *self, void *owner)
 {
     float *t = &FIELD(float, self, S_SND_T);
-    *t += dala_shell_dt(self);                              /* 0x9a95c0 */
+    *t += shell_dt(self);                              /* 0x9a95c0 */
     const float *p = VEC(self, SH_POS), *q = VEC(self, SH_POS2);
     float d[3] = {q[0] - p[0], q[1] - p[1], q[2] - p[2]}, l[4], k = 0.0f, pt[4] = {p[0], p[1], p[2], 0.0f};
-    if (dala_listener_pos(l)) {
+    if (shell_listener_pos(l)) {
         float dd = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
         if (dd > 0.0f) k = ((l[0] - p[0]) * d[0] + (l[1] - p[1]) * d[1] + (l[2] - p[2]) * d[2]) / dd;
         if (k < 0.0f) k = 0.0f;
@@ -121,11 +121,11 @@ static void s016_sound(void *self, void *owner)
     uint32_t area = FIELD(uint8_t, self, SH_AREA);
     if (*t >= 48.0f) {
         *t = 0.0f;
-        dala_snd_pos(owner, 208, pt, area);
-        dala_snd_pos(owner, 212, pt, area);
+        shell_snd_pos(owner, 208, pt, area);
+        shell_snd_pos(owner, 212, pt, area);
     } else {
-        dala_snd_move(owner, 208, pt);
-        dala_snd_move(owner, 212, pt);
+        shell_snd_move(owner, 208, pt);
+        shell_snd_move(owner, 212, pt);
     }
 }
 
@@ -142,13 +142,13 @@ static void s016_end(void *self, const char *why)
 static void s016_frame(void *self, void *owner)
 {
     if (motionCheck(owner, 0, 0, 380.0f, 0.0f)) {           /* 0xc6c068: re-arm with record 18 / 35 */
-        if (dala_shell_arm(self, DALA_HDS_S016_18, 31, 2, 0xffff)) FIELD(uint8_t, self, S_ARMED) = 2;
+        if (shell_arm(&dala_shells, self, DALA_HDS_S016_18, 31, 2, 0xffff)) FIELD(uint8_t, self, S_ARMED) = 2;
     }
     FIELD(float, self, SH_ATK0 + ATK_TIME) = 100.0f;        /* +448 = 100 */
     s016_place(self, owner);
     s016_sound(self, owner);
     float *life = &FIELD(float, self, S_LIFE);
-    *life -= dala_shell_owner_step(owner);
+    *life -= shell_owner_step(owner);
     if (*life < 0.0f) *life = 0.0f;
     s016_orient(self);
     dala_efx_place(FIELD(void *, self, S_EFX), VEC(self, SH_POS2), FIELD(uint32_t, self, SH_ANGLES),
@@ -171,7 +171,7 @@ static void s016_slot_kill(void *self)
     FIELD(uint8_t, self, S_DYING) = 1;
     FIELD(uint8_t, self, S_STATE) = 2;
     FIELD(float, self, S_DIE_T) = 0.0f;
-    dala_shell_slots_off(self);
+    shell_slots_off(self);
     dala_efx_stop(h);
 }
 
@@ -179,7 +179,7 @@ static void s016_dying(void *self)
 {
     void *h = FIELD(void *, self, S_EFX);
     float *t = &FIELD(float, self, S_DIE_T);
-    *t += dala_shell_dt(self);
+    *t += shell_dt(self);
     if (h && dala_efx_alive(h) && *t >= EFX_DIE_MAX && *t < EFX_DIE_MAX + 1000.0f) {
         dala_efx_kill(h);
         *t = EFX_DIE_MAX + 1000.0f;
@@ -198,7 +198,7 @@ static int s016_setup(void *self, void *param)
     void *owner = FIELD(void *, param, 0xc);
     FIELD(float, self, S_LIFE) = 320.0f;                    /* 0x102bbbc[21 / 39] */
     FIELD(uint8_t, self, S_STATE) = 1;
-    if (dala_shell_arm(self, DALA_HDS_S016_14, 31, 2, 0xffff)) FIELD(uint8_t, self, S_ARMED) = 1;
+    if (shell_arm(&dala_shells, self, DALA_HDS_S016_14, 31, 2, 0xffff)) FIELD(uint8_t, self, S_ARMED) = 1;
     FIELD(float, self, S_SND_T) = 600.0f;                   /* +688 */
     s016_place(self, owner);
     s016_orient(self);
@@ -224,12 +224,12 @@ static void s016_move(void *self)
     if (FIELD(void *, self, S_EFX) && !dala_efx_alive(FIELD(void *, self, S_EFX))) FIELD(void *, self, S_EFX) = 0;
     uShell_move(self);                                      /* owner gone -> kill (4U 0xc6ac94) */
     if (FIELD(uint8_t, self, S_DYING)) { s016_dying(self); return; }
-    if (!dala_shell_live(self) || FIELD(uint8_t, self, S_STATE) != 1) return;
-    void *owner = dala_shell_owner(self);
+    if (!shell_live(self) || FIELD(uint8_t, self, S_STATE) != 1) return;
+    void *owner = shell_owner(self);
     if (owner) s016_frame(self, owner);
 }
 
-static void *s016_new(MtDTI *dti) { (void)dti; return dala_shell_new(&s_cls); }
+static void *s016_new(MtDTI *dti) { (void)dti; return shell_new(&s_cls); }
 static MtDTI *s016_dti(void *self) { (void)self; return &s_cls.dti; }
 
 static void s016_delete(void *self)
@@ -237,7 +237,7 @@ static void s016_delete(void *self)
     void *h = FIELD(void *, self, S_EFX);
     if (dala_efx_alive(h)) dala_efx_kill(h);
     FIELD(void *, self, S_EFX) = 0;
-    dala_shell_free(&s_cls, self);
+    shell_free(&s_cls, self);
 }
 
 void *dala_shell016_post(void *owner, uint32_t subtype, uint32_t joint, const float *off, uint32_t xang,
@@ -245,12 +245,12 @@ void *dala_shell016_post(void *owner, uint32_t subtype, uint32_t joint, const fl
 {
     if ((subtype != 21 && subtype != 39) || !owner || !off) return 0;
     if (!s_cls.registered)
-        dala_shell_register(&s_cls, "uShellDala016", SHELL_SIZE, s016_new, s016_delete, s016_dti, s016_move, s016_setup,
-                            s016_slot_kill);
-    void *param = dala_shell_param(owner, "beam");
+        shell_register(&s_cls, &dala_shells, "uShellDala016", SHELL_SIZE, s016_new, s016_delete, s016_dti, s016_move,
+                       s016_setup, s016_slot_kill);
+    void *param = shell_param(&dala_shells, owner, "beam");
     if (!param) return 0;
-    void *shell = dala_shell_new(&s_cls);
-    if (!shell) { dala_shell_param_free(param); return 0; }
+    void *shell = shell_new(&s_cls);
+    if (!shell) { shell_param_free(param); return 0; }
     uint8_t *rec = FIELD(uint8_t *, owner, EN_RECORD);
     FIELD(uint8_t, shell, S_SUB) = (uint8_t)subtype;
     FIELD(uint32_t, shell, S_JOINT) = joint;
@@ -261,5 +261,5 @@ void *dala_shell016_post(void *owner, uint32_t subtype, uint32_t joint, const fl
     FIELD(uint32_t, shell, S_YANG) = (yang + FIELD(uint32_t, rec, REC_YAW)) & 0xffff;      /* + W+0x1ac */
     FIELD(uint32_t, shell, S_MOTION) = curMotion(owner);
     FIELD(uint32_t, shell, S_SERIAL) = ++s_serial;
-    return dala_shell_start(shell, param, "beam");
+    return shell_start(&dala_shells, shell, param, "beam");
 }

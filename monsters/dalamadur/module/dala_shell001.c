@@ -75,7 +75,7 @@ typedef int (*shell_setup_t)(void *self, void *param);
 
 #define VEC(p, off) (&FIELD(float, p, off))
 
-static dala_shcls_t s_cls;
+static shcls_t s_cls;
 static uint32_t s_serial;
 
 static int is_shah_kind(uint32_t k) { return k == 88 || k == 89; }
@@ -141,7 +141,7 @@ void dala_head_fireball(void *self, uint32_t kind, uint32_t lim, uint32_t ang, u
 
 /* ================================================================== (B) the shell uShell001 ================= */
 
-static void *s001_owner(void *self) { return dala_shell_owner(self); }
+static void *s001_owner(void *self) { return shell_owner(self); }
 
 /* 0xc4eb80 + 0xc4f13c for these kinds: impact effect / sound, camera shake, follow-up shell */
 static void s001_impact(void *self, void *owner, uint32_t ground)
@@ -153,9 +153,9 @@ static void s001_impact(void *self, void *owner, uint32_t ground)
     /* on this shell, which sits at the hit point (a world-position post attaches the owner's model: dala_shell003.c) */
     if (!ground) dala_efx_post_on(owner, big_kind(kind) ? DALA_EFX_FIREBALL_WALL_L : DALA_EFX_FIREBALL_WALL, self);
     else if (big_kind(kind)) dala_efx_post_on(owner, DALA_EFX_FIREBALL_GROUND, self);
-    dala_snd_pos(owner, 203, pos, area);                    /* 0x1018900 + 24 k [+0 / +8] = (2, 203) */
-    dala_cam_shake_pos(owner, 1, pos, area);                /* 0xc4f168: byte 3 = 0 -> 0xbfd568(mgr, 1, &pos) */
-    uint32_t group = dala_shell_group(self);                /* 4U r7 + 156 = +0x19c */
+    shell_snd_pos(owner, 203, pos, area);                    /* 0x1018900 + 24 k [+0 / +8] = (2, 203) */
+    shell_cam_shake_pos(owner, 1, pos, area);                /* 0xc4f168: byte 3 = 0 -> 0xbfd568(mgr, 1, &pos) */
+    uint32_t group = shell_group(self);                /* 4U r7 + 156 = +0x19c */
     if (ground && (kind == 24 || kind == 88))               /* 0x1019a70 {2, 1 / 2} -> 0x661ea0 type 9 */
         dala_shell009_post(owner, kind == 88 ? 2 : 1, pos, area, group, &FIELD(uint32_t, self, SH_ANGLES));
     else                                                     /* {1, 114 / 161, 0} -> 0x663220 type 3 */
@@ -168,7 +168,7 @@ static int s001_step(void *self, void *owner)
     uint32_t kind = FIELD(uint8_t, self, S_KIND), serial = FIELD(uint32_t, self, S_SERIAL);
     int done = 0;
     float *life = &FIELD(float, self, S_LIFE);
-    dala_shell_timer(self, life);
+    shell_timer(self, life);
     if (*life <= 0.0f) {                                    /* 0xc4da10: state 2, life 10, the frame goes on */
         *life = 10.0f;
         done = 1;
@@ -178,7 +178,7 @@ static int s001_step(void *self, void *owner)
     float *pos = VEC(self, SH_POS), *prev = VEC(self, S_PREV), *vel = VEC(self, S_VEL), *acc = VEC(self, S_ACC);
     prev[0] = pos[0]; prev[1] = pos[1]; prev[2] = pos[2];   /* 0xc4df70 (kind != 4) */
     FIELD(float, self, SH_ATK0 + ATK_TIME) = 100.0f;        /* 0xc4df90: +0x1c0 = 100 every frame */
-    float dt = dala_shell_dt(self), h = dt * dt * 0.5f;   /* 0x9ab0a0 */
+    float dt = shell_dt(self), h = dt * dt * 0.5f;   /* 0x9ab0a0 */
     for (int i = 0; i < 3; i++) { pos[i] += vel[i] * dt + acc[i] * h; vel[i] += acc[i] * dt; }
     float *p2 = VEC(self, SH_POS2);
     p2[0] = prev[0]; p2[1] = prev[1]; p2[2] = prev[2];
@@ -195,9 +195,9 @@ static int s001_step(void *self, void *owner)
                               ground ? "ground" : "wall", r, (int32_t)pos[0], (int32_t)pos[1], (int32_t)pos[2]);
         s001_impact(self, owner, ground);
         done = 1;
-    } else if (dala_shell_timer(self, &FIELD(float, self, S_SND_T))) {   /* 0xc4f9bc: 211 every 35 frames */
+    } else if (shell_timer(self, &FIELD(float, self, S_SND_T))) {   /* 0xc4f9bc: 211 every 35 frames */
         FIELD(float, self, S_SND_T) = 35.0f;
-        dala_snd_obj(owner, 211, self, FIELD(uint8_t, self, SH_AREA));
+        shell_snd_obj(owner, 211, self, FIELD(uint8_t, self, SH_AREA));
     }
     /* 0xc4eb1c: angles from the velocity */
     float hz = sqrt_f(vel[0] * vel[0] + vel[2] * vel[2]);
@@ -217,7 +217,7 @@ static void s001_slot_kill(void *self)
     FIELD(uint8_t, self, S_DYING) = 1;
     FIELD(uint8_t, self, S_STATE) = 2;
     FIELD(float, self, S_DIE_T) = 0.0f;
-    dala_shell_slots_off(self);
+    shell_slots_off(self);
     dala_efx_stop(h);
 }
 
@@ -225,7 +225,7 @@ static void s001_dying(void *self)
 {
     void *h = FIELD(void *, self, S_EFX);
     float *t = &FIELD(float, self, S_DIE_T);
-    *t += dala_shell_dt(self);
+    *t += shell_dt(self);
     if (h && dala_efx_alive(h) && *t >= EFX_DIE_MAX && *t < EFX_DIE_MAX + 1000.0f) {
         dala_efx_kill(h);
         *t = EFX_DIE_MAX + 1000.0f;           /* one more frame for the effect's own kill */
@@ -261,10 +261,10 @@ static int s001_setup(void *self, void *param)
     vel[1] = y; vel[2] = z;
     rot_y(vel, FIELD(uint32_t, self, SH_ANGLES + 4));
     FIELD(float, self, S_LIFE) = 300.0f;                    /* 0x101b024[k] */
-    FIELD(uint8_t, self, S_ARMED) = (uint8_t)dala_shell_arm(self, hi_kind(kind) ? DALA_HDS_S001_HI : DALA_HDS_S001_LO,
-                                                            31, 2, 0xffff);
+    FIELD(uint8_t, self, S_ARMED) = (uint8_t)shell_arm(&dala_shells, self, hi_kind(kind) ? DALA_HDS_S001_HI :
+                                                       DALA_HDS_S001_LO, 31, 2, 0xffff);
     FIELD(float, self, S_SND_T) = 0.0f;                     /* +0x28c */
-    dala_snd_joint_pos(owner, 202, 6, FIELD(uint8_t, self, SH_AREA));   /* 0x304c34(mgr, 202, owner, 6, area, -2) */
+    shell_snd_joint_pos(owner, 202, 6, FIELD(uint8_t, self, SH_AREA));   /* 0x304c34(mgr, 202, owner, 6, area, -2) */
     /* the effect (4U posts it first; GU's first effect update reads the shell: post once it is placed) */
     FIELD(void *, self, S_EFX) = dala_efx_post_on(owner, DALA_EFX_FIREBALL, self);
     FIELD(uint8_t, self, S_STATE) = 1;
@@ -283,7 +283,7 @@ static void s001_move(void *self)
     if (FIELD(void *, self, S_EFX) && !dala_efx_alive(FIELD(void *, self, S_EFX))) FIELD(void *, self, S_EFX) = 0;
     uShell_move(self);                        /* owner gone -> kill (4U 0xc4d9b0: state 3) */
     if (FIELD(uint8_t, self, S_DYING)) { s001_dying(self); return; }
-    if (!dala_shell_live(self)) return;
+    if (!shell_live(self)) return;
     if (FIELD(uint8_t, self, S_STATE) == 2) { VCALL0(self, SLOT_KILL); return; }
     if (FIELD(uint8_t, self, S_STATE) != 1) return;
     void *owner = s001_owner(self);
@@ -291,7 +291,7 @@ static void s001_move(void *self)
     if (s001_step(self, owner)) FIELD(uint8_t, self, S_STATE) = 2;
 }
 
-static void *s001_new(MtDTI *dti) { (void)dti; return dala_shell_new(&s_cls); }
+static void *s001_new(MtDTI *dti) { (void)dti; return shell_new(&s_cls); }
 static MtDTI *s001_dti(void *self) { (void)self; return &s_cls.dti; }
 
 static void s001_delete(void *self)
@@ -299,7 +299,7 @@ static void s001_delete(void *self)
     void *h = FIELD(void *, self, S_EFX);
     if (dala_efx_alive(h)) dala_efx_kill(h);   /* deleted without our kill (area / quest teardown) */
     FIELD(void *, self, S_EFX) = 0;
-    dala_shell_free(&s_cls, self);
+    shell_free(&s_cls, self);
 }
 
 /* 0x661bec(mgr, owner, &data, kind, 0xffff) -> 0x660e88 type 1 -> ctor 0xc4fd84 */
@@ -311,17 +311,17 @@ void *dala_shell001_post(void *owner, uint32_t kind, const float *pos, uint32_t 
         return 0;
     }
     if (!s_cls.registered)
-        dala_shell_register(&s_cls, "uShellDala001", SHELL_SIZE, s001_new, s001_delete, s001_dti, s001_move, s001_setup,
-                            s001_slot_kill);
-    void *param = dala_shell_param(owner, "fireball");
+        shell_register(&s_cls, &dala_shells, "uShellDala001", SHELL_SIZE, s001_new, s001_delete, s001_dti, s001_move,
+                       s001_setup, s001_slot_kill);
+    void *param = shell_param(&dala_shells, owner, "fireball");
     if (!param) return 0;
-    void *shell = dala_shell_new(&s_cls);
-    if (!shell) { dala_shell_param_free(param); return 0; }
+    void *shell = shell_new(&s_cls);
+    if (!shell) { shell_param_free(param); return 0; }
     FIELD(uint8_t, shell, S_KIND) = (uint8_t)kind;
     float *st = VEC(shell, S_START);
     st[0] = pos[0]; st[1] = pos[1]; st[2] = pos[2];
     FIELD(uint32_t, shell, S_PITCH) = pitch & 0xffff;
     FIELD(uint32_t, shell, S_YAW) = yaw & 0xffff;
     FIELD(uint32_t, shell, S_SERIAL) = ++s_serial;
-    return dala_shell_start(shell, param, "fireball");
+    return shell_start(&dala_shells, shell, param, "fireball");
 }
