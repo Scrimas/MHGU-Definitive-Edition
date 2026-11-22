@@ -7,7 +7,9 @@ The request is one UDP datagram to 127.0.0.1:47123 (the module listens there; Ry
 it reaches the game at once. What the monsters pick, and when a request applied, comes from the module's "nextact:" lines in the latest Ryujinx log. Action lists and names: tools/actions.py
 (a port's monsters/<package>/actions.toml, GU's own from its AI table).
 
-  nextact.py                          the GUI (Textual): monsters seen in the log, their actions, Enter = request
+  nextact.py                          the GUI (Textual): monsters seen in the log, their actions, Enter = request;
+                                      typing cat/num + Enter in the filter requests a pair the list lacks (class code
+                                      starts it, the AI table never picks it: the Queen's 7/79)
   nextact.py set 0x60d 7 74           write a request without the GUI
   options: --mods DIR                 the emulator's mods folder (default: GOG_MOD_ROOT, else ~/.config/Ryujinx/mods);
                                       the Ryujinx log folder is its sibling Logs/
@@ -52,7 +54,7 @@ def main_gui(mods, port=PORT):
     class NextAct(App):
         TITLE = 'Next action'
         CSS = '#mons { width: 46; } #acts { width: 1fr; } #status { height: 3; } #events { height: 10; }'
-        BINDINGS = [('q', 'quit', 'Quit'), ('/', 'focus_filter', 'Filter actions')]
+        BINDINGS = [('q', 'quit', 'Quit'), ('/', 'focus_filter', 'Filter / type cat/num + Enter')]
 
         def __init__(self):
             super().__init__()
@@ -70,7 +72,8 @@ def main_gui(mods, port=PORT):
             with Horizontal():
                 yield DataTable(id='mons', cursor_type='row')
                 with Vertical(id='acts'):
-                    yield Input(placeholder='filter: name or cat/num', id='filter')
+                    yield Input(placeholder='filter: name or cat/num; a cat/num + Enter requests it even if unlisted',
+                                id='filter')
                     yield DataTable(id='actlist', cursor_type='row')
             yield Static(id='status')
             yield RichLog(id='events', max_lines=500)
@@ -188,6 +191,11 @@ def main_gui(mods, port=PORT):
         def on_input_changed(self, event):
             self.fill()
 
+        def on_input_submitted(self, event):
+            """`cat/num` + Enter: request a pair the list lacks (its AI table never picks it: class code does)"""
+            m = re.fullmatch(r'\s*(\d+)\s*/\s*(\d+)\s*', event.value)
+            if m and self.sel is not None: self.request(int(m.group(1)), int(m.group(2)))
+
         def on_data_table_row_highlighted(self, event):
             if event.data_table.id == 'mons' and event.row_key is not None:
                 em = int(event.row_key.value, 16)
@@ -196,6 +204,9 @@ def main_gui(mods, port=PORT):
         def on_data_table_row_selected(self, event):
             if event.data_table.id != 'actlist' or self.sel is None: return
             cat, num = map(int, event.row_key.value.split('/'))
+            self.request(cat, num)
+
+        def request(self, cat, num):
             seq = send_request(self.sel, cat, num, port)
             self.pending = (seq, self.sel, cat, num)
             self.query_one('#events', RichLog).write('%s request %d: %s %d/%d sent (unpause: it replaces its next AI '
