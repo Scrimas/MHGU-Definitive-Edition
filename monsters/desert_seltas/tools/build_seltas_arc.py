@@ -26,7 +26,8 @@ names hold here unless written otherwise). GU's classes run them as variant 1 an
                                      differ: notes/plan.md "Effects"), a PSL per motion list; GU's common effects where their motions are GU's (the
                                      user's rule), and there GU's dust instead of their own 4U sand (the rule on environment effects);
                                      4U ground-flag records as world records on their ground (module/seltas_fx.c); grey rock chunks hidden
-                                     (hide_grey_models 'chunks', issue #6), 4U's common dust and their own sand at 1x (DUST_1X, own_sand())
+                                     (hide_grey_models 'opaque_chunks', issue #6; translucent models in their own
+                                     colour kept), 4U's common dust and their own sand at 1x (DUST_1X, own_sand())
       sound call / waves / bank / request   tools/snd4u2gu.py monster_entries
       dt_tune\\<ours>_dttune        their 4U values (tools/dt_convert.py on GU's file) + GU's retunes of the species where their 4U bytes equal the
                                      species' (dttune())
@@ -608,7 +609,7 @@ def effects(e, S, gu_pel_u, gu_pel_c, gu_psls, soil, notes):
     spec = dict(arc=e.src4u, stage_unpacked=[], mef=e.c['mef'], em_efl=e.c['efl_dir'], groups=groups, extra=[],
                 lmts=[(e.c['mot4u'] % b, e.psl % b) for b in e.c['banks']], pel=e.pel_u, soil=soil,
                 list2=efl4u2gu.pel_lists(gu_pel_u)[2], solid_fill=SOLID_FILL, intensity=True, intensity_skip=DUST_1X + sand + SHOT_1X,
-                hide_grey_models='chunks')
+                hide_grey_models='opaque_chunks')   # issue #6's rule, but translucent models in their own colour stay (efl4u2gu keep_translucent)
     log = []
     out = efl4u2gu.effect_set(spec, log)
     # Their own rock model (0.1.16; the contributor on 0.1.15: at one of her moves "stones on the ground, completely black"): their

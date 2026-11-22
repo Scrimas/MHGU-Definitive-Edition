@@ -192,7 +192,14 @@ S = strong, G = guess. 4U addresses: the v1.1 exe (dump/exefs_v11), read 2026-11
   (efl4u2gu PEL_TAIL_PREV) carries GU end mode 1, which stops the effect at its run's falling edge: one frame after the
   post. Now end mode 0 on every slot-0 record (pel_ground_records; 10 records in each PEL u, 10 bytes each). Posted
   ones, all 1-frame runs: hers id 1 (0x426), qe006_007 ids 530..533 (0x18, 0x19, 0x5a); his em094_007 ids 1 / 3 (0x341,
-  seven puffs then one), em094_204 id 14 (0x350, his impact burst). Not seen in the game yet.
+  seven puffs then one), em094_204 id 14 (0x350, his impact burst).  Test 2026-11-22 (17-24-30): 0x426 played for both (common post 111 at frame 150 logged), still no bullet. Also
+  (C): issue #6's chunk rule (hide_grey_models 'chunks') hid em095_005's entry 0, a model unit on the shared chunk
+  mesh cm000_000 in colour 79b2b2b2 (translucent, own colour: no area multiply), in element 0, the one her record
+  draws (mask 1). Now 'opaque_chunks' (efl4u2gu keep_translucent): translucent models 4U draws in their own colour
+  stay; rocks are opaque or ground-coloured. Five entries come back: em095_005 0, em095_009 2, em095_015 4,
+  em095_018 0, em095_021 2 (her shot hit). A core option, so other ports' arcs stay as they are (Dalamadur, Black
+  Gravios, Stygian Zinogre hide such models too: qe013_003 / 004, em048_004). Log "dsport: motion post" (each
+  record + motion once) shows whether ids 1 / 8 post. Not seen in the game yet.
 
 ## Routes (C)
 - tools/routes_seltas.py: their 4U maps on GU's maps (area_link / area_eat / map_info / area_select): Desert Seltas

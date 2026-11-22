@@ -9,7 +9,7 @@
  * The two hook sites are Tidal Najarala's (0x700d4 PEL u, 0x70068 PEL c; one hook per site): her handlers call these first, which answer 1 only for
  * Desert Seltas or the Queen, so nothing of hers changes.
  * Multiplayer: every machine plays its own motions and posts its own effects, as GU's PSL player. All addresses through MAIN / FN.
- * Logs: "dsport: ground word", "dsport: ground post", "dsport: common post". */
+ * Logs: "dsport: ground word", "dsport: ground post", "dsport: common post", "dsport: motion post" (each record + motion once). */
 #include <stdint.h>
 #include "game.h"
 #include "util.h"
@@ -38,6 +38,7 @@ typedef float (*ground_ray_t)(void *mgr, const float *from, const float *to, uin
 #define GROUND_LINES 24u
 #define POST_LINES   60u
 #define COMMON_LINES 30u
+#define MOTION_PAIRS 256u
 
 struct ground { uint16_t id; int16_t joint, x, z; };
 /* their MEF records with the ground flag {id, joint (-1: its own place), offset x, offset z}, in MEF order; tools/build_seltas_arc.py pel_ground_records
@@ -113,6 +114,19 @@ int seltas_pslc(uint32_t *regs)
     return 1;
 }
 
+/* each (record, motion) pair of their motion posts once: the Queen's 7/15 / 7/34 bullet (id 1 at frame 100 of 0x426, a 1-frame run) showed
+ * no visual with the motion playing (test 2026-11-22), and only ground and common posts were logged */
+static void log_motion_post(void *self, uint32_t id)
+{
+    static uint32_t s_seen[MOTION_PAIRS], s_n;
+    uint32_t key = id << 16 | (curMotion(self) & 0xffff);
+    for (uint32_t i = 0; i < s_n; i++) if (s_seen[i] == key) return;
+    if (s_n >= MOTION_PAIRS) return;
+    s_seen[s_n++] = key;
+    logf("dsport: motion post %u motion %x frame %d (%s)", id, curMotion(self), (int32_t)motionFrame(self),
+         IS_DS(self) ? "desert_seltas" : "desert_seltas_queen");
+}
+
 /* from em068_01_psl_c (the one hook of the site 0x700d4, kind 4 = PEL u): 1 = it was one of them */
 int seltas_psl(uint32_t *regs)
 {
@@ -159,5 +173,6 @@ int seltas_psl(uint32_t *regs)
                  IS_DS(self) ? "desert_seltas" : "desert_seltas_queen");
         break;
     }
+    log_motion_post(self, id);
     return 1;
 }

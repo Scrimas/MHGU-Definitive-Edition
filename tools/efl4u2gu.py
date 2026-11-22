@@ -949,11 +949,16 @@ GREY_SPREAD = 8
 GREY_MIN = 0x20     # near-black rubble kept (Dalamadur em024_001 ff0a0b0d; darkest confirmed white chunk ff2f2f2f)
 
 
-def hide_grey_models(d, d4, log=None, models=None, any_colour=False):
+def hide_grey_models(d, d4, log=None, models=None, any_colour=False, keep_translucent=False):
     """converted EFL d (4U source d4): element mask 0 on the entries whose unit is a model (type 5) with a grey 4U
     colour (GREY_SPREAD; any_colour: whatever its colour), drawing one of `models` (None = any); an element block shared
-    with another entry is copied to the file end for it first."""
+    with another entry is copied to the file end for it first. keep_translucent: models with alpha < 255 that 4U draws
+    in their own colour (no area multiply: unit colour mode 5, or 0 under an area block) stay: the rock chunks of
+    issue #6 are opaque, while the Desert Seltas Queen's water bullet (em095_005 entry 0, 79b2b2b2) and her shot
+    hit (em095_021 entry 2) are the shared chunk mesh cm000_000 drawn translucent (2026-11-22)."""
     p, p4 = efl_parse(d), efl_parse(d4)
+    b = efl_colour_block(d4)
+    area_block = bool(b and b[0] & 0x10 and not (b[3] >> 16) & 0xFF)
     users = collections.Counter(e[0] >> 8 for e in p['ents'] if e[0] >> 8)
     size = {o: s for o, s, k in p['blocks']}
     out = bytearray(d)
@@ -963,6 +968,9 @@ def hide_grey_models(d, d4, log=None, models=None, any_colour=False):
         c = struct.unpack_from('<I', d4, (e4[1] >> 8) + 0x30 + 0x48)[0]
         rgb = (c & 0xFF, (c >> 8) & 0xFF, (c >> 16) & 0xFF)
         if not any_colour and (max(rgb) - min(rgb) > GREY_SPREAD or max(rgb) < GREY_MIN):
+            continue
+        mode = struct.unpack_from('<I', d4, (e4[1] >> 8) + 0x30 + 0x18)[0] & UNIT_COLOUR_MODE
+        if keep_translucent and c >> 24 < 0xFF and not (mode == UNIT_AREA_MODE or (area_block and mode == 0)):
             continue
         if models is not None:
             offs = [(w >> 8) + 0x30 for w in e if w >> 8]
@@ -1049,8 +1057,8 @@ def effect_set(spec, log):
         l = []
         conv['EFL'][p] = convert_efl(d4, l, spec['soil'], spec.get('intensity', False) and p.rsplit(chr(92), 1)[-1] not in spec.get('intensity_skip', ()))   # intensity_skip: EFL names kept at 1x (opt-in, Shrouded Nerscylla's ground dust)
         hide = spec.get('hide_grey_models', ())
-        if hide == 'chunks':
-            conv['EFL'][p] = hide_grey_models(conv['EFL'][p], d4, l, CHUNK_MODELS)
+        if hide in ('chunks', 'opaque_chunks'):
+            conv['EFL'][p] = hide_grey_models(conv['EFL'][p], d4, l, CHUNK_MODELS, keep_translucent=hide == 'opaque_chunks')
         elif p.split('\\')[-1] in hide:
             conv['EFL'][p] = hide_grey_models(conv['EFL'][p], d4, l)
         _, bad = check_efl(conv['EFL'][p])
