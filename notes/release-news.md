@@ -4,6 +4,30 @@ tools/release.py puts the section of the core version being packaged into the re
 groups, **New** (something added) and **Fixed** (what works now, not what was broken), one short plain line each,
 written for players; write the section before `release.py package`.
 
+## v3.1.0
+**New**
+- Crimson Fatalis from MH4U's G rank, as *Crimson Fatalis (4U)* next to MHGU's own, with its MH4U AI and attacks
+  (heatwaves, a scorching heat zone, permanent rage on event quest), 3 G★4 quests from MH4U (*Advanced: A Final 
+  Battle Cry* and the events *Beyond the Crimson Veil* and *A Feast for the Departed*), the Wroth armor and the 
+  8 weapons MHGU lacks.
+- The Hub has room for more quests: up to 1024 loaded (MHGU: 864) and 255 per star board (MHGU: 99).
+
+**Fixed**
+- Ported bowguns shoot like their MH4U selves: rapid fire, crouching fire, internal ammo, recoil, reload and
+  deviation are MH4U's, no longer borrowed from the MHGU bowgun they're built on.
+- Dalamadur's and Gogmazios' armor sit where MHGU would put them: EX Rebellion above HR Rebellion, and the X and Z
+  sets a little sturdier.
+- Desert Seltas Queen is as tough as in MH4U: her quests are balanced against MH4U's and MHGU's own Queen hunts.
+- Desert Seltas and the Queen play their attack effects in full. After a water burst, the Queen fires three water
+  shots correctly 
+- Stygian Zinogre roams, eats and sleeps on Heaven's Mount where he does in MH4U, and his charged spikes glow as in
+  MH4U.
+- Effects MH4U shows only in some moves or states (a severed tail, G rank, a broken part) show only then: Black
+  Gravios, Stygian Zinogre, Tidal Najarala, Shrouded Nerscylla, Desert Seltas Queen, Gogmazios and Dalamadur.
+- Dalamadur's meteors explode where they land.
+- 13 ported quests draw their reward lists fully at random, as in MH4U.
+- The installer shows Gogmazios' icon on his card, and the Desert Seltas card leads with the Queen.
+
 ## v3.0.0
 **New**
 - Desert Seltas and Desert Seltas Queen, ported by @Rukasu1609, with their MH4U AI and attacks, 6 quests from MH4U
