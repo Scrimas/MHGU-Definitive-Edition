@@ -530,7 +530,7 @@
   "AI table: 4U em025_cmd for em 94; GU's variant-1 body in [(0, 0), (0, 1), (0, 6), (1, 29), (1, 34), (4, 0), (20, 0)]; GU extra entries appended (['g1 s82..s101']); GU's op-0x92 scripts whose variant-1 body equals the 4U one [(0, 3), (0, 4), (0, 5), (0, 7), (0, 13)], differs []; frenzy branches cut in [(0, 2)]; 4U scripts past GU's count appended []",
   "effect area colour: Dunes soil median (211, 165, 117, 255) (11 areas)",
   "effects: their own sand at 1x ('em094_006', 'em094_007', 'em094_008', 'em094_010', 'em094_011')",
-  "effects: 15 records on the ground [4, 6, 7, 10, 11, 500, 501, 513, 515, 516, 517, 518, 519, 520, 521] (world posts, module/seltas_fx.c), 0 records end with their event range",
+  "effects: 15 records on the ground [4, 6, 7, 10, 11, 500, 501, 513, 515, 516, 517, 518, 519, 520, 521] (world posts, module/seltas_fx.c), 0 records end with their event range, one-shots (slot mode 0) freed from the follow tail's end mode 1: [0, 1, 3, 14, 1004, 1006, 1009, 1010, 1017, 1022]",
   "effects bank 0: GU's common effects in 10 motions; their own 4U sand left out for GU's dust in {'41': [4]}",
   "effects bank 1: GU's common effects in 2 motions; their own 4U sand left out for GU's dust in {}",
   "effects bank 2: GU's common effects in 6 motions; their own 4U sand left out for GU's dust in {'21c': [4], '21d': [4]}",

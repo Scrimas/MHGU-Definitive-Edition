@@ -47,7 +47,7 @@ S = strong, G = guess. 4U addresses: the v1.1 exe (dump/exefs_v11), read 2026-11
   past the post, C; 0xfd745c's test picks a follow-up action, 0xfd4b00's skips a block not read yet), where 4U posts his own
   uShell012 subtypes (0x661f6c: 58 / 56 in 0x77f618 and 0x7802e0, 59 / 57 in 0x7819d4 and 0x781eb8; the Seltas' are
   7 / 6 and 24 / 13). So those attacks of his have no projectile in GU (the contributor, 2026-11-09: "spit attacks
-  without spit effects"). The Queen: 4U 0x78e688 (7/9 7/15 7/34 7/79) and 0x796928 post subtype 92 for her where the
+  without spit effects"). The Queen: 4U 0x78e688 (7/9 7/79: modes 0 / 3 only; 7/15 7/34 are its modes 1 / 2, no shell) and 0x796928 (7/56) post subtype 92 for her where the
   normal Queen's is 1 (0x661bec); GU's twin 0xf96a38 posts the normal Queen's shell 0x127 kinds 0 / 1 / 2 for both.
   Colour (0.1.6; the contributor on 0.1.5: his spit on her back is green, C unless marked): the species' 4U shot EFLs
   em025_001 / 002 / 005 take a code colour (colour block), theirs (em094_201..203, em095_020 / 021) have none: 4U draws
@@ -184,6 +184,36 @@ S = strong, G = guess. 4U addresses: the v1.1 exe (dump/exefs_v11), read 2026-11
   163). Now every own EFL whose units 4U multiplies by the soil (area colour block or mode-5 units) is drawn at 1x: his
   em094_006 / 007 / 008 / 010 / 011, hers em095_000 / 011..014 / 023 / 024 / 028 / 029 (each holds soil units only,
   asserted). Not seen in the game yet.
+- One-shots (2026-11-22, C unless marked; the maintainer with the next-action aid: her 7/15 / 7/34 hit, no water
+  bullet, 7/9's shells show). Both games send 7/15 / 7/34 to the shot function in modes 1 / 2 (4U 0x78e688 = GU
+  0xf96a38), which posts no shell there: the bullet is a motion effect of 0x426, MEF id 1 = em095_005 element 0 on
+  joint 1 at frame 100, a 1-frame run, MEF slot mode 0 (GU's own Queen: record 260 em069_00_003, end mode 0). 4U
+  never stops a slot-0 effect (monsters/dalamadur/tools/build_dalamadur_arc.py pel_slot_end); our follow tail
+  (efl4u2gu PEL_TAIL_PREV) carries GU end mode 1, which stops the effect at its run's falling edge: one frame after the
+  post. Now end mode 0 on every slot-0 record (pel_ground_records; 10 records in each PEL u, 10 bytes each). Posted
+  ones, all 1-frame runs: hers id 1 (0x426), qe006_007 ids 530..533 (0x18, 0x19, 0x5a); his em094_007 ids 1 / 3 (0x341,
+  seven puffs then one), em094_204 id 14 (0x350, his impact burst).  Test 2026-11-22 (17-24-30): 0x426 played for both (common post 111 at frame 150 logged), still no bullet. Also
+  (C): issue #6's chunk rule (hide_grey_models 'chunks') hid em095_005's entry 0, a model unit on the shared chunk
+  mesh cm000_000 in colour 79b2b2b2 (translucent, own colour: no area multiply), in element 0, the one her record
+  draws (mask 1). Now 'opaque_chunks' (efl4u2gu keep_translucent): translucent models 4U draws in their own colour
+  stay; rocks are opaque or ground-coloured. Five entries come back: em095_005 0, em095_009 2, em095_015 4,
+  em095_018 0, em095_021 2 (her shot hit). Test 2026-11-22 (17-33-35): ids 8 / 1 post at frames 40 / 101, still no
+  bullet. Test 2026-11-22 (18-19-37, diagnostic build): the maintainer sees the charge glow (id 8) and the burst at the
+  shot (id 1), only the bullets are missing; both effects live ~4 s. 4U's dispatch 0x793b30 (table at 0x793b54, on
+  +0x1cb): 7/9 -> shot mode 0, 7/15 -> 1, 7/34 -> 2, 7/79 -> 3; modes 1 / 2 set 0x426 and call attackEx 0x933144
+  (attacks 20 / 49 / 48), no shell. Anim 38's group-2 id 1100 is a marker (4U 0x39170c clears obj+0x11), not an
+  effect. So the bullets are units of em095_005 element 0 (S): entry 0, ten cm000_000 balls in 79b2b2b2 over 30
+  frames (t17 [2, 10, 30]), as Capcom's em069_00_003 entry 10 (cm101_000, 78a4a4a4, [4, 10, 30]). Test 2026-11-22
+  (efl4u2gu blend_fill: the colourless meshes of blended materials at RGB 127 instead of black): still no bullets.
+  The maintainer's choice then (2026-11-22): Capcom's bullets (GU em069_00u record 260, em069_00_003): still none.
+  Test 2026-11-22 on GU's own Seltas Queen (em069_00, next-action aid): 7/15 / 7/34 show no bullets either. So
+  em069_00_003 is a burst, and em095_005 too (the burst the maintainer sees): 7/15 / 7/34 are a close-range water
+  burst in 4U and GU. The "Water shots (three)" label (actions.toml, 2157929) came from this file's wrong "Shots" note
+  (0x78e688 posts for modes 0 / 3 only, fixed); the Queen's 4U shell posts (0x661bec in 0x780000..0x7a0000) are 0x78e688
+  modes 0 / 3, 0x796928 (7/56) and the species' 0x787270 (his). The Capcom swap and the blend_fill / opaque_chunks
+  attempts are backed out (our em095_005 again). The maintainer's choice (2026-11-22): 7/15 / 7/34 fire 7/9's three
+  shots too, after the burst (seltas_shots.c seltas_shot_qm at GU 0xf96b14: modes 1 / 2 pass the gate as mode 0, at
+  0x426's frames 100 / 110 / 120), a DEVIATION from 4U. Not seen in the game yet.
 
 ## Routes (C)
 - tools/routes_seltas.py: their 4U maps on GU's maps (area_link / area_eat / map_info / area_select): Desert Seltas

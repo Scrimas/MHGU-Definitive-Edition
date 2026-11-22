@@ -13,7 +13,7 @@ import glob, os, re, shutil, struct, subprocess, sys, tomllib
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
-import alloc, nso, paths, ui_icons
+import actions, alloc, nso, paths, ui_icons
 
 MONSTERS = alloc.monsters()        # registry order (allocations.toml): registry indexes, append order
 QUESTS_PER_ENTRY = alloc.QUESTS_PER_ENTRY   # port.h PORT_QUESTS
@@ -207,21 +207,35 @@ HOOKS = [
     ('em070_01_act', 0xFAE550),    # uEm070_00 slot 125: Shrouded Nerscylla (variant 1) log (monsters/shrouded_nerscylla/module/em070_01.c)
     ('em070_01_line', 0xF9F3EC),   # uEm070_00 slot 130's web line sound, GU's variant test: GU's variant-0 path for her (mid hooks, return 0)
     ('em070_01_line2', 0xF9F534),
+    # G-rank Crimson Fatalis (uEm013_00 variant 6): variant 1's branch where GU switches on 0 / 1 / 2 only
+    # (monsters/g_crimson_fatalis/module/em013_06_alias.c): slot 86's shell preload and slot 79's flags (MID_EXIT),
+    # four shot posts (register rewrites, one MID_EXIT)
+    ('em013_06_preload', 0xD8E334), ('em013_06_flags', 0xD8E0F8), ('em013_06_shot_d', 0xD89840),
+    ('em013_06_shot_a', 0xD831CC), ('em013_06_shot_b', 0xD851C4), ('em013_06_shot_c', 0xD89320),
+    # its 4U em117 behaviour (entry hooks, return 0 = GU's body runs on): slot 118 spawn setup, slot 119 state frame
+    # (em013_06_state.c), slot 130 prominence (em013_06_frame.c), the hitzone switch 0xd815d0 (replaced for it), the
+    # cat-7 dispatcher for 7/74..76 (em013_06_moves.c), the destructors (slots 0 / 1: its heat haze filter killed,
+    # em013_06_zone.c); its stepfire through the core b0gate's post list
+    ('em013_06_spawn', 0xD808F0), ('em013_06_state', 0xD81A08), ('em013_06_frame', 0xD80EEC),
+    ('em013_06_meat', 0xD815D0), ('em013_06_act7', 0xD8BC74), ('em013_06_dtor', 0xD807F0),
+    ('em013_06_delete', 0xD80844),
     ('seltas_ds_act', 0xFDC074),   # uEm076_00 slot 125: Desert Seltas (variant 1): his 4U entry and death (monsters/desert_seltas/module/seltas.c)
     ('seltas_dsq_react', 0xF9BE10),  # uEm069_00 category 10, which GU ends at once for a variant: her 4U reactions (seltas_react.c)
     # their own 4U shots (monsters/desert_seltas/module/seltas_shots.c): GU's variant skips before a post (MID_EXIT: on to
-    # the post), the marks, and the shell request's def read (0x48c5e4) and exit (0x48c54c)
+    # the post) and the marks (the swap itself: module/shellswap.c, below)
     ('seltas_shot_a', 0xFD531C), ('seltas_shot_b', 0xFD6130), ('seltas_shot_c0', 0xFD7C78), ('seltas_shot_c', 0xFD7F30),
     ('seltas_shot_d', 0xFD8240), ('seltas_shot_e', 0xFD86E4), ('seltas_shot_q', 0xF987D0),
     ('seltas_shot_q1', 0xF96BC4), ('seltas_shot_q2', 0xF96C74), ('seltas_shot_q3', 0xF96D24),
-    ('seltas_shot_req', 0x48C5E4), ('seltas_shot_end', 0x48C54C),
+    ('seltas_shot_qm', 0xF96B14),  # her 7/15 / 7/34 (modes 1 / 2) past the gate to 7/9's three shots (seltas_shots.c)
     ('seltas_shot_g', 0xFDCBE4),   # GU's Seltas shell class 0xfdca90, before its ground-splash post 0x13a: his own splash
                                    # (seltas_shots.c, 0.1.8)
     ('seltas_shot_g2', 0xFC6C00), ('seltas_shot_g3', 0xFC6DE0),  # GU's Seltas shell callback 0xfc6a30, before its two
                                    # posts of the unit's 0x13a; GU's Queen shell class 0xf9dc80, before its 0x128 post:
     ('seltas_shot_qg', 0xF9DD9C),  # their own ground splashes (seltas_shots.c, 0.1.10)
-    ('seltas_shot_any', 0x48C4F8),  # GU's shell request after its entry (Tigerstripe's hook): every 0x13a the Desert
-                                    # Seltas owns takes his own splash, whoever posts it (seltas_shots.c, 0.1.12)
+    # GU's shell request (module/shellswap.c): a port's own family copies for its posts: the start after its entry
+    # (Tigerstripe's hook; a port that takes every post of an id: the Desert Seltas' 0x13a, G-rank Crimson Fatalis'
+    # 0x86 / 0x87), the def read and the exit
+    ('shellswap_any', 0x48C4F8), ('shellswap_req', 0x48C5E4), ('shellswap_end', 0x48C54C),
     ('seltas_sting', 0x4E5240),     # sSoundControl 0x4e51c8 before its discovery sting: none for her dug-out male
                                     # (seltas.c, 0.1.15)
     ('seltas_mark', 0x4E4B18),      # sSoundControl's scan, its clear of a unit's announce mark: kept for her Desert
@@ -280,6 +294,10 @@ MID_EXIT = {
     'seltas_shot_a': 0xFD5328, 'seltas_shot_b': 0xFD613C, 'seltas_shot_c': 0xFD7F40, 'seltas_shot_d': 0xFD824C,
     'seltas_shot_e': 0xFD86F0, 'seltas_shot_q': 0xF987E0,
     'seltas_mark': 0x4E4B20,     # seltas.c: past sSoundControl's clear of the unit's announce mark (it stays set)
+    # em013_06_alias.c: variant 1's branch for variant 6
+    'em013_06_preload': 0xD8E3FC,  # slot 86: rows 134..137 preloaded
+    'em013_06_flags': 0xD8E108,    # slot 79: this+0x13f4 |= 0x38000
+    'em013_06_shot_d': 0xD898F8,   # 0xd8775c: variant 1's post
 }
 # GU code that third-party Forge plugins check against v1.4 before hooking it (each plugin's table of main address +
 # v1.4 bytes, read with tools/plugin_sigs.py); a plugin whose check fails installs nothing. main() refuses a hook
@@ -365,6 +383,50 @@ WORD_PATCHES = [
     (0x5B0CB8, 0xE355007B, cmp_imm(0xE355007B, NOTES_COUNT)),  # list screen: visible entries in display order
 ]
 
+
+def arm_imm(word, v):
+    """the same ARM data-processing instruction (mov / cmp, any condition) with the modified immediate v"""
+    for rot in range(16):
+        imm8 = ((v << 2 * rot) | (v >> (32 - 2 * rot))) & 0xFFFFFFFF if rot else v
+        if imm8 < 256: return (word & ~0xFFF) | rot << 8 | imm8
+    raise ValueError('%#x is no ARM immediate' % v)
+
+
+def movw_imm(word, v):
+    """the same movw with the 16-bit immediate v"""
+    return (word & 0xFFF0F000) | (v >> 12) << 16 | (v & 0xFFF)
+
+
+# Quest board manager L (loaded quests and star boards; a helper's trace 2026-11-22, C, notes of
+# monsters/g_crimson_fatalis/notes/plan.md 12): GU loads at most 864 quests in a hub (L+0x24, a heap array of
+# resource pointers, past it the loader stops silently) and puts at most 99 on a star board (18 boards of 99 u32 IDs
+# in one heap block at L+0x34, u16 counts; board_put returns silently past 99: G★4 held 98 with our quests). Both
+# raised for the ports' quests, every site of a bound together (a partial patch overruns the heap); the counts and
+# the board list UI are u16 (S), nothing else sized by them.
+QUEST_LOAD_MAX = 1024           # GU 864; each loaded questData stays resident, so not more than needed (G)
+BOARD_QUEST_MAX = 255           # GU 99 per star board
+BOARD_COUNT = 18                # boards in L+0x34's block (allocated in 0x3ba8fc)
+QUEST_LIMIT_SITES = [           # (site, GU word, GU value, our value, encoder)
+    (0x3B7D58, 0xE3A01D36, 864 * 4, QUEST_LOAD_MAX * 4, arm_imm),     # 0x3b7cf8: mov r1, #0xd80 (array size)
+    (0x3B7D64, 0xE3A01D36, 864 * 4, QUEST_LOAD_MAX * 4, arm_imm),     # its clear
+    (0x3B7E70, 0xE3500E36, 864, QUEST_LOAD_MAX, arm_imm),             # loader 0x3b7de8: done at the cap
+    (0x3B7F84, 0xE3500E36, 864, QUEST_LOAD_MAX, arm_imm),             # loader: continue while below it
+    (0x3B6300, 0xE3550E36, 864, QUEST_LOAD_MAX, arm_imm),             # free-all loop 0x3b62d8
+    (0x3B65F0, 0xE3500E36, 864, QUEST_LOAD_MAX, arm_imm),             # incremental release 0x3b651c
+    (0x3B659C, 0xE351001A, 864 // 32 - 1, QUEST_LOAD_MAX // 32 - 1, arm_imm),   # its resume check (idx >> 5)
+    (0x3BA988, 0xE3011BD8, BOARD_COUNT * 99 * 4, BOARD_COUNT * BOARD_QUEST_MAX * 4, movw_imm),   # 0x3ba8fc: block
+    (0x3BA994, 0xE3011BD8, BOARD_COUNT * 99 * 4, BOARD_COUNT * BOARD_QUEST_MAX * 4, movw_imm),   # its clear
+    (0x3BC9C8, 0xA3A00F63, 99 * 4, BOARD_QUEST_MAX * 4, arm_imm),     # board getter 0x3bc96c: board stride
+] + [(s, w, 99 * 4, BOARD_QUEST_MAX * 4, arm_imm)                     # board_put 0x3bb318: the stride per path
+     for s, w in ((0x3BB3CC, 0xE3A02F63), (0x3BB4E4, 0xE3A02F63), (0x3BB5C4, 0xE3A03F63), (0x3BB788, 0xE3A03F63),
+                  (0x3BB848, 0xE3A02F63))] + \
+    [(s, w, 98, BOARD_QUEST_MAX - 1, arm_imm)                          # board_put: count > 98 -> not put
+     for s, w in ((0x3BB3E0, 0xE3510062), (0x3BB4FC, 0xE3520062), (0x3BB5DC, 0xE3520062), (0x3BB7A0, 0xE3520062),
+                  (0x3BB860, 0xE3520062))]
+for _s, _w, _gu, _ours, _enc in QUEST_LIMIT_SITES:
+    assert _enc(_w, _gu) == _w, 'quest limit site %x: GU word does not hold %#x' % (_s, _gu)
+    WORD_PATCHES.append((_s, _w, _enc(_w, _ours)))
+
 # Items appended past GU's 2991 (allocations.toml [monster.append] items; notes/items-append.md): the code that bounds
 # item IDs by the count is raised by the appended count, the per-item heap buffer grows with it, the item box sort and
 # the items-obtained set / clear / test are replaced (items.c: IDs from 3008 use a reserved save block). Nothing
@@ -386,6 +448,8 @@ if 'MOTION_GUARD' in os.environ.get('GOG_DEFINES', '').split():   # diagnostic: 
     MID_EXIT['motion_guard'] = 0x88F4D4  # add r7, r7, #1: the update loop's next material, this one not evaluated
 if 'TEST_QUEST_RANK' in os.environ.get('GOG_DEFINES', ''):   # test: Stygian's quests at that rank (em057_01_ai.c)
     HOOKS += [('em057_01_rank', 0x3A8D68)]                   # GU quest rank getter (4U 0x69ae70)
+if 'TEST_NEXT_ACTION' in os.environ.get('GOG_DEFINES', '').split():   # test: the AI's next pick from tools/nextact.py
+    HOOKS += [('nextact_pick', 0x85A10)]   # the AI selector's setAction(this, cat, num, 0) of an EMC pick (nextact.c)
 
 
 def movw_imm(word, imm):
@@ -719,6 +783,8 @@ def main():
     open(os.path.join(OUT, 'tables.S'), 'w').write(reg_tables_asm(img))
     errs = alloc.check()
     if errs: sys.exit('allocations.toml:\n  ' + '\n  '.join(errs))
+    errs = actions.check()   # each port's AI action list (tools/nextact.py), kept with its AI table
+    if errs: sys.exit('actions.toml:\n  ' + '\n  '.join(errs))
     check_data_pool()
     open(os.path.join(OUT, 'alloc.h'), 'w').write(alloc.header())
     open(os.path.join(OUT, 'modsave_quests.h'), 'w').write(modsave_quests_h())
@@ -731,7 +797,8 @@ def main():
     incs = ['-I', OUT, '-I', HERE] + [a for d in mods for a in ('-I', d)]
     srcs = [os.path.join(HERE, f) for f in ('crt0.S', 'main.c', 'util.c', 'port.c', 'quest.c', 'items.c', 'gear.c',
                                             'notes.c', 'stage_alias.c', 'bgm.c', 'icons.c', 'save.c',
-                                            'modsave.c', 'savefile.c', 'b0gate.c')]
+                                            'modsave.c', 'savefile.c', 'b0gate.c', 'shell.c', 'efx.c',
+                                            'shellswap.c', 'nextact.c')]
     for d in mods:                                     # every registered monster's code, registry order
         srcs += sorted(glob.glob(os.path.join(d, '*.c')))
     srcs += [os.path.join(OUT, 'port_monsters.c'), os.path.join(OUT, 'tables.S')]

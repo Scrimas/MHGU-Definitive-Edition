@@ -24,7 +24,7 @@ notes_entry = [123, 159]                # Hunter's Notes: 123..127 = free bits o
 quests = [11491, 11492, 11493, 11494, 10790, 10791, 10792, 11495, 11496,   # checked free (no file, no list
           10775, 10776, 10777, 10778, 10779, 11426, 11427, 11428, 11429, 1023, 1024, 10780, 11430, 10781, 1025,
           1056, 10782, 10783, 11451, 1057, 1058, 1059, 10784, 10785, 11452, 11368, 11453,
-          1062, 11370, 11371, 841, 10547, 11372, 1068, 11138, 11139, 11140, 11374, 11373]
+          1062, 11370, 11371, 841, 10547, 11372, 1068, 11138, 11139, 11140, 11374, 11373, 11498, 11499, 11497]
                                         # entry; v1.0 RomFS); 107NN = Hub HR 7, 114NN = Hub G4 (the ID's digits decide
                                         # which hub loads it, the questData bytes the rank: plan.md Dalamadur 6.),
                                         # 10NN = village ★10 (Stygian Zinogre, 2026-10-28); 10780 / 11430 / 10781 /
@@ -44,7 +44,12 @@ quests = [11491, 11492, 11493, 11494, 10790, 10791, 10792, 11495, 11496,   # che
                                         # 1068 / 11138 / 11139 / 11140 / 11374 / 11373 (Desert Seltas' and the Queen's,
                                         # 2026-11-09 / 11374 on 2026-11-11 when the tours took 11372: the same check, and
                                         # none is in the event download catalog 0x1595e98; 111NN = Hub G1, 113NN = Hub G3;
-                                        # IDs earlier local test builds used are left out)
+                                        # IDs earlier local test builds used are left out). 11498 / 11499 (the G-rank
+                                        # Crimson Fatalis', 2026-11-22: no q%07d.arc in the v1.4 RomFS, no quest_group
+                                        # entry, not in the catalog 0x1595e98, C); 11497 (its third, 2026-11-22: the same
+                                        # check; claimed once for Tidal Najarala's dropped arena quest, never released).
+                                        # A hub ID ending in 00 never loads: GU's loader filter 0x3b8090 and is_G
+                                        # 0x3b9e50 want NN in 1..99 (C; 11400 failed in test 1). No free 114NN ID is left
 quest_slots = [1011009, 1011003, 1011048, 1011049, 1010007, 1010177, 1110009, 1110114, 1110115]
                                         # quest_group group-127 entries renamed in memory. 1010007 / 1010177 / 1110009 /
                                         # 1110114 / 1110115 (indexes 1307 / 1329 / 1314 / 1393 / 1394, 2026-10-21):
@@ -682,6 +687,64 @@ w02 = 1                                 # (monsters/desert_seltas/tools/gear_wea
 w06 = 1                                 # (the table is full): mKireType GU's nearest rows, her bars the 4U rows (KIRX)
 w09 = 1
 w10 = 2
+
+[[monster]]
+name = "g_crimson_fatalis"              # 4U em117, the G-rank Crimson Fatalis, run by 4U's uEm077 with Fatalis, Crimson
+                                        # and White Fatalis (em077..079; monsters/g_crimson_fatalis/notes/plan.md)
+title = "Crimson Fatalis (4U)"          # the maintainer's name (2026-11-22): 4U names all four "Fatalis", and GU's own
+                                        # Crimson Fatalis (em013_01) is 4U's High Rank one, em078
+em_id = 0x60d                           # Fatalis (em 13) variant 6: GU's own class uEm013_00 runs it (package.toml
+                                        # gu_class); GU ships variants 0..2 only, but its class keeps 4U's tests of em 117
+                                        # as variant 6 (C: slot 133 0xd8185c `cmp #6; cmpne #1` = 4U uEm077 slot 51
+                                        # 0x89e29c `cmp #78` / 0x89e2a4 `cmp #117`)
+registry_index = 150
+donor_index = 118                       # Crimson Fatalis em013_01 (GU pair 0x10d -> 118)
+standin_id = 0x10d                      # its quests name Crimson Fatalis (loader-visible), swapped to 0x60d at spawn; no 4U
+                                        # quest of its has a real Crimson Fatalis next to it (C)
+file_ids = [0x10a80, 0x10abf]
+save = "lease"                          # no free save slot: it borrows one per quest (module/save.c)
+name_entry = 223                        # 'dummy3' of monsterName's second list (the Desert Seltas Queen took 224)
+notes = false                           # no Hunter's Notes entry: GU has one Fatalis entry (120, em 0xd) for its three, none
+                                        # for Crimson or White (the maintainer's rule, 2026-11-22: as GU does); 4U gives
+                                        # em117 no entry or text either (emExp[117] "Invalid Message")
+quests = [11498, 11499, 11497]          # 4U m11036 "Advanced: A Final Battle Cry" (guild G3), the events m60249 "Beyond the
+                                        # Crimson Veil" and m60215 "A Feast for the Departed" (G3, from the maintainer's
+                                        # extdata; m60215 added 2026-11-22, Phase 1 had missed it) -> hub G4, the rank of
+                                        # GU's own Crimson Fatalis q11456; all on Ingle Isle (4U stage 9, GU stage 19: GU's
+                                        # own map). quests[1] is the event quest of 4U spawn byte 3 (module em013_06)
+quest_append = true                     # new quest list entries after GU's (module/quest.c), no quest_slots
+bgm_ids = [0x904]                       # its own 4U theme bgm_em117.mca (one stream, no _2)
+                                        # No items: its 4U materials 1589..1593 (Fatalis Flamescale .. Devileye+) are
+                                        # GU's 1658..1662 (Crimson Fatalis Scale .. Fatalis Devileye+: the same text,
+                                        # renamed, C); 4U 1886 Crimson Fatalis Ticket is not ported (only 4U's GX set
+                                        # uses it, which GU ships as its own: the maintainer, 2026-11-22). No ui_icon:
+                                        # 4U's boards show '?' for its quests (+0xE8 = 0)
+armor_models = [410, 411]               # 4U Wroth, Blademaster / Gunner (unused in GU, C)
+
+[monster.weapon_models]                 # per weapon class (GU model numbers = 4U's, unused in GU, checked by
+w00 = 108                               # tools/gear_weapons_em013_06.py): the 8 4U weapons GU lacks by name
+w02 = 109
+w06 = 59
+w07 = 91
+w09 = 93
+w10 = 86
+w12 = 79
+w13 = 44
+
+[monster.append]
+armor_series = 2                        # Wroth (Blademaster + Gunner)
+armor_create = 1
+armor_process = 5                       # the template's level rows (GU Fatalis Crimson; tools/gear_em013_06.py)
+
+[monster.append.weapons]                # BaseData / MsgData / LevelData rows per class: one weapon each
+w00 = 1                                 # (tools/gear_weapons_em013_06.py); no sharpness row of its own (the table is
+w02 = 1                                 # full): mKireType GU's nearest rows, its bars the 4U rows (KIRX)
+w06 = 1
+w07 = 1
+w09 = 1
+w10 = 1
+w12 = 1
+w13 = 1
 
 # ---- maps (maps/<name>): the IDs a map package owns, never a registry index ---------------------------------------
 # A map's Harvest Tours (maps/<map>/package.toml [[tour]]) ship in its package: a monster requiring the map brings them,

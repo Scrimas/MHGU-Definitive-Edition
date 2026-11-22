@@ -530,3 +530,16 @@ Built (release, no defines); not tested. Details: gu-walkable.md 6e.
   105 (x7.0), defence 82 (x0.80); 11494 HP 65 (x2.05), attack 107 (x7.6), defence 79 (x0.80). The log has HP 22880 =
   base 17600 x 1.30 for 10792 (this machine controlled it; 11494's controller was a friend's: 36080 expected, S).
   Times in the log: 11494 11:31, 10792 6:14. The attack rows are nearly equal in 4U itself.
+
+## Meteor impact explosion missing (2026-11-22, G-rank Crimson Fatalis tests 1 / 2)
+- The maintainer: meteors fine, the impact effect gone, also with Dalamadur played first after a fresh boot (so no
+  leftover of another port). Log: every blast (uShell003 126) spawns and posts 2930 (em024_005) on its shell with a
+  valid handle; the shipped em024_005 equals 4U's layout; the shell framework move to core (1d90eec) is mechanical.
+- Cause (S): since the 2026-10-21 fix the blast's effect is posted on the blast shell (attached, it reads its target
+  every frame), and the shell died with its 14-frame attack window (0.225 s in the log), stopping the effect and
+  leaving it no target. The meteor's own attached effect (2900) already had the deferred kill for this
+  (dala_meteor.c shell_slot_kill); the blast had not. 4U's kill 0xc5598c releases the effect through 0xc470dc, which
+  calls the effect's own end (vt+0x70 / +0x40 by its mode +0x118, C) rather than deleting it with the shell.
+- Fix: dala_shell003.c s003_slot_kill / s003_dying: stop, attack slots off, base kill once the effect is dead
+  (forced after 300 frames). Log "dalaport: blast N: effect ended F frames after the window". Also covers the burn
+  steps' 112 / 159 blasts (em024_001).

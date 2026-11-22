@@ -16,7 +16,8 @@
  * (power / flag changes, all gated on request flags +0x14 = 0: nothing). Per frame: age += dt; state 2 (end) when
  * the attack slot's active byte (+0x16d) is 0 or age >= 200 (0xc54b88); the active byte drops at the record's window
  * end (start s16 +0, length s16 +2), here taken from the records (GU's own clearing of slot +5 not traced, as
- * Gogmazios' em089_shell005.c). Kill 0xc5598c releases the effect +0x29c (0xc470dc) -> dala_efx_stop.
+ * Gogmazios' em089_shell005.c). Kill 0xc5598c releases the effect +0x29c (0xc470dc) -> dala_efx_stop, the shell
+ * kept until the effect ends (s003_slot_kill: it is attached to the shell, as the meteor's).
  * Records (power / window / volume): 112 = 159: 100, 4 + 20, sphere bone 255 r 450; 113 = 160: 45, 4 + 10, r 450;
  * 114 = 161: 80, 4 + 20, r 700; 126 = 162: 50, 4 + 10, r 450 (all type 2; byte 0x1c = 29, see the build).
  * Effects: 112 / 159 em024_001 / em110_001 mask 1, scale 1.5; 113 / 126 / 160 / 162 em024_005 / em110_005 (group 35 /
@@ -63,7 +64,10 @@ typedef int (*shell_setup_t)(void *self, void *param);
 #define B_END     (DALA_SH_FIELDS + 0x10)   /* float window end (record start + length) */
 #define B_EFX     (DALA_SH_FIELDS + 0x14)   /* void * [+0x29c] */
 #define B_START   (DALA_SH_FIELDS + 0x18)   /* float[3] request position */
+#define B_DYING   (DALA_SH_FIELDS + 0x24)   /* u8 1 = killed, waiting for the effect */
+#define B_DIE_T   (DALA_SH_FIELDS + 0x28)   /* float frames spent waiting for the effect to end */
 #define B_SIZE    (DALA_SH_FIELDS + 0x30)
+#define EFX_DIE_MAX 300.0f                  /* dala_meteor.c's bound before a forced stop */
 
 typedef struct { uint8_t sub, hds, shah; uint16_t efx; float end; } s003_t;
 static const s003_t k_s003[] = {
@@ -80,7 +84,7 @@ static const s003_t *s003_info(uint32_t sub)
     return 0;
 }
 
-static dala_shcls_t s_cls003;
+static shcls_t s_cls003;
 static uint32_t s_serial003;
 
 static void s003_end(void *self, const char *why)
@@ -92,12 +96,46 @@ static void s003_end(void *self, const char *why)
     VCALL0(self, SLOT_KILL);
 }
 
-/* slot 16 = 4U slot 24 0xc5598c: the effect is released, then the base kill */
+/* slot 16 = 4U slot 24 0xc5598c: the effect is released (0xc470dc), then the base kill. The blast's effect is
+ * attached to this shell (posted on it so it shows at the impact) and reads it every frame, so the shell outlives it
+ * as the meteor's (dala_meteor.c shell_slot_kill): stopped, attack slots off, base kill once the effect is dead
+ * (s003_dying). Until 2026-11-22 the shell died with its 14-frame attack window and took the explosion with it (the
+ * maintainer: "the impact effect is gone"). */
 static void s003_slot_kill(void *self)
 {
     void *h = FIELD(void *, self, B_EFX);
-    if (dala_efx_alive(h)) dala_efx_stop(h);
+    if (h && !dala_efx_alive(h)) FIELD(void *, self, B_EFX) = h = 0;
+    if (!h) { FIELD(uint8_t, self, B_DYING) = 0; uShell_kill(self); return; }
+    if (FIELD(uint8_t, self, B_DYING)) return;
+    FIELD(uint8_t, self, B_DYING) = 1;
+    FIELD(uint8_t, self, B_STATE) = 2;
+    FIELD(float, self, B_DIE_T) = 0.0f;
+    FIELD(uint8_t, self, 0x13ae) = 255; FIELD(uint8_t, self, 0x13ad) = 0;   /* 0x4a247c: attack slots 0..2 off */
+    FIELD(uint8_t, self, 0x1466) = 255; FIELD(uint8_t, self, 0x1465) = 0;
+    FIELD(uint8_t, self, 0x151e) = 255; FIELD(uint8_t, self, 0x151d) = 0;
+    dala_efx_stop(h);
+}
+
+/* per frame while B_DYING: base kill once the effect is dead (forced stop after EFX_DIE_MAX frames) */
+static void s003_dying(void *self)
+{
+    void *h = FIELD(void *, self, B_EFX);
+    float *t = &FIELD(float, self, B_DIE_T);
+    *t += shell_dt(self);
+    if (h && dala_efx_alive(h) && *t >= EFX_DIE_MAX && *t < EFX_DIE_MAX + 1000.0f) {
+        static uint32_t s_n;
+        if (++s_n <= 20) logf("dalaport: blast %u: effect still alive after %d frames, forced stop",
+                              FIELD(uint32_t, self, B_SERIAL), (int32_t)EFX_DIE_MAX);
+        dala_efx_kill(h);
+        *t = EFX_DIE_MAX + 1000.0f;           /* one more frame for the effect's own kill, then the shell goes */
+        return;
+    }
+    if (h && dala_efx_alive(h) && *t < EFX_DIE_MAX + 1000.0f + 30.0f) return;
+    static uint32_t s_n;
+    if (++s_n <= 20) logf("dalaport: blast %u: effect ended %d frames after the window", FIELD(uint32_t, self, B_SERIAL),
+                          (int32_t)*t);
     FIELD(void *, self, B_EFX) = 0;
+    FIELD(uint8_t, self, B_DYING) = 0;
     uShell_kill(self);
 }
 
@@ -114,7 +152,8 @@ static int s003_setup(void *self, void *param)
     FIELD(uint8_t, self, B_STATE) = 1;
     FIELD(float, self, B_AGE) = 0.0f;
     FIELD(float, self, B_END) = k->end;
-    FIELD(uint8_t, self, B_ARMED) = (uint8_t)dala_shell_arm(self, k->hds, 31, 2, FIELD(uint16_t, self, B_GROUP));
+    FIELD(uint8_t, self, B_ARMED) = (uint8_t)shell_arm(&dala_shells, self, k->hds, 31, 2,
+                                                       FIELD(uint16_t, self, B_GROUP));
     /* posted on this shell (4U 0xc5540c posts from the shell, C): a world-position post (dala_efx_post_at) leaves the
      * request's attach target empty, GU then attaches the owner's model and the blast showed at the head's origin,
      * one fixed arena point (test 2026-10-21); the record places once, here = the impact point */
@@ -132,14 +171,15 @@ static void s003_move(void *self)
 {
     if (FIELD(void *, self, B_EFX) && !dala_efx_alive(FIELD(void *, self, B_EFX))) FIELD(void *, self, B_EFX) = 0;
     uShell_move(self);
-    if (!dala_shell_live(self) || FIELD(uint8_t, self, B_STATE) != 1) return;
+    if (FIELD(uint8_t, self, B_DYING)) { s003_dying(self); return; }
+    if (!shell_live(self) || FIELD(uint8_t, self, B_STATE) != 1) return;
     float *age = &FIELD(float, self, B_AGE);
-    *age += dala_shell_dt(self);
+    *age += shell_dt(self);
     if (*age >= FIELD(float, self, B_END)) { s003_end(self, "attack window over"); return; }
     if (*age >= 200.0f) s003_end(self, "age 200");
 }
 
-static void *s003_new(MtDTI *dti) { (void)dti; return dala_shell_new(&s_cls003); }
+static void *s003_new(MtDTI *dti) { (void)dti; return shell_new(&s_cls003); }
 static MtDTI *s003_dti(void *self) { (void)self; return &s_cls003.dti; }
 
 static void s003_delete(void *self)
@@ -147,7 +187,7 @@ static void s003_delete(void *self)
     void *h = FIELD(void *, self, B_EFX);
     if (dala_efx_alive(h)) dala_efx_stop(h);
     FIELD(void *, self, B_EFX) = 0;
-    dala_shell_free(&s_cls003, self);
+    shell_free(&s_cls003, self);
 }
 
 void *dala_shell003_post(void *owner, uint32_t subtype, const float *pos, uint32_t area, uint32_t group)
@@ -164,19 +204,19 @@ void *dala_shell003_post(void *owner, uint32_t subtype, const float *pos, uint32
                              FIELD(uint8_t, owner, EN_VARIANT));
     }
     if (!s_cls003.registered)
-        dala_shell_register(&s_cls003, "uShellDala003", B_SIZE, s003_new, s003_delete, s003_dti, s003_move, s003_setup,
-                            s003_slot_kill);
-    void *param = dala_shell_param(owner, "blast");
+        shell_register(&s_cls003, &dala_shells, "uShellDala003", B_SIZE, s003_new, s003_delete, s003_dti, s003_move,
+                       s003_setup, s003_slot_kill);
+    void *param = shell_param(&dala_shells, owner, "blast");
     if (!param) return 0;
-    void *shell = dala_shell_new(&s_cls003);
-    if (!shell) { dala_shell_param_free(param); return 0; }
+    void *shell = shell_new(&s_cls003);
+    if (!shell) { shell_param_free(param); return 0; }
     FIELD(uint8_t, shell, B_SUB) = (uint8_t)subtype;
     FIELD(uint8_t, shell, B_AREA) = (uint8_t)area;
     FIELD(uint16_t, shell, B_GROUP) = (uint16_t)group;
     float *st = VEC(shell, B_START);
     st[0] = pos[0]; st[1] = pos[1]; st[2] = pos[2];
     FIELD(uint32_t, shell, B_SERIAL) = ++s_serial003;
-    return dala_shell_start(shell, param, "blast");
+    return shell_start(&dala_shells, shell, param, "blast");
 }
 
 /* ================================================================== (B) uShell009 ========================== */
@@ -204,7 +244,7 @@ static const s009_step_t k_s009_2[] = {
     {-1.0f, 255, 0, {0, 0, 0}},
 };
 
-static dala_shcls_t s_cls009;
+static shcls_t s_cls009;
 static uint32_t s_serial009;
 
 static void s009_end(void *self, const char *why)
@@ -223,7 +263,7 @@ static void s009_step(void *self, void *owner)
     const s009_step_t *e = &list[FIELD(uint8_t, self, Q_IDX)];
     if (e->t < 0.0f) { s009_end(self, "list end"); return; }
     float *age = &FIELD(float, self, Q_AGE);
-    *age += dala_shell_dt(self);
+    *age += shell_dt(self);
     if (*age > 300.0f) { s009_end(self, "age 300"); return; }
     if (e->t >= *age) return;
     if (!e->skip) {
@@ -263,25 +303,26 @@ static int s009_setup(void *self, void *param)
 static void s009_move(void *self)
 {
     uShell_move(self);
-    if (!dala_shell_live(self) || FIELD(uint8_t, self, Q_STATE) != 1) return;
-    void *owner = dala_shell_owner(self);
+    if (!shell_live(self) || FIELD(uint8_t, self, Q_STATE) != 1) return;
+    void *owner = shell_owner(self);
     if (owner) s009_step(self, owner);
 }
 
-static void *s009_new(MtDTI *dti) { (void)dti; return dala_shell_new(&s_cls009); }
+static void *s009_new(MtDTI *dti) { (void)dti; return shell_new(&s_cls009); }
 static MtDTI *s009_dti(void *self) { (void)self; return &s_cls009.dti; }
-static void s009_delete(void *self) { dala_shell_free(&s_cls009, self); }
+static void s009_delete(void *self) { shell_free(&s_cls009, self); }
 
 void *dala_shell009_post(void *owner, uint32_t subtype, const float *pos, uint32_t area, uint32_t group,
                          const uint32_t *angles)
 {
     if ((subtype != 1 && subtype != 2) || !pos) return 0;  /* the init kills >= 5; 0 / 3 / 4 are not Dalamadur's */
     if (!s_cls009.registered)
-        dala_shell_register(&s_cls009, "uShellDala009", Q_SIZE, s009_new, s009_delete, s009_dti, s009_move, s009_setup, 0);
-    void *param = dala_shell_param(owner, "burn");
+        shell_register(&s_cls009, &dala_shells, "uShellDala009", Q_SIZE, s009_new, s009_delete, s009_dti, s009_move,
+                       s009_setup, 0);
+    void *param = shell_param(&dala_shells, owner, "burn");
     if (!param) return 0;
-    void *shell = dala_shell_new(&s_cls009);
-    if (!shell) { dala_shell_param_free(param); return 0; }
+    void *shell = shell_new(&s_cls009);
+    if (!shell) { shell_param_free(param); return 0; }
     FIELD(uint8_t, shell, Q_SUB) = (uint8_t)subtype;
     FIELD(uint8_t, shell, Q_AREA) = (uint8_t)area;
     FIELD(uint16_t, shell, Q_GROUP) = (uint16_t)group;
@@ -289,5 +330,5 @@ void *dala_shell009_post(void *owner, uint32_t subtype, const float *pos, uint32
     st[0] = pos[0]; st[1] = pos[1]; st[2] = pos[2];
     for (int i = 0; i < 3; i++) FIELD(uint32_t, shell, Q_ANG + 4 * i) = angles ? angles[i] : 0;
     FIELD(uint32_t, shell, Q_SERIAL) = ++s_serial009;
-    return dala_shell_start(shell, param, "burn");
+    return shell_start(&dala_shells, shell, param, "burn");
 }

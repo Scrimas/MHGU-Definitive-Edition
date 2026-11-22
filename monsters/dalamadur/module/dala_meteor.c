@@ -314,7 +314,7 @@ static void *shell_alloc(MtDTI *dti, uint32_t size)
     return alloc(a, size, 16, dti->w[7]);
 }
 
-static void *shell_owner(void *self)
+static void *meteor_owner(void *self)
 {
     void *param = FIELD(void *, self, 0x136c);
     return param ? FIELD(void *, param, 0xc) : 0;
@@ -332,10 +332,10 @@ static void *shell_owner(void *self)
 #define DALA_METEOR_PACE_PCT 75
 #endif
 #define METEOR_PACE (DALA_METEOR_PACE_PCT / 100.0f)
-static float meteor_dt(void *self) { return METEOR_PACE * dala_shell_dt(self); }
+static float meteor_dt(void *self) { return METEOR_PACE * shell_dt(self); }
 
 /* 4U 0x9aad4c(shell, &t): t -= dt; 1 once t <= 0 (clamped to 0) */
-static int shell_timer(void *self, float *t)
+static int meteor_timer(void *self, float *t)
 {
     if (*t <= 0.0f) { *t = 0.0f; return 1; }
     *t -= meteor_dt(self);
@@ -380,11 +380,11 @@ static int meteor_step(void *self, void *owner)
     uint32_t kind = FIELD(uint8_t, self, S_KIND), serial = FIELD(uint32_t, self, S_SERIAL);
     float *arm_t = &FIELD(float, self, S_ARM_T);
     if (*arm_t > 0.0f) {                      /* 0xc7d2c0: delayed attack (the machine always passes 0.0) */
-        if (!shell_timer(self, arm_t)) return 0;
+        if (!meteor_timer(self, arm_t)) return 0;
         meteor_arm(self);
     }
     float *life = &FIELD(float, self, S_LIFE);
-    shell_timer(self, life);
+    meteor_timer(self, life);
     if (*life <= 0.0f) {                      /* 0xc7d344: state 2, lifetime 10 */
         *life = 10.0f;
         static uint32_t s_n;
@@ -439,7 +439,7 @@ static int meteor_step(void *self, void *owner)
         } else if (m && owner) snd_req_pos(m, 204, owner, pos, area, -2);
         return 1;
     }
-    if (shell_timer(self, &FIELD(float, self, S_SND_T))) {   /* 0xc7d484: falling sound every 12 frames */
+    if (meteor_timer(self, &FIELD(float, self, S_SND_T))) {   /* 0xc7d484: falling sound every 12 frames */
         FIELD(float, self, S_SND_T) = 12.0f;
         void *m = SND_MGR;
         if (m && owner) snd_req_obj(m, 205, self, -1, owner, area, self);
@@ -475,7 +475,7 @@ static void shell_dying(void *self)
 {
     void *h = FIELD(void *, self, S_EFX);
     float *t = &FIELD(float, self, S_DIE_T);
-    *t += dala_shell_dt(self);
+    *t += shell_dt(self);
     if (h && dala_efx_alive(h) && *t >= EFX_DIE_MAX && *t < EFX_DIE_MAX + 1000.0f) {
         static uint32_t s_n;
         if (++s_n <= 20) logf("dalaport: meteor %u: effect still alive after %d frames, forced stop",
@@ -560,10 +560,10 @@ static void shell_move(void *self)
     if ((FIELD(uint32_t, self, 0xc) & 7) - 1 >= 2) return;
     if (FIELD(uint8_t, self, S_STATE) == 2) { shell_kill(self); return; }
     if (FIELD(uint8_t, self, S_STATE) != 1) return;
-    if (meteor_step(self, shell_owner(self))) shell_kill(self);
+    if (meteor_step(self, meteor_owner(self))) shell_kill(self);
 }
 
-static void *shell_new(MtDTI *dti)
+static void *meteor_new(MtDTI *dti)
 {
     (void)dti;
     void *mem = shell_alloc(&s_dti, SHELL_SIZE);
@@ -592,7 +592,7 @@ static MtDTI *shell_get_dti(void *self)
     return &s_dti;
 }
 
-static void shell_register(void)
+static void meteor_register(void)
 {
     const uint32_t *base_vt = (const uint32_t *)VT_uShellEnemy;
     for (int i = 0; i < 2 + VT_uShellEnemy_SLOTS; i++) s_vt[i] = base_vt[i - 2];
@@ -603,7 +603,7 @@ static void shell_register(void)
     s_vt[2 + SLOT_KILL] = (uint32_t)&shell_slot_kill;
     const uint32_t *base_dvt = (const uint32_t *)DTIVT_uShellEnemy;
     for (int i = 0; i < 2 + 3; i++) s_dti_vt[i] = base_dvt[i - 2];
-    s_dti_vt[2 + 2] = (uint32_t)&shell_new;
+    s_dti_vt[2 + 2] = (uint32_t)&meteor_new;
     MtDTI_ctor(&s_dti, "uShellDala029", DTI_uShellEnemy, SHELL_SIZE, 0, 0, 0);
     s_dti.w[0] = (uint32_t)&s_dti_vt[2];
     s_registered = 1;
@@ -615,7 +615,7 @@ static void shell_register(void)
 void *dala_meteor_post(void *owner, uint32_t kind, const float *pos, uint32_t area, uint32_t group, float arm_delay)
 {
     static uint32_t s_fail;
-    if (!s_registered) shell_register();
+    if (!s_registered) meteor_register();
     uint8_t *mgr = SHELL_MGR;
     if (!owner || !pos || kind < 2 || kind >= METEOR_KINDS || !mgr) {
         if (++s_fail <= 20) logf("dalaport: meteor post dropped (owner %x kind %u mgr %x)", (uint32_t)owner, kind,
@@ -648,7 +648,7 @@ void *dala_meteor_post(void *owner, uint32_t kind, const float *pos, uint32_t ar
     FIELD(uint32_t, param, 0x34) = FIELD(uint32_t, owner, 0xfec);
     FIELD(uint32_t, param, 0x38) = FIELD(uint32_t, owner, 0xff0);
     FIELD(uint16_t, param, 0x3c) = 0xffff;
-    void *shell = shell_new(&s_dti);
+    void *shell = meteor_new(&s_dti);
     if (!shell) {
         ((void (*)(void *))((*(uint32_t **)param)[1]))(param);
         return 0;

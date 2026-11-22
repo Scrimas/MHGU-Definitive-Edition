@@ -17,3 +17,11 @@ struct b0port {
 
 extern const struct b0port em005_01_b0port, em068_01_b0port, em069_01_b0port, em070_01_b0port, em089_b0port,
     em090_00_b0port, em090_01_b0port;
+
+/* a port whose 4U code is tied to its own ungated records: told of each PEL u post of its unit (it gates nothing) */
+struct b0post {
+    uint16_t em;                                /* EN_ID */
+    void (*posted)(void *self, uint32_t id);
+};
+
+extern const struct b0post em013_06_b0post;

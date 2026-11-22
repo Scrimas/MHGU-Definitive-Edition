@@ -1,0 +1,25 @@
+# G-rank Crimson Fatalis package: 4U's G-rank Crimson Fatalis (4U em117) as GU Fatalis variant 6, what the installer
+# shows and installs, and the version written into its data file.
+name = "g_crimson_fatalis"
+kind = "monster"
+title = "Crimson Fatalis (4U)"
+class = "Elder Dragon"     # its class, GU's name (monsterName 253..267): the installer's subtitle in every language
+version = "0.4.0"          # bump on every published change of this monster's files (data, assets or code); 0.4.0:
+                           # test 1 fixes: GX Fatalis Crimson and its ticket dropped (GU ships that set), the third
+                           # quest is 11497 (11400 never loaded), opaque weapon blades, haze at half strength, its
+                           # fireball impacts without GU's clods (copies of GU Crimson's families 0x86 / 0x87, core
+                           # module/shellswap.c);
+                           # 0.3.0: its gear: G break rewards, Wroth armor, the 8 4U weapons GU lacks; 0.2.0:
+                           # its 4U behaviour (module em013_06_*.c), name "Crimson Fatalis (4U)" (NAME, entry
+                           # 223) and quests 11498 / 11499 / 11497 (4U m11036, events m60249 / m60215); 0.1.0:
+                           # its arc em013_06 (model, sound, effects, AI, tuning, carves), theme, shells and
+                           # variant aliases; 0.0.1: its IDs claimed in allocations.toml, nothing built yet
+requires_core = "3.1.0"    # oldest core module (exefs) that runs this version: its shells, variant 6 aliases and
+                           # appended quests
+requires = []              # packages it needs besides the core: none, GU's own Ingle Isle (stage 19) hosts it
+code = "em013_06"          # C prefix of its module code (hooks gated on GU variant 6)
+gu_class = "uEm013_00"     # GU's Fatalis class runs it as variant 6 (module/build.py: registry DTI = donor's)
+
+[size]                     # quest-result size record (module/main.c size_data): 4U table 0xf32008 + 16 x em {f32 base
+                           # cm, mini, silver, gold}; em117 = 4110.6 with crowns -1 (none, as em077 / em078) -> [base]
+g_crimson_fatalis = [4110.6]

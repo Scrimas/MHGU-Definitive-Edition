@@ -112,6 +112,11 @@ pairs where possible (tools/dt_vote.py, dt_map.py, snd4u2gu.py selftest), then a
    the core patches the loaded tables (module/items.c, gear.c, notes.c), never ships resident arcs: UI mods
    replace resident.arc / resident_<lang>.arc (the
    maintainer's HD UI v4 does), and shipping blacksmith.arc from the v1.0 RomFS could undo update changes.
+5. **AI action list** `monsters/<name>/actions.toml`: every native (cat, num) pair its AI table (cmd_tbl) picks, in
+   GU's numbering, with names and a "needs" note where known, for the next-action test aid (tools/nextact.py, module
+   nextact.c, switch TEST_NEXT_ACTION: pause, pick an attack, the monster's next AI pick is that attack).
+   `python3 tools/actions.py init <package>` writes / extends it (names kept); module/build.py refuses a port whose
+   table picks a pair the file lacks, so rerun `init` after any AI table change and name the new pairs.
 
 ## 4. Pipeline, in order
 ### Phase 0: identify (do not guess)
@@ -211,7 +216,10 @@ pairs where possible (tools/dt_vote.py, dt_map.py, snd4u2gu.py selftest), then a
   | 0xbfe98c | 0x49eac | camera shake |
   | 0x91df20 | 0x712a4 | species row; 4U row +0x48 (emd word 20, map-hit sphere: 4 offsets + radius +48) = the block GU 0x712a4 returns directly ([dtbase+0x84]) |
 - Shells: 4U posts uShellNNN objects through 0x660e88 (type = class). Port each as a GU uShellEnemy subclass
-  (examples: module/em089_shell*.c for uShell050 tar blobs, 051 ground splashes, 016 beams, 005 tremor). Port
+  on the core framework module/shell.h (class set-up, our copy of GU's request, arming, sounds; the port passes its
+  family {def file ID, row, log tag}) with code-posted effects through module/efx.h (examples:
+  monsters/dalamadur/module/dala_shell*.c, monsters/g_crimson_fatalis/module/em013_06_shell*.c; Gogmazios'
+  module/em089_shell*.c keeps its own copy: uShell050 tar blobs, 051 ground splashes, 016 beams, 005 tremor). Port
   their lifetimes completely: a shell's attack object (+0x168) clears byte +5 (= shell +0x16d) when the attack
   window (start + length of the attackdata record) runs out, and several 4U shells die on that.
 - Effects: GU PEL records posted through em089_efx.c. A live effect that follows something needs GU's per-frame
@@ -298,7 +306,13 @@ testable alone (the maintainer checks the smithy or one quest).
 - **Quests.** tools/build_gog_quest.py --source <4U quest> (fee, rewards, HRP, subquest = GU type 8, digit = break
   group or 7 tail sever); board slots by renaming DUMMY quest_group entries (allocations.toml quest_slots,
   module/quest.c, only while the monster is installed); 4U spawn byte 3 sits where GU keeps the Hyper flag: keep
-  GU's 0 and return 4U's value from code.
+  GU's 0 and return 4U's value from code. Reward lists (C, G-rank Crimson Fatalis' plan.md 10): a 4U row A with a
+  second list of flag 4 (slay-or-repel quests: Fatalis, Jhen / Dah'ren Mohran, Lao-Shan) holds the **repel**
+  rewards, drawn instead of the main list; GU's twin is slot 0's condition-4 group, which tools/quest4u.py rem_4u
+  writes. Check every 4U event file of the monster (tools/extdata4u.py list): Phase 1 of that port missed one.
+  A hub quest ID must end in 01..99: GU's loader filter 0x3b8090 and is_G 0x3b9e50 reject NN = 00 (11400 never
+  loaded, C). The core lifts GU's hub caps (module/build.py QUEST_LIMIT_SITES: 1024 loaded quests, 255 per star
+  board; GU drops quests past 864 / 99 silently), but free IDs per star stay limited: check them in allocations.toml.
 - **Armor / weapons.** tools/gear_em089.py (armor series 127 B + create / level rows + skill tree / skill +
   Arcane decorations) and tools/gear_weapons_em089.py (14 classes: Base / Level / Msg / Create / Process,
   sharpness, bowgun ammo, bow coatings; one load-exit hook per table class, module/gear_hooks.txt; a weapon
@@ -642,7 +656,9 @@ Notes: monsters/tigerstripe_zamtrios/notes/ (plan, phase1-variant-map, missing-a
   (Desert Seltas' 11140 has a normal Seltas). Desert Seltas 0.1.3's way: copies of GU's defs under its own paths, on its
   own PELs (GU's list-2 records of the ids the kinds post, on its 4U EFLs) and hit data, found by file ID (FILE IDs after
   the manifest's), and swapped into the shell request's cache read for its own posts only (0x48c5e4, back at the exit
-  0x48c54c: module/seltas_shots.c, tools/shots_seltas.py). A hook pair whose second instruction is conditional (movne)
+  0x48c54c: module/seltas_shots.c, tools/shots_seltas.py; since G-rank Crimson Fatalis the swap is the core's,
+  module/shellswap.c: a port gives a `struct shellswap` {owner ID, shell id -> file ID, ids taken for every post} and
+  marks its class-specific posts with shellswap_mark). A hook pair whose second instruction is conditional (movne)
   cannot be displaced: the trampoline's own cmp changes the flags first (`tools/hookcheck.py` checks it).
 - GU may renumber a subspecies' attack records: GU's Seltas Queen records 47 / 51 are 4U's Desert Seltas Queen 69 / 70
   (up to GU's retune bytes) and GU posts them for her. Compare record bytes, not indexes, before calling a post missing.
@@ -738,3 +754,45 @@ Notes: monsters/tigerstripe_zamtrios/notes/ (plan, phase1-variant-map, missing-a
 - A GU twin may drop a 4U call that edits shared species data at runtime: the Desert Queen's hold points (4U 0x799e24
   on the em data object's +0xa0 = GU dtbase +0x80, the points a held hunter is put on). Search GU's data files for the
   4U values (here joint 144 and the 0x8000 rotation) to find the twin of a runtime array.
+
+## Lessons from G-rank Crimson Fatalis (a 4U form GU's class keeps but never ships, 2026-11-22)
+- A variant number GU never ships (4U em117 = uEm013_00 variant 6, whose 4U tests GU kept as `cmp #6`) misses every
+  per-variant table and switch GU wrote for its own variants 0..2: slot 86 preloads the shell families for 0 / 1 / 2
+  only and returns for any other, so every shot of variant 6 would be refused for want of a resource; four shot
+  posts and slot 79 switch on 0 / 1 / 2 with no default. List every variant read of the class (`tools/variants_gu.py`
+  misses loads through the record: `ldrb rX, [rec, #0xa1cd]` = this+0xb5f5; grep `#0xa1cd` too), then take the 4U
+  twin's species reads to decide which GU variant's branch the new one takes (monsters/g_crimson_fatalis/module/
+  em013_06_alias.c: variant 1's, as 4U treats em117 as em078 there).
+- A GU hook pair cannot hold a branch: to change a variant compare, rewrite the register in the pair just before the
+  `cmp` (the trampoline replays it with the new value), or point the load's offset register at a byte holding the
+  wanted value when the pair before the load must not be skipped (em013_06_alias.c shot_c).
+- 4U's motion bit tracks (the footstep "slots" a class reads through 0x960478, codes like 2000..2003) became GU's PSL
+  files: a 4U action tied to a new section of such a track (Crimson's stepfire shell) runs from the PSL post of that
+  record. The core b0gate (GU's PSL post, every monster's) tells a port of its unit's PEL u posts (s_posts).
+- A GU class's own sub-dispatcher (uEm013_00's cat-7 0xd8bc74, one caller) is a cleaner hook for missing actions than
+  the shared no-case thunks 0xca118 / 0xca10c (Tigerstripe's, which need a return-address filter): an entry hook that
+  returns 1 goes back to slot 125 as GU's own case would.
+- Before adding a field to a core struct that ports initialize positionally (port_bgm, b0port), look for a way
+  without it: every port's initializer then warns (-Wmissing-field-initializers). A variant run by GU's class takes
+  the BGM stand-in path (its em type, answered only while its quests run).
+- Hunter-side 4U code (heat ticks, HP drains) can often run from the monster's own slot 119 for the local hunter:
+  4U's player tick is local too, so every machine gets the same result. GU's HP change is 0x2f4930(h, delta) (damage
+  lock, Guts, faint; C).
+- GU may already ship a 4U monster's materials under other names (em117's Fatalis Flame* = GU's Crimson Fatalis
+  Scale .. Wing) and part of its gear (by name, or by model: 4U's GX Fatalis Crimson look is GU's Fatalis Crimson XR).
+  Check names AND model numbers before planning gear; map renamed materials explicitly (items_em013_06.RENAMED),
+  never by English name. Search GU's whole armor series list for every 4U set name: the first survey compared one
+  look-alike set (XR) and missed that GU already ships 4U's GX Fatalis Crimson itself (series 1076 / 1077, Capcom's
+  conversion: Arcana -> Elemental), so a port of it duplicated a GU set and was dropped after test 1.
+- Package-split substitutes (the maintainer, 2026-11-22: all packages will later ship as one mod): a recipe item that
+  only another of our packages appends (B.Gravios Pallium, Black Gravios') gets a GU substitute so the package stays
+  standalone; mark each one "PACKAGE-SPLIT" in the builder, so the merge can put the real item back. A ported
+  skill two packages need (Arcana: Gogmazios' armor, today the only one) is one shared builder
+  (tools/gear4u.py arcana) whose records each package ships at the same IDs: module/gear.c appends a TBLA / TXTA
+  block only while the table still has the block's base count, so the first package loaded adds it and the copy is
+  skipped.
+- A variant that borrows GU's shots borrows GU's look too: GU Crimson's fireball impacts are Capcom's own GU files
+  (light clods where 4U draws a few near-black chunks), so the "rocks" the tester saw were GU's, not the 4U effect
+  first blamed (em117_202). Before blaming a converted effect, list every shell the variant posts and the PEL list-2
+  ids its kinds post (ef files = cParam {list, id}). The fix without touching GU's monster: copies of the defs on
+  the port's PEL, the records on edited EFL copies, swapped in by the core (module/shellswap.c).

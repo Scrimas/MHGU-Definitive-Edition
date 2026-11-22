@@ -105,8 +105,10 @@ class Materials:
     def __init__(self, name, items, decos=(), other=None, no_gu=()):
         a = alloc.monster(name)
         self.items, self.decos, self.other, self.no_gu = list(items), list(decos), dict(other or {}), set(no_gu)
-        self.gu_first = a['items'][0]
-        assert self.gu_first + len(self.items) - 1 == a['items'][1], 'allocations.toml items does not match the list'
+        rng = a.get('items')                 # none: every material of the monster is a GU item
+        assert (rng is None) == (not self.items), 'allocations.toml items does not match the list'
+        self.gu_first = rng[0] if rng else None
+        assert not rng or self.gu_first + len(self.items) - 1 == rng[1], 'allocations.toml items does not match the list'
         if self.decos:
             assert [g for _, g in self.decos] == list(range(a['decorations'][0], a['decorations'][1] + 1))
 

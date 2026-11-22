@@ -38,21 +38,15 @@ sys.path.insert(0, os.path.join(ROOT, 'tools'))     # core converters + paths.py
 sys.path.insert(0, HERE)
 import gear4u, portdata
 import items_em089
-from gear4u import EXE, EXE_BASE, LANGS, RomFS, gu_arc, text4u, gu_str, cnt
+from gear4u import EXE, EXE_BASE, RomFS, gu_arc, cnt
 
 # GU table classes (main offsets: element alloc / free / ctor / parse, in-memory element size; module/gear.c)
-CLS_SKILL_TYPE = (0x4cd4e0, 0x4cd51c, 0x4cd548, 0x4cda28, 24)
-CLS_SKILL = (0x4cc3fc, 0x4cc438, 0x4cc464, 0x4ccc10, 24)
 CLS_DECO = (0x184140, 0x18417c, 0x1841a8, 0x184484, 12)
 CLS_DECO_CREATE = (0x4aacd4, 0x4aad10, 0x4aad3c, 0x4ab294, 20)
-# Enlightened Blade (4U: Awaken + Element Atk Up + Status Atk Up): GU skill checks answer yes for these (SKIL)
-SKILL_GRANTS = (76, 79)                  # Element Atk Up, Status Atk +1 (GU has no Awaken)
-
-SERIES_FIRST, TREE_ID, SKILL_ID = 1287, 206, 328
-ARCANA_4U, ENLIGHTENED_4U = 140, 273     # 4U tree / skill ids
+# the Arcana tree and Enlightened Blade: tools/gear4u.py arcana (any package whose gear has Arcana ships the same)
+SERIES_FIRST, TREE_ID, ARCANA_4U = 1287, gear4u.ARCANA_TREE, gear4u.ARCANA_4U
 GU_TREES = {'Expert': 70, 'Artillery': 90, 'Avarice': 199, 'Sharpener': 34, 'Dead Eye': 66, 'Normal Up': 48,
             'Normal S+': 52, 'Reload Spd': 45}
-ELEMENTALITY = 319                       # GU compound skill whose per-class bytes the new skill copies
 ARMOR = dict(
     name='gogmazios', materials=[items_em089.MATERIALS],
     template=(1054, 1055),               # GU Akantor Mask X / Fangs X
@@ -99,20 +93,10 @@ def main():
     tables, texts = gear4u.armor(ARMOR, R, exe)       # TBLA / TXTA entries (tools/portdata.py)
     assert tables[0]['base'] == SERIES_FIRST
 
-    # ---- Arcana tree + Enlightened Blade
-    tt = res['table\\skillTypeData']; ts = res['table\\skillData']
-    assert struct.unpack_from('<I', tt, 4)[0] == TREE_ID and struct.unpack_from('<I', ts, 4)[0] == SKILL_ID
-    tree = struct.pack('<IB7H', TREE_ID, 0, 0, 0, 0, SKILL_ID, SKILL_ID, SKILL_ID, SKILL_ID)
-    skill = struct.pack('<I', SKILL_ID) + ts[8 + 18 * ELEMENTALITY + 4: 8 + 18 * (ELEMENTALITY + 1)]
-    tables.append(dict(path='table\\skillTypeData', cls=CLS_SKILL_TYPE, rec_bytes=19, base=TREE_ID, records=tree))
-    tables.append(dict(path='table\\skillData', cls=CLS_SKILL, rec_bytes=18, base=SKILL_ID, records=skill))
-    t4 = [text4u(lang) for lang in LANGS]     # tree name + description, skill name + description
-    texts.append(('skillTypeData', TREE_ID * 2, [[gu_str(t['skillType'][ARCANA_4U]),
-                                                  gu_str(t['skillTypeExp'][ARCANA_4U])] for t in t4]))
-    texts.append(('skillData', SKILL_ID * 2, [[gu_str(t['skillName'][ENLIGHTENED_4U]),
-                                              gu_str(t['skillExp'][ENLIGHTENED_4U])] for t in t4]))
-    skil = portdata.Section('SKIL')       # Enlightened Blade answers yes for SKILL_GRANTS (module/gear.c)
-    skil.u32(1, SKILL_ID, *(SKILL_GRANTS + (0xFFFFFFFF,) * (3 - len(SKILL_GRANTS))))
+    # ---- Arcana tree + Enlightened Blade (tools/gear4u.py arcana)
+    t, x, skil = gear4u.arcana(res)
+    tables += t
+    texts += x
 
     # ---- Arcane jewels (items_em089.DECOS): decoData record k = item 2638 + k, so they append at the table's end
     dd, dc = res['table\\decoData'], bs['table\\decoCreate']

@@ -15,6 +15,7 @@ tidal_najarala = "水蛇龙"  # community (monsterhunterwiki.org): no Chinese re
 tigerstripe_zamtrios = "变形虎鲨" # community (monsterhunterwiki.org), GU's own Zamtrios pattern (冰鮫鯊 / 变形冰鲨)
 desert_seltas = "沙漠穿甲虫" # this project's: GU's 沙漠 (its "Desert") + GU's Seltas 徹甲蟲 / 穿甲虫; no Chinese release or fan name found
 desert_seltas_queen = "沙漠重甲虫" # this project's: GU's 沙漠 + GU's Seltas Queen 重甲蟲 / 重甲虫; no Chinese release or fan name found
+g_crimson_fatalis = "红龙（4U）" # GU's own Crimson Fatalis (monsterName 118) + the maintainer's "(4U)", full-width (GU's chS has no ASCII parentheses)
 
 [maps]                     # board = the quest board's and the installer's name (4U has none in Chinese),
                            # full = the full name; community (no Chinese release names them): 天空山 the 4G kanji; 千剑山 moegirl, 战斗街 baike.baidu.com
@@ -335,6 +336,26 @@ speartip_crag = { board = "千剑山", full = "千剑山" }
 "armorSeriesData.13167" = { text = "如正义之箭般\r\n贯穿大地的不灭之臂。\r\n出击吧，黄金的救世主！", en = "cd2b9623" }
 "armorSeriesData.13168" = { text = "重心低稳的钢铁防御，\r\n让人在正义中站稳脚步。\r\n出击吧，黄金的救世主！", en = "d2b18767" }
 "armorSeriesData.13169" = { text = "精心设计的双脚，\r\n连上天都得聆听其步伐。\r\n出击吧，黄金的救世主！", en = "5a598f7f" }
+"armorSeriesData.13170" = { text = "怒焰头饰", en = "ee915f1f" }
+"armorSeriesData.13171" = { text = "怒焰皮甲", en = "915d4da1" }
+"armorSeriesData.13172" = { text = "怒焰护肘", en = "71aaabed" }
+"armorSeriesData.13173" = { text = "怒焰脊髓", en = "267dc5cc" }
+"armorSeriesData.13174" = { text = "怒焰鞋子", en = "24cbb643" }
+"armorSeriesData.13175" = { text = "赤红之角见证了\r\n无数次毁灭与重生的\r\n头部装备。", en = "34b7a4b6" }
+"armorSeriesData.13176" = { text = "被烈焰那赤红而不屈的\r\n怒火烧得焦黑的\r\n身体装备。", en = "7b355b42" }
+"armorSeriesData.13177" = { text = "以赤红之爪招来灾厄，\r\n将人引向最终安息之地的\r\n臂部装备。", en = "69a50dab" }
+"armorSeriesData.13178" = { text = "为难以言喻的罪孽诅咒\r\n穿戴者，使其化为赤红\r\n悲叹熔炉的腰部装备。", en = "0f8446b9" }
+"armorSeriesData.13179" = { text = "步伐有如赤红的流星，\r\n预告末日将至的\r\n脚部装备。", en = "60109df1" }
+"armorSeriesData.13180" = { text = "怒焰面罩", en = "6e45ddb4" }
+"armorSeriesData.13181" = { text = "怒焰甲皮", en = "fce10f03" }
+"armorSeriesData.13182" = { text = "怒焰拳头", en = "88d9d640" }
+"armorSeriesData.13183" = { text = "怒焰鳞片", en = "f083bde8" }
+"armorSeriesData.13184" = { text = "怒焰双脚", en = "6f5c17b1" }
+"armorSeriesData.13185" = { text = "自远古苏醒，以赤红之角\r\n撕裂罪有应得之世的\r\n头部装备。", en = "8f87d80f" }
+"armorSeriesData.13186" = { text = "因赤红之火与无尽怒意\r\n而颤动，再也不甘受支配的\r\n身体装备。", en = "9347517d" }
+"armorSeriesData.13187" = { text = "以渴求复仇的赤红之爪\r\n撕裂焚烧出毁灭交响曲的\r\n臂部装备。", en = "5be6dcd9" }
+"armorSeriesData.13188" = { text = "以带来可怕灾祸的\r\n赤红怒翼点燃虚空的\r\n腰部装备。", en = "dc70bdb3" }
+"armorSeriesData.13189" = { text = "引领人走向终战的脚部装备。\r\n那炽烈的高潮\r\n将是世界的黄昏。", en = "eeb5f150" }
 "itemData.5982" = { text = "蛇王龙的钢鳞", en = "5ff0984f" }
 "itemData.5983" = { text = "鳞中之王，连最锋利的刀刃也能挡下。\r\n能制作出惊人的装备。", en = "d58eec3b" }
 "itemData.5984" = { text = "蛇王龙的尾鳞", en = "358dba42" }
@@ -568,6 +589,12 @@ speartip_crag = { board = "千剑山", full = "千剑山" }
 "weapon00MsgData.903" = { text = "以轻盈坚固的骸蜘蛛素材制成、\r\n如夜般漆黑的威吓之刃。", en = "d66b3648" }
 "weapon00MsgData.904" = { text = "网罗骸刃", en = "3f9c2a08" }
 "weapon00MsgData.905" = { text = "以轻盈坚固的骸蜘蛛素材制成、\r\n如夜般漆黑的威吓之刃。", en = "d66b3648" }
+"weapon00MsgData.906" = { text = "红龙炎剑", en = "7a2e776e" }
+"weapon00MsgData.907" = { text = "炽烈而愤怒的红龙大剑。\r\n刻着传说之战\r\n留下的刀痕。", en = "eef10940" }
+"weapon00MsgData.908" = { text = "红龙炎剑", en = "7a2e776e" }
+"weapon00MsgData.909" = { text = "炽烈而愤怒的红龙大剑。\r\n刻着传说之战\r\n留下的刀痕。", en = "eef10940" }
+"weapon00MsgData.910" = { text = "红龙炎剑", en = "7a2e776e" }
+"weapon00MsgData.911" = { text = "炽烈而愤怒的红龙大剑。\r\n刻着传说之战\r\n留下的刀痕。", en = "eef10940" }
 "weapon01MsgData.774" = { text = "勇猛的士兵", en = "c8fd3974" }
 "weapon01MsgData.775" = { text = "怪诞的脚步声响起，冥界的黑暗逼近，\r\n要将一切希望与光明熄灭。", en = "b5337bd7" }
 "weapon01MsgData.776" = { text = "勇猛的士兵", en = "c8fd3974" }
@@ -820,6 +847,12 @@ speartip_crag = { board = "千剑山", full = "千剑山" }
 "weapon02MsgData.897" = { text = "专为钻掘而打造的大锤。\r\n特殊的机关赋予它\r\n足以在山上凿洞的力量。", en = "c13b6303" }
 "weapon02MsgData.898" = { text = "碎岩钻锤", en = "386fd8bc" }
 "weapon02MsgData.899" = { text = "专为钻掘而打造的大锤。\r\n特殊的机关赋予它\r\n足以在山上凿洞的力量。", en = "c13b6303" }
+"weapon02MsgData.900" = { text = "红龙怒锤", en = "df76d9c1" }
+"weapon02MsgData.901" = { text = "红龙之怒所化的神器。\r\n扭曲的角永远\r\n在寻求宣泄之处。", en = "381152eb" }
+"weapon02MsgData.902" = { text = "红龙怒锤", en = "df76d9c1" }
+"weapon02MsgData.903" = { text = "红龙之怒所化的神器。\r\n扭曲的角永远\r\n在寻求宣泄之处。", en = "381152eb" }
+"weapon02MsgData.904" = { text = "红龙怒锤", en = "df76d9c1" }
+"weapon02MsgData.905" = { text = "红龙之怒所化的神器。\r\n扭曲的角永远\r\n在寻求宣泄之处。", en = "381152eb" }
 "weapon03MsgData.762" = { text = "束缚的责罚", en = "6074851d" }
 "weapon03MsgData.763" = { text = "长眠于冥界黑暗中的怪诞武器。\r\n从高贵的灵魂沦为一具血肉。", en = "54ae81a6" }
 "weapon03MsgData.764" = { text = "束缚的责罚", en = "6074851d" }
@@ -1120,6 +1153,12 @@ speartip_crag = { board = "千剑山", full = "千剑山" }
 "weapon06MsgData.723" = { text = "使用上好的重甲虫素材，\r\n让机关运作流畅的轻弩，\r\n能不断骚扰猎物。", en = "fb630a60" }
 "weapon06MsgData.724" = { text = "弹雨机炮（4U）", en = "d43f5641" }
 "weapon06MsgData.725" = { text = "使用上好的重甲虫素材，\r\n让机关运作流畅的轻弩，\r\n能不断骚扰猎物。", en = "fb630a60" }
+"weapon06MsgData.726" = { text = "冥焰之勇", en = "c2a3b970" }
+"weapon06MsgData.727" = { text = "沐浴在赤红中的红龙轻弩。\r\n射出的子弹迅猛无比，\r\n甚至足以击落太阳。", en = "874d01d7" }
+"weapon06MsgData.728" = { text = "冥焰之勇", en = "c2a3b970" }
+"weapon06MsgData.729" = { text = "沐浴在赤红中的红龙轻弩。\r\n射出的子弹迅猛无比，\r\n甚至足以击落太阳。", en = "874d01d7" }
+"weapon06MsgData.730" = { text = "冥焰之勇", en = "c2a3b970" }
+"weapon06MsgData.731" = { text = "沐浴在赤红中的红龙轻弩。\r\n射出的子弹迅猛无比，\r\n甚至足以击落太阳。", en = "874d01d7" }
 "weapon07MsgData.762" = { text = "阴森的跪拜者", en = "d593c3df" }
 "weapon07MsgData.763" = { text = "在冥界黑暗中等待的怪诞死神，\r\n将吞噬转生的机会。", en = "65fddde3" }
 "weapon07MsgData.764" = { text = "阴森的跪拜者", en = "d593c3df" }
@@ -1228,6 +1267,12 @@ speartip_crag = { board = "千剑山", full = "千剑山" }
 "weapon07MsgData.867" = { text = "流淌着骸蜘蛛之黑暗的太刀。\r\n预示猎物将迎来无声的死亡。", en = "f42a7c3d" }
 "weapon07MsgData.868" = { text = "暗物质", en = "3af88f41" }
 "weapon07MsgData.869" = { text = "流淌着骸蜘蛛之黑暗的太刀。\r\n预示猎物将迎来无声的死亡。", en = "f42a7c3d" }
+"weapon07MsgData.870" = { text = "红龙焰镰", en = "8d50d2d2" }
+"weapon07MsgData.871" = { text = "燃烧着的赤红红龙大镰，\r\n所过之处血流成河，\r\n哀号不断。", en = "c1ca2715" }
+"weapon07MsgData.872" = { text = "红龙焰镰", en = "8d50d2d2" }
+"weapon07MsgData.873" = { text = "燃烧着的赤红红龙大镰，\r\n所过之处血流成河，\r\n哀号不断。", en = "c1ca2715" }
+"weapon07MsgData.874" = { text = "红龙焰镰", en = "8d50d2d2" }
+"weapon07MsgData.875" = { text = "燃烧着的赤红红龙大镰，\r\n所过之处血流成河，\r\n哀号不断。", en = "c1ca2715" }
 "weapon08MsgData.660" = { text = "应罚之罪", en = "6eef2595" }
 "weapon08MsgData.661" = { text = "充满悔恨之情的怪诞武器，\r\n曾经被埋葬于冥界。", en = "67f0c9cf" }
 "weapon08MsgData.662" = { text = "应罚之罪", en = "6eef2595" }
@@ -1426,6 +1471,12 @@ speartip_crag = { board = "千剑山", full = "千剑山" }
 "weapon09MsgData.801" = { text = "进一步提高了炮击威力的铳枪，\r\n主要改良了炮身部分的结构。\r\n装甲强度也是无可挑剔。", en = "56ad685c" }
 "weapon09MsgData.802" = { text = "炮铳枪坚韧炮甲（4U）", en = "dc9f83cf" }
 "weapon09MsgData.803" = { text = "进一步提高了炮击威力的铳枪，\r\n主要改良了炮身部分的结构。\r\n装甲强度也是无可挑剔。", en = "56ad685c" }
+"weapon09MsgData.804" = { text = "狱灭龙铳枪", en = "f9706945" }
+"weapon09MsgData.805" = { text = "赤红的红龙铳枪。\r\n扭曲的双角会释放出\r\n灼热的反抗爆击。", en = "eb6001b0" }
+"weapon09MsgData.806" = { text = "狱灭龙铳枪", en = "f9706945" }
+"weapon09MsgData.807" = { text = "赤红的红龙铳枪。\r\n扭曲的双角会释放出\r\n灼热的反抗爆击。", en = "eb6001b0" }
+"weapon09MsgData.808" = { text = "狱灭龙铳枪", en = "f9706945" }
+"weapon09MsgData.809" = { text = "赤红的红龙铳枪。\r\n扭曲的双角会释放出\r\n灼热的反抗爆击。", en = "eb6001b0" }
 "weapon10MsgData.648" = { text = "冷漠的牢狱", en = "52b2d898" }
 "weapon10MsgData.649" = { text = "怪诞的悲惨。冥界黑暗中的灵魂\r\n回想起失去的过往，泪流成河。", en = "4ba9e906" }
 "weapon10MsgData.650" = { text = "冷漠的牢狱", en = "52b2d898" }
@@ -1528,6 +1579,12 @@ speartip_crag = { board = "千剑山", full = "千剑山" }
 "weapon10MsgData.747" = { text = "据说是吉兆的黄金天弓。\r\n其光芒预示着\r\n战胜黑暗的胜利。", en = "a7522dbc" }
 "weapon10MsgData.748" = { text = "黄金光芒", en = "7aaabdfd" }
 "weapon10MsgData.749" = { text = "据说是吉兆的黄金天弓。\r\n其光芒预示着\r\n战胜黑暗的胜利。", en = "a7522dbc" }
+"weapon10MsgData.750" = { text = "赤天灭龙弓", en = "2fea9401" }
+"weapon10MsgData.751" = { text = "染上赤红的红龙弓。\r\n射出灼热愤怒之箭，\r\n诅咒猎物迎向悲惨结局。", en = "37b79a64" }
+"weapon10MsgData.752" = { text = "赤天灭龙弓", en = "2fea9401" }
+"weapon10MsgData.753" = { text = "染上赤红的红龙弓。\r\n射出灼热愤怒之箭，\r\n诅咒猎物迎向悲惨结局。", en = "37b79a64" }
+"weapon10MsgData.754" = { text = "赤天灭龙弓", en = "2fea9401" }
+"weapon10MsgData.755" = { text = "染上赤红的红龙弓。\r\n射出灼热愤怒之箭，\r\n诅咒猎物迎向悲惨结局。", en = "37b79a64" }
 "weapon11MsgData.756" = { text = "互责者", en = "9aa63c1d" }
 "weapon11MsgData.757" = { text = "两个罪恶的灵魂被撕裂、\r\n抛入冥界黑暗时留下的怪诞伤痕。", en = "fab10c5e" }
 "weapon11MsgData.758" = { text = "互责者", en = "9aa63c1d" }
@@ -1714,6 +1771,12 @@ speartip_crag = { board = "千剑山", full = "千剑山" }
 "weapon12MsgData.741" = { text = "使用水蛇龙尾部素材\r\n发出响亮共鸣的狩猎笛。", en = "a28dedcb" }
 "weapon12MsgData.742" = { text = "纳加的洪流", en = "3ea59297" }
 "weapon12MsgData.743" = { text = "使用水蛇龙尾部素材\r\n发出响亮共鸣的狩猎笛。", en = "a28dedcb" }
+"weapon12MsgData.744" = { text = "红龙魔魂笛", en = "78da4991" }
+"weapon12MsgData.745" = { text = "以红龙嗜血的旋律\r\n笼罩整个战场的狩猎笛。", en = "223fe4ba" }
+"weapon12MsgData.746" = { text = "红龙魔魂笛", en = "78da4991" }
+"weapon12MsgData.747" = { text = "以红龙嗜血的旋律\r\n笼罩整个战场的狩猎笛。", en = "223fe4ba" }
+"weapon12MsgData.748" = { text = "红龙魔魂笛", en = "78da4991" }
+"weapon12MsgData.749" = { text = "以红龙嗜血的旋律\r\n笼罩整个战场的狩猎笛。", en = "223fe4ba" }
 "weapon13MsgData.498" = { text = "使者的印记", en = "3bd25ebd" }
 "weapon13MsgData.499" = { text = "来自冥界、萦绕不去的武器。\r\n沐浴在黑暗中，让持有者感到被遗弃。", en = "cf681a84" }
 "weapon13MsgData.500" = { text = "使者的印记", en = "3bd25ebd" }
@@ -1822,6 +1885,12 @@ speartip_crag = { board = "千剑山", full = "千剑山" }
 "weapon13MsgData.603" = { text = "以顶级骸蜘蛛素材制成的操虫棍。\r\n死神之爪让一切生命归于沉寂。", en = "0acfdb1f" }
 "weapon13MsgData.604" = { text = "噩梦", en = "43574e2f" }
 "weapon13MsgData.605" = { text = "以顶级骸蜘蛛素材制成的操虫棍。\r\n死神之爪让一切生命归于沉寂。", en = "0acfdb1f" }
+"weapon13MsgData.606" = { text = "狱灭龙棍", en = "a0f59d55" }
+"weapon13MsgData.607" = { text = "红龙的操虫棍。\r\n在敌人身上烙下印记，\r\n让复仇永无止境。", en = "9a905b7b" }
+"weapon13MsgData.608" = { text = "狱灭龙棍", en = "a0f59d55" }
+"weapon13MsgData.609" = { text = "红龙的操虫棍。\r\n在敌人身上烙下印记，\r\n让复仇永无止境。", en = "9a905b7b" }
+"weapon13MsgData.610" = { text = "狱灭龙棍", en = "a0f59d55" }
+"weapon13MsgData.611" = { text = "红龙的操虫棍。\r\n在敌人身上烙下印记，\r\n让复仇永无止境。", en = "9a905b7b" }
 "weapon14MsgData.486" = { text = "禁忌的棺材", en = "0e1a0637" }
 "weapon14MsgData.487" = { text = "冥界黑暗的怪诞武器。\r\n在那里，未受惩罚的罪将被揭露并付出代价。", en = "63ffa13a" }
 "weapon14MsgData.488" = { text = "禁忌的棺材", en = "0e1a0637" }
@@ -2263,6 +2332,27 @@ speartip_crag = { board = "千剑山", full = "千剑山" }
 "11496.other" = { text = "无", en = "6eef6648" }
 "11496.sub" = { text = "切断蛇帝龙尾巴", en = "8e4c626f" }
 "11496.title" = { text = "绯红之帝", en = "4ca4e17f" }
+"11497.client" = { text = "谜之红衣男子", en = "22966381" }
+"11497.desc" = { text = "赤红的恐惧\r\n已然现身。\r\n猎人啊，你愿意\r\n挺身对抗它吗？\r\n毕竟我们故事的结局\r\n尚未写下。", en = "05194dc6" }
+"11497.fail" = { text = "报酬金额为零\r\n时间耗尽", en = "2cfc371e" }
+"11497.obj" = { text = "讨伐或者击退\r\n红龙", en = "8776a0c1" }
+"11497.other" = { text = "无", en = "6eef6648" }
+"11497.sub" = { text = "无", en = "6eef6648" }
+"11497.title" = { text = "亡者的盛宴", en = "e661f3dc" }
+"11498.client" = { text = "至尊大人", en = "8cd620c0" }
+"11498.desc" = { text = "幸会，勇敢的猎人。\r\n你解读的文献记载着\r\n一头带来浩劫的红龙\r\n即将降临熔岩岛。\r\n长老会已将它\r\n列为讨伐目标。\r\n我相信你一定能成功。", en = "1fbf1d6b" }
+"11498.fail" = { text = "报酬金额为零\r\n时间耗尽", en = "2cfc371e" }
+"11498.obj" = { text = "讨伐或者击退\r\n红龙", en = "8776a0c1" }
+"11498.other" = { text = "无", en = "6eef6648" }
+"11498.sub" = { text = "无", en = "6eef6648" }
+"11498.title" = { text = "高难度：最后的战吼", en = "b53fd70b" }
+"11499.client" = { text = "谜之红衣男子", en = "22966381" }
+"11499.desc" = { text = "这个时刻终于来临了。\r\n看啊！赤红的鳞片\r\n覆满了红龙全身。\r\n最终的舞台已经备妥，\r\n猎人啊，去迎接\r\n死亡本身吧！", en = "80328636" }
+"11499.fail" = { text = "报酬金额为零\r\n时间耗尽", en = "2cfc371e" }
+"11499.obj" = { text = "讨伐或者击退\r\n红龙", en = "8776a0c1" }
+"11499.other" = { text = "无", en = "6eef6648" }
+"11499.sub" = { text = "无", en = "6eef6648" }
+"11499.title" = { text = "赤红帷幕的彼方", en = "c154d152" }
 "841.client" = { text = "艾露猫导游", en = "667ec511" }
 "841.desc" = { text = "听好了喵！想在天空山\r\n尽情采集的话，\r\n这个任务最适合不过了喵！\r\n两分钟后就会送来\r\n猫车票券，\r\n把它缴纳掉，\r\n马上就能回家喵！", en = "40615759" }
 "841.fail" = { text = "报酬金额为零", en = "37e1b6a8" }
