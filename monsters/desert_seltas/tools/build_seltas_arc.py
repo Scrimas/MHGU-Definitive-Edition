@@ -510,7 +510,11 @@ def ground_rows(e):
 def pel_ground_records(e, pel, S, notes):
     """their 4U effects on the ground (Tidal Najarala's way: 4U 0x391b50 copies the MEF flags into the effect; ground flag bit 1: x, z = the joint + the
     record offset, y = the ground): GU's records have no such tail, so these become world records and module/seltas_fx.c (hook on the PSL post) names
-    the point and the ground set. Slot mode 1: 4U ends the effect when the event range ends; in GU that is end mode 1 (+0x3a)"""
+    the point and the ground set. Slot mode (MEF byte 1) -> GU end mode (+0x3a; monsters/dalamadur/tools/build_dalamadur_arc.py pel_slot_end has both
+    readings, C): 1 = 4U ends the effect when the event range ends = end mode 1; 0 = 4U's one-shot, never stopped by its range = end mode 0. The follow
+    tail (efl4u2gu PEL_TAIL_PREV) carries end mode 1, so a slot-0 record on a 1-frame run was stopped one frame after its post: the Queen's water bullet
+    of 7/15 / 7/34 (id 1, em095_005, frame 100 of motion 0x426; test 2026-11-22: hit, no visual). Slot mode 2 (a repeat interval) keeps the tail's
+    end mode (not mapped)."""
     mef = efl4u2gu.mef_records(S[(e.c['mef'], efl4u2gu.T['MEF'])])
     ground = [r for r in mef if r['flags'] & efl4u2gu.MEF_GROUND]
     assert all(r['pos'][1] == 0.0 and r['pos'][0] == round(r['pos'][0]) and r['pos'][2] == round(r['pos'][2]) for r in ground), 'a ground record the table cannot hold'
@@ -526,7 +530,7 @@ def pel_ground_records(e, pel, S, notes):
             's_b0_%s (module/seltas_fx.c) differs from the MEF' % e.c['ours']
     lists = efl4u2gu.pel_lists(pel)
     n, body = lists[1]
-    out, i, placed, ends = bytearray(), 0, set(), 0
+    out, i, placed, ends, once = bytearray(), 0, set(), 0, []
     for _ in range(n):
         L = body[i]
         path, two, st = body[i + 1:i + 1 + L], body[i + 1 + L:i + 3 + L], bytearray(body[i + 3 + L:i + 3 + L + 160])
@@ -541,10 +545,14 @@ def pel_ground_records(e, pel, S, notes):
         if r and r['slot'] == 1:
             st[0x3a] = 1
             ends += 1
+        elif r and r['slot'] == 0 and st[0x3a]:
+            st[0x3a] = 0
+            once.append(r['id'])
         out += bytes([len(path)]) + path + two + bytes(st)
     assert i == len(body), 'PEL list 1'
     assert placed == {r['id'] for r in ground}, 'a ground record has no PEL record'
-    notes.append('effects: %d records on the ground %s (world posts, module/seltas_fx.c), %d records end with their event range' % (len(placed), sorted(placed), ends))
+    notes.append('effects: %d records on the ground %s (world posts, module/seltas_fx.c), %d records end with their event range, one-shots (slot mode 0) '
+                 'freed from the follow tail\'s end mode 1: %s' % (len(placed), sorted(placed), ends, once))
     res = pel[:8]
     for k, (cnt, b) in enumerate(lists):
         res += struct.pack('<I', cnt) + (bytes(out) if k == 1 else b)

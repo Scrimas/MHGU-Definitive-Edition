@@ -184,6 +184,15 @@ S = strong, G = guess. 4U addresses: the v1.1 exe (dump/exefs_v11), read 2026-11
   163). Now every own EFL whose units 4U multiplies by the soil (area colour block or mode-5 units) is drawn at 1x: his
   em094_006 / 007 / 008 / 010 / 011, hers em095_000 / 011..014 / 023 / 024 / 028 / 029 (each holds soil units only,
   asserted). Not seen in the game yet.
+- One-shots (2026-11-22, C unless marked; the maintainer with the next-action aid: her 7/15 / 7/34 hit, no water
+  bullet, 7/9's shells show). Both games send 7/15 / 7/34 to the shot function in modes 1 / 2 (4U 0x78e688 = GU
+  0xf96a38), which posts no shell there: the bullet is a motion effect of 0x426, MEF id 1 = em095_005 element 0 on
+  joint 1 at frame 100, a 1-frame run, MEF slot mode 0 (GU's own Queen: record 260 em069_00_003, end mode 0). 4U
+  never stops a slot-0 effect (monsters/dalamadur/tools/build_dalamadur_arc.py pel_slot_end); our follow tail
+  (efl4u2gu PEL_TAIL_PREV) carries GU end mode 1, which stops the effect at its run's falling edge: one frame after the
+  post. Now end mode 0 on every slot-0 record (pel_ground_records; 10 records in each PEL u, 10 bytes each). Posted
+  ones, all 1-frame runs: hers id 1 (0x426), qe006_007 ids 530..533 (0x18, 0x19, 0x5a); his em094_007 ids 1 / 3 (0x341,
+  seven puffs then one), em094_204 id 14 (0x350, his impact burst). Not seen in the game yet.
 
 ## Routes (C)
 - tools/routes_seltas.py: their 4U maps on GU's maps (area_link / area_eat / map_info / area_select): Desert Seltas
