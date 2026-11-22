@@ -215,3 +215,36 @@ def armors(name, materials, specs, R=None, exe=None):
     tables.append(dict(path='table\\armorProcessA00', cls=CLS_ARMOR_PROCESS, rec_bytes=38,
                        base=n + alloc.offset(name, 'armor_process'), records=b''.join(lv)))
     return tables, texts
+
+
+# 4U's Arcana tree (140; +10 = Enlightened Blade 273 = Awaken + Element Atk Up + Status Atk Up) as GU tree 206 / skill
+# 328 (the v1.0 table counts), first ported for Gogmazios (monsters/gogmazios/tools/gear_em089.py). Its effect is
+# module/gear.c's has-skill hook: SKIL answers yes for Element Atk Up 76 and Status Atk +1 79 (GU has no Awaken).
+CLS_SKILL_TYPE = (0x4cd4e0, 0x4cd51c, 0x4cd548, 0x4cda28, 24)
+CLS_SKILL = (0x4cc3fc, 0x4cc438, 0x4cc464, 0x4ccc10, 24)
+ARCANA_4U, ENLIGHTENED_4U = 140, 273     # 4U tree / skill ids
+ARCANA_TREE, ARCANA_SKILL = 206, 328     # GU ids
+ARCANA_GRANTS = (76, 79)                 # Element Atk Up, Status Atk +1
+ELEMENTALITY = 319                       # GU compound skill whose per-class bytes the new skill copies
+
+
+def arcana(res):
+    """([TBLA tables], [TXTA texts], SKIL section) of the Arcana tree and Enlightened Blade (res = GU resident.arc).
+    Every package whose gear has Arcana ships these same records at the same IDs: module/gear.c appends a block only
+    while its table / GMD still has the block's base count, so the first package loaded adds them and the others'
+    copies are skipped (logged). No package needs another, and once all ship as one mod the copies become one."""
+    import portdata
+    tt, ts = res['table\\skillTypeData'], res['table\\skillData']
+    assert cnt(tt) == ARCANA_TREE and cnt(ts) == ARCANA_SKILL
+    tree = struct.pack('<IB7H', ARCANA_TREE, 0, 0, 0, 0, ARCANA_SKILL, ARCANA_SKILL, ARCANA_SKILL, ARCANA_SKILL)
+    skill = struct.pack('<I', ARCANA_SKILL) + ts[8 + 18 * ELEMENTALITY + 4: 8 + 18 * (ELEMENTALITY + 1)]
+    tables = [dict(path='table\\skillTypeData', cls=CLS_SKILL_TYPE, rec_bytes=19, base=ARCANA_TREE, records=tree),
+              dict(path='table\\skillData', cls=CLS_SKILL, rec_bytes=18, base=ARCANA_SKILL, records=skill)]
+    t4 = [text4u(lang) for lang in LANGS]     # tree name + description, skill name + description
+    texts = [('skillTypeData', ARCANA_TREE * 2, [[gu_str(t['skillType'][ARCANA_4U]),
+                                                  gu_str(t['skillTypeExp'][ARCANA_4U])] for t in t4]),
+             ('skillData', ARCANA_SKILL * 2, [[gu_str(t['skillName'][ENLIGHTENED_4U]),
+                                              gu_str(t['skillExp'][ENLIGHTENED_4U])] for t in t4])]
+    skil = portdata.Section('SKIL')       # Enlightened Blade answers yes for ARCANA_GRANTS (module/gear.c)
+    skil.u32(1, ARCANA_SKILL, *(ARCANA_GRANTS + (0xFFFFFFFF,) * (3 - len(ARCANA_GRANTS))))
+    return tables, texts, skil

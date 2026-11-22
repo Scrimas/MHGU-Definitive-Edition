@@ -774,4 +774,7 @@ Notes: monsters/tigerstripe_zamtrios/notes/ (plan, phase1-variant-map, missing-a
   never by English name.
 - Package-split substitutes (the maintainer, 2026-11-22: all packages will later ship as one mod): a recipe item that
   only another of our packages appends (B.Gravios Pallium, Black Gravios') gets a GU substitute so the package stays
-  standalone; mark each one "PACKAGE-SPLIT" in the builder, so the merge can put the real item back.
+  standalone; mark each one "PACKAGE-SPLIT" in the builder, so the merge can put the real item back. A ported
+  skill two packages need (Arcana: Gogmazios' and G-rank Crimson Fatalis' armor) is one shared builder
+  (tools/gear4u.py arcana) whose records both ship at the same IDs: module/gear.c appends a TBLA / TXTA block only
+  while the table still has the block's base count, so the first package loaded adds it and the copy is skipped.

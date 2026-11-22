@@ -297,8 +297,11 @@ substitutes, B.Gravios Pallium being a package-split one (all packages will late
   chances) -> BUI4. Until now the port had none (GU has no record for 0x60d).
 - Armor: templates GU Fatalis Crimson (Wroth) / Fatalis Crimson XR (GX: the same look); defense by the ratio of the
   G elder X sets both games name (Kushala / Akantor / Ukanlos X): Wroth 148 / 92, GX 136 / 82 (S). Skills by GU
-  name; 4U Constitutn = GU Constitution; 4U Arcana (GX's set tree: Awaken + element + status) -> GU Elemental, a
-  DEVIATION for review (no GU twin). Substitutes: Earth Dragonsphire -> Heavenly Dragonsphire, Skyblade Drgnsphire
+  name; 4U Constitutn = GU Constitution; 4U Arcana (GX's set tree, +10 Enlightened Blade: Awaken + element +
+  status) = the tree 206 / skill 328 Gogmazios ported (Element Atk Up + Status Atk +1 through the core's SKIL hook,
+  GU has no Awaken; the maintainer: port the skill, 2026-11-22). Its records moved into tools/gear4u.py arcana and
+  both packages ship them at the same IDs: the core appends a block only at its base count, so the first loaded adds
+  them (Gogmazios' sections byte-identical after the move). Substitutes: Earth Dragonsphire -> Heavenly Dragonsphire, Skyblade Drgnsphire
   -> Azure Dragonsphire, Dire Blastheart -> Tigrex Mantle, B.Gravios Pallium -> Gravios Pallium (package-split).
 - Weapons: the 8 GU lacks, one forged weapon each, stand-ins = GU's own Crimson Fatalis weapon of the class (C: its
   materials in their recipes); Blast = GU 9; raw / element on GU's balance (gu_scale, as the last two ports: GS x1.09

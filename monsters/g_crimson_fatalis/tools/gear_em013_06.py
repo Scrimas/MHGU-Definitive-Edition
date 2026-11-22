@@ -1,6 +1,6 @@
 """gear_em013_06.py : G-rank Crimson Fatalis' armor (4U Wroth and GX Fatalis Crimson, 2 series pairs, 20 pieces, crafted
-from its materials in 4U) as records appended to GU's loaded tables -> data file sections TBLA / TXTA (gen/*-armor.sec,
-tools/portdata.py; module/gear.c). Formats, 4U records and the shared rules: tools/gear4u.py. Weapons:
+from its materials in 4U) as records appended to GU's loaded tables -> data file sections TBLA / TXTA / SKIL
+(gen/*-armor.sec, tools/portdata.py; module/gear.c). Formats, 4U records and the shared rules: tools/gear4u.py. Weapons:
 gear_weapons_em013_06.py. Models: build.py step armor (tools/armor4u2gu.py, Wroth's 20 arcs pl_{m,f}_<part>{410,411});
 GX Fatalis Crimson's models 507 / 508 are GU's own arcs.
   gear_em013_06.py          write the sections
@@ -15,7 +15,9 @@ Choices (the earlier ports' rules, listed for review):
   - Defense: 4U defense x the GU / 4U ratio of the G-rank elder sets both games have by name at 4U rarity 10 (ANCHORS:
     Kushala X, Akantor X, Ukanlos X; S): 4U's Fatalis G sets are not in GU by name, GU's Fatalis Crimson is 4U's High
     Rank set re-ranked. On GU's balance as the earlier ports.
-  - Skills by GU tree name; a 4U tree GU lacks is dropped (DROPPED_TREES), a DEVIATION.
+  - Skills by GU tree name; a 4U tree GU lacks is dropped (DROPPED_TREES), a DEVIATION. 4U Arcana (the GX set's
+    tree) is the ported Arcana / Enlightened Blade (tools/gear4u.py arcana, the maintainer's choice 2026-11-22: port
+    the skill), whose records this package ships as Gogmazios' does: the first one loaded appends them.
   - Level rows: the templates', unchanged: their monster materials are GU's Crimson Fatalis ones = its own (C:
     items_em013_06.RENAMED), so nothing is swapped (TEMPLATE_WORD None, as Shrouded Nerscylla's).
   - Recipe items: its renamed materials (items_em013_06.RENAMED) by GU's names; items GU lacks -> SUBSTITUTES (the
@@ -39,11 +41,10 @@ PAIRS = [('Wroth', [698, 702, 686, 686, 694], (1074, 1075), (410, 411)),
 # 4U G-rank elder sets of GU's names: (Blademaster head, Gunner head) -> GU series
 ANCHOR_NAMES = [('Kushala Glare X', 'Kushala Snarl X'), ('Akantor Mask X', 'Akantor Fangs X'),
                 ('Ukanlos Mask X', 'Ukanlos Fangs X')]
-# 4U Constitutn = GU Constitution (4U's 10-character name, the same description, C). 4U Arcana (GX's set tree:
-# "unlock latent weapon elements, and power up elemental and abnormal status attacks", 4U skillTypeExp 140) has no GU
-# tree (GU has no Awaken and no combined skill): its element part as GU Elemental, a DEVIATION listed for review (the
-# status and Awaken parts are lost)
-TREE_4U_GU = {'Constitutn': 'Constitution', 'Arcana': 'Elemental'}
+# 4U Constitutn = GU Constitution (4U's 10-character name, the same description, C). 4U Arcana (GX's set tree, +10 =
+# Enlightened Blade: Awaken + Element Atk Up + Status Atk Up) is the ported tree 206 / skill 328 Gogmazios' armor has
+# (tools/gear4u.py arcana: GU's element and status boosts, GU has no Awaken), its records shipped here too (see there)
+TREE_4U_GU = {'Constitutn': 'Constitution'}
 DROPPED_TREES = {'FreeElemnt'}           # as the earlier ports: GU has no hidden elements
 TEMPLATE_WORD = None                     # the templates' materials are its own (see above)
 SUBSTITUTES = {'B.Gravios Pallium': 'Gravios Pallium',          # package-split (see above; Shrouded Nerscylla's rule)
@@ -84,6 +85,7 @@ def armor_specs(R, exe):
 
     def tree(tree4, name):
         if name in DROPPED_TREES: return None
+        if tree4 == gear4u.ARCANA_4U: return gear4u.ARCANA_TREE
         return gtree[TREE_4U_GU.get(name, name)]
     specs = []
     for pair, parts, tpl, model in PAIRS:
@@ -106,7 +108,8 @@ def main():
     for (pair, *_), s in zip(PAIRS, specs):
         print('%-18s defense %s' % (pair, s['defense']))
     tables, texts = gear4u.armors(NAME, [mats], specs, R, exe)
-    secs = [portdata.tbla(tables), portdata.txta(texts)]
+    t, x, skil = gear4u.arcana(gu_arc(R.read('/nativeNX/loc/arc/resident.arc')))    # GX's set tree
+    secs = [portdata.tbla(tables + t), portdata.txta(texts + x), skil]
     if sys.argv[1:] == ['show']:
         for s in secs: print(s.tag, portdata.decode(s.tag, s.bytes()))
         return
