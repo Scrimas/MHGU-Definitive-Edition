@@ -142,3 +142,46 @@ from code for 11499 (Gogmazios' way).
 2. this+0xd38, cleared in 11/1 (GU dropped it for its own Crimson too): what it holds before porting it.
 3. The kind-52 part bits of slot 50 against em117's part rows (emdata4u.part_rows) and GU's kinds (GU tests 50 / 1).
 4. The GU items for quest row B (Conqueror's Seal G, Immenseness Ticket S, Purecrystal, ...) at the quest build.
+5. Whether GU's slot-132 variant-6 branch (0xd8dc64) plays "Angry_Start" / "Angry_End" on every material or only on
+   types 50 / 1: em117's three additive rage layers (m51 / m52) carry the animations too (Phase 2 MRL).
+
+## 7. Phase 2: assets (done 2026-11-22, static checks only; `python3 monsters/g_crimson_fatalis/build.py`)
+
+Steps: dt (tools/dt_convert.py of em078 and em117 on donor em013_01), bgm (tools/bgm_em013_06.py), arc
+(tools/build_em013_06_arc.py), pack. Arc em013_06.arc: 600 entries, 19.0 MB; own file IDs 0x10a80..0x10a91 (16 manifest
+fields + extras bgm_stqr 0x10a90, shell01 0x10a91). The builder's docstring and asserts hold the rules; the facts:
+- Shared with em078 (C, asserted): the 30 files em117.arc ships under em077 / em078 paths are byte-identical to
+  em078.arc's; attackdata / hitsize / bodydata equal. So GU em013_01's files stay for all of them.
+- Data (C): dtbase = both conversions = GU's (kept). dttune: the two conversions differ only at +0x38 (HP base, etd word
+  4: 8000 -> 8500); GU's file = the em078 conversion + 13 retuned bytes elsewhere; ours = GU's + that word.
+- Model: 8 materials (GU's 5 by the same names + 3 additive rage layers m51 / m52, template 'light' as Stygian's
+  IAFilter2 lights); all 7 non-eye materials carry 4U's "Angry_Start" / "Angry_End" (name hashes checked), converted.
+  Mesh groups = GU em013_01's (asserted), so GU's parts states (XFS) stay as they are. Normal maps (S): em117's
+  NM_MIRRORs are half the albedo's height and cover its whole UV range (the wing's NM alpha correlates 0.43 with the
+  albedo squashed 2x, 0.09 / 0.13 with either half); the specular mask (+A) = their alpha, rows doubled. GU's own
+  Crimson textures are Capcom's HD repaint (no correlation with 4U's): no Capcom rule to copy.
+- Sound: 4U call em117 + bank snd_em117 (snd4u2gu), common-bank requests from GU em013_01.
+- AI: GU em013_00's table + 4U g0 s10, g1 s113 s118 s119 (asserted: no 4U-only op, every called script equal in both
+  tables); natives 1/7 1/12 2/1 7/74 7/75 7/76.
+- Carves: s4 = 4U G table (Flamescale 30 / Flameshell 62 / Flamehorn 8 -> GU 1658 / 1659 / 1660: the 4U descriptions
+  equal GU's, C), s0..s3 filler.
+- Effects (the maintainer's choice, 2026-11-22: GU's look + em117's own): PEL u = GU em013_01u + em117_1's 7 records
+  (list 1) + 5 code records 4100..4104 for the new shells (list 2). PSLs = GU's with (a) the foot dust (PEL c 0..3,
+  cm202_020) out only where the motion's 4U records on that foot are all MEF b0 3 (4U 0x89d600 never sets bit 3 for
+  em 117; GU dust standing for 4U's ungated records 10..26, or with no 4U record, stays), (b) em117_1's stepfire
+  2000..2003 (b0 4 = the rising edge of their own slots for em 117, so no gate) and heatwave casts 2004..2006 (bank 2
+  motions 60..62) in at 4U's frames, 23 motions. Area colour: 4U Ingle Isle m09a01 soil.
+- BGM: 4U bgm_em117.mca (one looping stream, 4U 0.0 dB -> GU -1.48 dB by the anchors), own STQR (sequence 0x904).
+- Shell family em013_06_shell01 (GU em013_01_shell01 renamed, def PEL -> em013_06u) with 6 HDS / HTS entries from 4U by
+  the em089 rule: heatwave 35 / 37 (event 45 / 46: attack type 7 instead of 6), volumes 15 / 17 (bone 1001, r1400 /
+  r700); eruption uShell037 record 6 (window 15 + 60, power 10, type 31, volume 4: bone 1001, r150: a capsule from the
+  ground point to the rising shell); stepfire uShell003 177 (window 0 + 20, power 20, volume 120: bone 255, r100).
+  HTS +4: 4U's kept (Capcom set it per volume, no rule).
+
+New in Phase 2 for the module (C):
+- GU's slot 86 (0xd8e32c) preloads the shell families per variant (0 -> rows 130..133, 1 -> 134..137, 2 -> 138..142)
+  and returns for any other: variant 6 would have none. And four shot sites switch on 0 / 1 / 2 with no case for 6
+  (0xd831c8 in 0xd83144, 0xd851c8, 0xd89328, 0xd89848), as does slot 79 (0xd8e09c / 0xd8e100: flags). 4U has no species
+  test at their twins (its fireball post 0x89e788 tests em 79 only: em 77 / 78 / 117 post the same uShell001 kinds), so
+  variant 6 takes variant 1's branch there (module alias hooks).
+- BGM: the core's bgm_select matches em types (u8: 13 = every Fatalis); our registration needs the full ID 0x60d.
