@@ -13,11 +13,21 @@
  *   register is rewritten (6 -> 1); where it holds the load, the load's offset is pointed at a byte holding 1
  *   (0xd89324, whose pair before the load stores s16 and cannot be skipped); where it is movw + ldrb, the hook exits
  *   to the variant-1 branch.
- * Only a variant-6 uEm013_00 can be ours (GU ships variants 0..2); the ID is checked anyway. */
+ * Only a variant-6 uEm013_00 can be ours (GU ships variants 0..2); the ID is checked anyway.
+ * Those families' impacts draw GU's clods (Capcom's own effect files; 4U's G Crimson shows no rocks there, the
+ * maintainer, test 2): every request of GU shell 0x86 / 0x87 it owns takes our copy on our PEL, clods hidden (core
+ * module/shellswap.c; build_em013_06_arc.py CLOD_DEFS), whoever posts it (its class, the meteor 0xd84000 that tests
+ * no variant, the impact child 0xd8f844). */
 #include <stdint.h>
 #include "game.h"
 #include "util.h"
 #include "alloc.h"
+#include "shellswap.h"
+#include "em013_06_shell.h"
+
+static uint32_t clod_fid(uint32_t id) { return id == 0x86 ? GCF_CLOD_FILE_10 : id == 0x87 ? GCF_CLOD_FILE_11 : 0; }
+static int clod_any(uint32_t id) { return clod_fid(id) != 0; }
+const struct shellswap em013_06_shellswap = { G_CRIMSON_FATALIS_EM_ID, "gcf", clod_fid, clod_any };
 
 enum { R0, R1, R2, R3, R4, R5, R12, LR };
 

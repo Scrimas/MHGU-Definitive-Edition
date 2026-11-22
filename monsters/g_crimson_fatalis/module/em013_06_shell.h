@@ -18,6 +18,10 @@
  * GU's em013_01_shell01, param class EmBase01 (DTI 0x188cb88, the core request's) */
 #define GCF_SHELL_FILE 0x10a91u
 #define GCF_SHELL_ROW  135u
+/* GU Crimson's fireball families 0x86 / 0x87 (em013_01_shell00 / 01) on our PEL, clods hidden (build_em013_06_arc.py
+ * CLOD_DEFS; extras 'shell10' / 'shell11', the build asserts them), swapped in by em013_06_alias.c */
+#define GCF_CLOD_FILE_10 0x10a92u
+#define GCF_CLOD_FILE_11 0x10a93u
 extern const struct shell_family gcf_shells;       /* em013_06_shell003.c; log prefix "gcfport" */
 
 /* HDS entries (build_em013_06_arc.py SHELL_HDS, same order) */

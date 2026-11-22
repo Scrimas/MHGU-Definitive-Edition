@@ -222,18 +222,19 @@ HOOKS = [
     ('seltas_ds_act', 0xFDC074),   # uEm076_00 slot 125: Desert Seltas (variant 1): his 4U entry and death (monsters/desert_seltas/module/seltas.c)
     ('seltas_dsq_react', 0xF9BE10),  # uEm069_00 category 10, which GU ends at once for a variant: her 4U reactions (seltas_react.c)
     # their own 4U shots (monsters/desert_seltas/module/seltas_shots.c): GU's variant skips before a post (MID_EXIT: on to
-    # the post), the marks, and the shell request's def read (0x48c5e4) and exit (0x48c54c)
+    # the post) and the marks (the swap itself: module/shellswap.c, below)
     ('seltas_shot_a', 0xFD531C), ('seltas_shot_b', 0xFD6130), ('seltas_shot_c0', 0xFD7C78), ('seltas_shot_c', 0xFD7F30),
     ('seltas_shot_d', 0xFD8240), ('seltas_shot_e', 0xFD86E4), ('seltas_shot_q', 0xF987D0),
     ('seltas_shot_q1', 0xF96BC4), ('seltas_shot_q2', 0xF96C74), ('seltas_shot_q3', 0xF96D24),
-    ('seltas_shot_req', 0x48C5E4), ('seltas_shot_end', 0x48C54C),
     ('seltas_shot_g', 0xFDCBE4),   # GU's Seltas shell class 0xfdca90, before its ground-splash post 0x13a: his own splash
                                    # (seltas_shots.c, 0.1.8)
     ('seltas_shot_g2', 0xFC6C00), ('seltas_shot_g3', 0xFC6DE0),  # GU's Seltas shell callback 0xfc6a30, before its two
                                    # posts of the unit's 0x13a; GU's Queen shell class 0xf9dc80, before its 0x128 post:
     ('seltas_shot_qg', 0xF9DD9C),  # their own ground splashes (seltas_shots.c, 0.1.10)
-    ('seltas_shot_any', 0x48C4F8),  # GU's shell request after its entry (Tigerstripe's hook): every 0x13a the Desert
-                                    # Seltas owns takes his own splash, whoever posts it (seltas_shots.c, 0.1.12)
+    # GU's shell request (module/shellswap.c): a port's own family copies for its posts: the start after its entry
+    # (Tigerstripe's hook; a port that takes every post of an id: the Desert Seltas' 0x13a, G-rank Crimson Fatalis'
+    # 0x86 / 0x87), the def read and the exit
+    ('shellswap_any', 0x48C4F8), ('shellswap_req', 0x48C5E4), ('shellswap_end', 0x48C54C),
     ('seltas_sting', 0x4E5240),     # sSoundControl 0x4e51c8 before its discovery sting: none for her dug-out male
                                     # (seltas.c, 0.1.15)
     ('seltas_mark', 0x4E4B18),      # sSoundControl's scan, its clear of a unit's announce mark: kept for her Desert
@@ -791,7 +792,8 @@ def main():
     incs = ['-I', OUT, '-I', HERE] + [a for d in mods for a in ('-I', d)]
     srcs = [os.path.join(HERE, f) for f in ('crt0.S', 'main.c', 'util.c', 'port.c', 'quest.c', 'items.c', 'gear.c',
                                             'notes.c', 'stage_alias.c', 'bgm.c', 'icons.c', 'save.c',
-                                            'modsave.c', 'savefile.c', 'b0gate.c', 'shell.c', 'efx.c')]
+                                            'modsave.c', 'savefile.c', 'b0gate.c', 'shell.c', 'efx.c',
+                                            'shellswap.c')]
     for d in mods:                                     # every registered monster's code, registry order
         srcs += sorted(glob.glob(os.path.join(d, '*.c')))
     srcs += [os.path.join(OUT, 'port_monsters.c'), os.path.join(OUT, 'tables.S')]

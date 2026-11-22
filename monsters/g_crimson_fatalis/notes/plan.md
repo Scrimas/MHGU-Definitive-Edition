@@ -373,3 +373,30 @@ Fixes after test 1 (2026-11-22):
   The NN = 00 rejection is in 0x3b8090, is_G 0x3b9e50, the rank / availability classifiers and the per-star
   summary 0x3b85d8 (inline); nothing indexes by NN - 1 for hub IDs (S). The maintainer: lift the 864 cap AND the
   99-per-board limit; renumber the third quest 11400 -> 11497 (no hook; 11497 was never released).
+
+Test 2 (2026-11-22, build 3714fa1; logs Ryujinx_..._14-46-21 and _15-00-05):
+- Board: all three quests listed; 11497 loads and plays. The log's loaded count is 855 (under GU's 864: the raised cap
+  is headroom, not yet used); its "G4 board" count reads 0 although the quests show (the diagnostic reads the wrong
+  list, harmless).
+- Rage: 11499 (event 1) rage 0 -> 1 with the lock and never back (as 4U's event quest); 11497 enraged at 1:40 and
+  stayed so to the quest's end at ~3:13 (no calm-down in that span; not a finding).
+- Weapons: holes gone ("much better"). Haze: fine.
+- Belly: GU's own Crimson (q11456) is the same: GU's hitbox, not ours (the maintainer: don't touch).
+- Rocks: still there. They are not em117_202's (that unit is gone): they come from the fireball impacts GU's
+  Crimson shells post (variant 6 takes variant 1's families, which post em013_01u list 2). GU's Crimson has them, 4U's
+  G Crimson does not (the maintainer). The maintainer's choice: GU's effect with the rock units hidden, for variant 6
+  only (private copies; GU's Crimson unchanged).
+- Dalamadur: no impact effect also when played first after a fresh boot (_15-00-05: blasts spawn, 2930 posts return
+  valid handles), so not a Crimson leftover. The maintainer last saw the explosions at the impact on 2026-10-21
+  (behaviour.md); the change since is open (candidates: issue #6 chunk hiding 903b49f does not touch em024_005 / em110_005,
+  checked; maps as packages 4b26771; b0gate 1f7d3dc). A Dalamadur follow-up, outside this port.
+
+Fix after test 2 (a helper's trace, checked; C unless noted): variant 6 posts GU shells 0x86 / 0x87 (rows 134 / 135 =
+em013_01_shell00 / 01): the fireball 0xd8519c, the meteor 0xd84000 (no variant test), 0xd83144 / 0xd84aa0 and the
+impact child 0xd8f844. Their kinds post em013_01u list 2 ids 1 / 2 (em013_00_005 masks 1 / 2), 11 (em013_00_009), 101
+(em013_01_008): Capcom's own files (S), 7 / 1 / 7 clod units (cm202_020_g / cm202_022_g). Built: copies of the two defs
+on em013_06u (em013_06_shell10 / 11, file IDs 0x10a92 / 0x10a93), em013_06u's ids 1 / 2 / 11 / 101 on em013_06_005 /
+009 / 008 (clods' element mask 0), swapped in for every 0x86 / 0x87 request variant 6 owns (core module/shellswap.c,
+which now also holds Desert Seltas' swap: the three hook sites 0x48c4f8 / 0x48c5e4 / 0x48c54c take one owner each).
+GU's PSLs post no clods (S). Test 3: impacts without rocks, GU's Crimson (q11456) still with, Desert Seltas' shots
+unchanged (log "mhgu-de: shell swap ds" / "gcf").

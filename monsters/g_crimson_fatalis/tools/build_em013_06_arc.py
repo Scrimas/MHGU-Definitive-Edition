@@ -27,6 +27,8 @@ Capcom's conversion of em078, so everything but em117's own files stays GU's Cri
       shell\\em\\em013_06_shell01\\...      shell family of its new shells: GU em013_01_shell01 renamed, HDS / HTS from
                                            the 4U records (shell_family(); no manifest field, extra file ID)
       sound\\bgm\\battle\\bgm_em013_06      its own battle STQR (tools/bgm_em013_06.py; extra file ID)
+      shell\\em\\em013_06_shell10 / 11      GU Crimson's fireball family defs on our PEL, effect\\em\\em013\\em013_06_005 /
+                                           009 / 008 its impacts without GU's clods (CLOD_DEFS; extra file IDs)
   shared, GU em013_01 (original paths + file IDs): motions, camera, PTS, PEL c, the shell families GU's class posts
       for its Crimson (slot 86 preloads them; module code gives variant 6 variant 1's), attack / hit / body / cambody
       data, dtbase (= the em078 and em117 conversions), dtbparts, area data (Ingle Isle, GU stage 19, is Crimson's).
@@ -71,7 +73,8 @@ P1 = 'enemy\\em013\\em013_01\\'  # GU variant 1 (Crimson)
 P = 'enemy\\em013\\em013_06\\'   # ours
 # manifest fields with our own file: IDs are given in this order (append only: IDs never move once shipped)
 OWN_ORDER = [0, 3, 12, 13, 17, 18, 19, 20, 21, 33, 37, 46, 47, 48, 49, 50]
-EXTRA_ORDER = ['bgm_stqr', 'shell01']   # own files without a manifest field, IDs after the fields' (append only)
+EXTRA_ORDER = ['bgm_stqr', 'shell01', 'shell10', 'shell11']   # own files without a manifest field, IDs after the
+                                                              # fields' (append only)
 DT_DIR = os.path.join(ROOT, 'dump/converted/em117')           # build.py step dt
 BGM_STQR = 'sound\\bgm\\battle\\bgm_em013_06'                 # tools/bgm_em013_06.py
 BGM_STQR_SRC = os.path.join(ROOT, 'dump/converted/g_crimson_fatalis/bgm_em013_06.stqr')
@@ -457,7 +460,8 @@ def effects(S, gfile, code, notes):
     assert not set(pel_ids(gu_lists[2][1])) & set(CODE_FX_IDS), 'PEL list-2 id block 4100..4199 not free'
     assert list2[0] == gu_lists[2][0] + len(CODE_FX) and pel_ids(list2[1]) == pel_ids(gu_lists[2][1]) + ours2, \
         'PEL list 2 = GU + ours'
-    pel = b'PEL\0' + struct.pack('<II', 15, 0) + struct.pack('<I', gu_lists[1][0] + mine[0]) + gu_lists[1][1] + \
+    list2 = (list2[0], clod_repoint(list2[0], list2[1], notes))
+    pel =b'PEL\0' + struct.pack('<II', 15, 0) + struct.pack('<I', gu_lists[1][0] + mine[0]) + gu_lists[1][1] + \
         mine[1] + struct.pack('<I', list2[0]) + list2[1]
     lists = efl4u2gu.pel_lists(pel)
     assert pel_ids(lists[1][1]) == gu1 + pel_ids(mine[1]) and lists[2] == list2, 'merged PEL u layout'
@@ -521,6 +525,68 @@ SHELL_HDS = [('heatwave ahead (uShell012 51, record 35)', U012, 35), ('heatwave 
              U012, 37), ('heatwave ahead, event (uShell012 66, record 45)', U012, 45),
              ('heatwave sides, event (uShell012 67 / 68, record 46)', U012, 46),
              ('eruption (uShell037 8, record 6)', U037, 6), ('stepfire (uShell003 177)', U003, 177)]
+
+# ---- GU Crimson's fireball families without their clods (test 2, 2026-11-22). Variant 6 posts GU Crimson's shells
+# 0x86 / 0x87 (shell table 0x1763448 rows 134 / 135 = em013_01_shell00 / 01; C): the fireball 0xd8519c (kinds 0 / 1),
+# the meteor 0xd84000 (0x86 kind 5), 0xd83144 / 0xd84aa0 (0x87) and the impact child 0xd8f844 (0x87 kinds 0..4). Their
+# kinds post list 2 of the def's PEL (ef cParam {list, id}, C): ids 1 / 2 (ground / wall: em013_00_005 masks 1 / 2),
+# 11 (kind 1's impact, em013_00_009), 101 (the meteor's, em013_01_008). Those are Capcom's own GU files (39 / 22 / 26
+# entries against 4U em077_005 / em077_009 / em078_008's 13 / 11 / 6, GU models, S), drawing 5 to 7 light grey-tan
+# clods (cm202_020_g / cm202_022_g) where 4U draws one to four near-black chunks; the maintainer: 4U's G Crimson
+# shows no rocks there, keep GU's effect with the rocks hidden. So: copies of the two defs on PEL_U (same-length
+# rename, kind files and hit data stay GU's), PEL_U's ids 1 / 2 / 11 / 101 on copies of the three EFLs with every
+# clod unit's element mask 0 (efl4u2gu.hide_grey_models), swapped in for variant 6's posts only (core
+# module/shellswap.c, em013_06_alias.c). A DEVIATION from GU's look, by the maintainer's 4U rule; GU's Crimson keeps
+# its clods.
+CLOD_DEFS = [('shell\\em\\em013_01_shell00\\em013_01_00', 'shell\\em\\em013_06_shell10\\em013_06_10'),
+             ('shell\\em\\em013_01_shell01\\em013_01_01', 'shell\\em\\em013_06_shell11\\em013_06_11')]
+CLOD_MODELS = {'cm202_020_g', 'cm202_022_g'}
+# GU EFL -> our copy, the list-2 ids that post it, the clod units hidden (C, counted 2026-11-22)
+CLOD_EFLS = [('effect\\em\\em013\\em013_00_005', 'effect\\em\\em013\\em013_06_005', (1, 2), 7),
+             ('effect\\em\\em013\\em013_00_009', 'effect\\em\\em013\\em013_06_009', (11,), 1),
+             ('effect\\em\\em013\\em013_01_008', 'effect\\em\\em013\\em013_06_008', (101,), 7)]
+
+
+def clod_repoint(n, body, notes):
+    """PEL_U list 2 (count, record bytes) with ids 1 / 2 / 11 / 101 on the clod-free copies (record = u8 path length,
+    path, 162 B: u16 id at +2 + 0x30)"""
+    to = {i: (src, dst) for src, dst, ids, _ in CLOD_EFLS for i in ids}
+    out, i, done = b'', 0, []
+    for _ in range(n):
+        L = body[i]
+        path, rec = body[i + 1:i + 1 + L].decode('ascii'), body[i + 1 + L:i + 1 + L + 162]
+        rid = struct.unpack_from('<H', rec, 2 + 0x30)[0]
+        if rid in to:
+            assert path == to[rid][0], ('PEL list-2 id %d names %s' % (rid, path))
+            path = to[rid][1]
+            done.append(rid)
+        out += bytes([len(path)]) + path.encode('ascii') + rec
+        i += 1 + L + 162
+    assert i == len(body) and sorted(done) == sorted(to), ('clod records', done)
+    notes.append('clods: PEL u list-2 ids %s on the copies %s' % (sorted(done), [d.split('\\')[-1] for _, d, _, _ in
+                                                                              CLOD_EFLS]))
+    return out
+
+
+def clod_copies(G, notes):
+    """[(path, type, data)]: the three EFL copies without clods, then the two def copies on PEL_U"""
+    T_EFL = efl4u2gu.T['EFL']
+    out = []
+    for src, dst, ids, n in CLOD_EFLS:
+        hid = []
+        d = efl4u2gu.hide_grey_models(G[(src, T_EFL)], G[(src, T_EFL)], hid, CLOD_MODELS, any_colour=True)
+        assert len(hid) == n, ('clod units of %s' % src, hid)
+        _, bad = efl4u2gu.check_efl(d)
+        assert not bad, (dst, bad)
+        out.append((dst, T_EFL, d))
+        notes.append('clods: %s -> %s, %d clod units hidden (%s)' % (src.split('\\')[-1], dst.split('\\')[-1], n,
+                                                                   ', '.join(h.split(':')[0] for h in hid)))
+    for src, dst in CLOD_DEFS:
+        d = G[(src, T_SHELL)]
+        assert d.count(PEL_GU.encode()) == 1 and dst.encode() not in d, ('def PEL path', src)
+        out.append((dst, T_SHELL, d.replace(PEL_GU.encode(), PEL_U.encode())))
+        notes.append('clods: def %s = GU %s on %s' % (dst, src, PEL_U))
+    return out
 
 
 def shell_hds_hts(code, gu_hds, gu_hts, notes):
@@ -635,7 +701,9 @@ def main():
     ext = [(BGM_STQR, T_STQR, open(BGM_STQR_SRC, 'rb').read())]
     fam = shell_family(gents, code, notes)
     extras['shell01'] = (SHELL_DST, T_SHELL)
-    ents = ents + kept + ext + fam
+    clods = clod_copies(G, notes)                # after the kept GU files their EFLs and defs name
+    extras['shell10'], extras['shell11'] = [(dst, T_SHELL) for _, dst in CLOD_DEFS]
+    ents = ents + kept + ext + fam + clods
 
     # ---- manifest: own fields -> our IDs (field order: IDs only ever grow), then the extras; the rest = em013_01's
     new_files, manifest, src_of = [], list(gman), {}
@@ -655,6 +723,9 @@ def main():
     hdr = open(os.path.join(MON, 'module', 'em013_06_shell.h'), encoding='utf-8').read()
     assert int(re.search(r'GCF_SHELL_FILE (0x[0-9a-f]+)u', hdr).group(1), 16) == extra_ids['shell01'], \
         'em013_06_shell.h GCF_SHELL_FILE != the shell01 file ID'
+    for name in ('shell10', 'shell11'):          # em013_06_alias.c swaps these in for GU's 0x86 / 0x87
+        assert int(re.search(r'GCF_CLOD_FILE_%s (0x[0-9a-f]+)u' % name[-2:], hdr).group(1), 16) == extra_ids[name], \
+            'em013_06_shell.h GCF_CLOD_FILE_%s != the %s file ID' % (name[-2:], name)
     assert sorted(int(x) for x in re.findall(r'GCF_EFX_\w+ = (\d+)', hdr)) == [r[0] for r in CODE_FX], \
         'em013_06_shell.h GCF_EFX_* != CODE_FX'
     assert [int(x) for x in re.findall(r'GCF_HDS_\w+ = (\d+)', hdr)] == list(range(len(SHELL_HDS))), \

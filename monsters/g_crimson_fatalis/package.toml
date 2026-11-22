@@ -6,7 +6,9 @@ title = "Crimson Fatalis (4U)"
 class = "Elder Dragon"     # its class, GU's name (monsterName 253..267): the installer's subtitle in every language
 version = "0.4.0"          # bump on every published change of this monster's files (data, assets or code); 0.4.0:
                            # test 1 fixes: GX Fatalis Crimson and its ticket dropped (GU ships that set), the third
-                           # quest is 11497 (11400 never loaded), opaque weapon blades, haze at half strength;
+                           # quest is 11497 (11400 never loaded), opaque weapon blades, haze at half strength, its
+                           # fireball impacts without GU's clods (copies of GU Crimson's families 0x86 / 0x87, core
+                           # module/shellswap.c);
                            # 0.3.0: its gear: G break rewards, Wroth armor, the 8 4U weapons GU lacks; 0.2.0:
                            # its 4U behaviour (module em013_06_*.c), name "Crimson Fatalis (4U)" (NAME, entry
                            # 223) and quests 11498 / 11499 / 11497 (4U m11036, events m60249 / m60215); 0.1.0:

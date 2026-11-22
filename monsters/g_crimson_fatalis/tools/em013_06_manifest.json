@@ -3,7 +3,7 @@
  "id": "0x60d",
  "registry_index": 150,
  "file_id_base": "0x10a80",
- "file_count": 18,
+ "file_count": 20,
  "manifest": [
   {
    "field": 0,
@@ -320,6 +320,8 @@
  ],
  "bgm_stqr": "0x10a90",
  "shell01": "0x10a91",
+ "shell10": "0x10a92",
+ "shell11": "0x10a93",
  "files": [
   {
    "file_id": "0x10a80",
@@ -428,6 +430,18 @@
    "path": "shell\\em\\em013_06_shell01\\em013_06_01",
    "type": "0x4aa69872",
    "path_hash": "0x66f83613"
+  },
+  {
+   "file_id": "0x10a92",
+   "path": "shell\\em\\em013_06_shell10\\em013_06_10",
+   "type": "0x4aa69872",
+   "path_hash": "0x487d0f37"
+  },
+  {
+   "file_id": "0x10a93",
+   "path": "shell\\em\\em013_06_shell11\\em013_06_11",
+   "type": "0x4aa69872",
+   "path_hash": "0xe2ece624"
   }
  ],
  "notes": [
@@ -444,6 +458,7 @@
   "em117 sound: 62 waves (62 used by the bank), bank 8 groups / 92 entries, request 223 entries (5 common-bank entries from GU em013_01, 15 converted, + 1 more of its common-bank requests), sound call 47916 B",
   "sound request: GU em013_01's own-bank requests em117 lacks (silent if GU code posts them): [100]",
   "effect area colour: 4U Ingle Isle m09a01 soil (63, 28, 16, 255)",
+  "clods: PEL u list-2 ids [1, 2, 11, 101] on the copies ['em013_06_005', 'em013_06_009', 'em013_06_008']",
   "effects: PEL u = GU em013_01u (list 1: 14, list 2: 18) + em117_1 (7) + code records [4100, 4101, 4102, 4103, 4104] (list 2); 19 converted 4U files",
   "  PSL bank 0 motion 6: GU dust [0, 1] out, em117_1 [(2002, 2), (2003, 3)] in",
   "  PSL bank 0 motion 7: GU dust [2, 3] out, em117_1 [(2000, 2), (2001, 3)] in",
@@ -489,6 +504,11 @@
   "  HDS 3 heatwave sides, event (uShell012 67 / 68, record 46): window 0+99 power 20 type 0x7 level 0 -> HTS 3: volume 17 bone 1001 +4 1 r700",
   "  HDS 4 eruption (uShell037 8, record 6): window 15+60 power 10 type 0x1f level 0 -> HTS 4: volume 4 bone 1001 +4 0 r150",
   "  HDS 5 stepfire (uShell003 177): window 0+20 power 20 type 0x1 level 4 -> HTS 5: volume 120 bone 255 +4 0 r100",
-  "shell family shell\\em\\em013_06_shell01\\em013_06_01: 35 files from GU shell\\em\\em013_01_shell01\\em013_01_01 (PEL effect\\pel\\em\\em013_06u); HDS / HTS: 6 entries"
+  "shell family shell\\em\\em013_06_shell01\\em013_06_01: 35 files from GU shell\\em\\em013_01_shell01\\em013_01_01 (PEL effect\\pel\\em\\em013_06u); HDS / HTS: 6 entries",
+  "clods: em013_00_005 -> em013_06_005, 7 clod units hidden (entry 3, entry 4, entry 16, entry 17, entry 18, entry 28, entry 31)",
+  "clods: em013_00_009 -> em013_06_009, 1 clod units hidden (entry 3)",
+  "clods: em013_01_008 -> em013_06_008, 7 clod units hidden (entry 2, entry 7, entry 8, entry 9, entry 10, entry 11, entry 12)",
+  "clods: def shell\\em\\em013_06_shell10\\em013_06_10 = GU shell\\em\\em013_01_shell00\\em013_01_00 on effect\\pel\\em\\em013_06u",
+  "clods: def shell\\em\\em013_06_shell11\\em013_06_11 = GU shell\\em\\em013_01_shell01\\em013_01_01 on effect\\pel\\em\\em013_06u"
  ]
 }

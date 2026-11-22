@@ -651,7 +651,9 @@ Notes: monsters/tigerstripe_zamtrios/notes/ (plan, phase1-variant-map, missing-a
   (Desert Seltas' 11140 has a normal Seltas). Desert Seltas 0.1.3's way: copies of GU's defs under its own paths, on its
   own PELs (GU's list-2 records of the ids the kinds post, on its 4U EFLs) and hit data, found by file ID (FILE IDs after
   the manifest's), and swapped into the shell request's cache read for its own posts only (0x48c5e4, back at the exit
-  0x48c54c: module/seltas_shots.c, tools/shots_seltas.py). A hook pair whose second instruction is conditional (movne)
+  0x48c54c: module/seltas_shots.c, tools/shots_seltas.py; since G-rank Crimson Fatalis the swap is the core's,
+  module/shellswap.c: a port gives a `struct shellswap` {owner ID, shell id -> file ID, ids taken for every post} and
+  marks its class-specific posts with shellswap_mark). A hook pair whose second instruction is conditional (movne)
   cannot be displaced: the trampoline's own cmp changes the flags first (`tools/hookcheck.py` checks it).
 - GU may renumber a subspecies' attack records: GU's Seltas Queen records 47 / 51 are 4U's Desert Seltas Queen 69 / 70
   (up to GU's retune bytes) and GU posts them for her. Compare record bytes, not indexes, before calling a post missing.
@@ -784,3 +786,8 @@ Notes: monsters/tigerstripe_zamtrios/notes/ (plan, phase1-variant-map, missing-a
   (tools/gear4u.py arcana) whose records each package ships at the same IDs: module/gear.c appends a TBLA / TXTA
   block only while the table still has the block's base count, so the first package loaded adds it and the copy is
   skipped.
+- A variant that borrows GU's shots borrows GU's look too: GU Crimson's fireball impacts are Capcom's own GU files
+  (light clods where 4U draws a few near-black chunks), so the "rocks" the tester saw were GU's, not the 4U effect
+  first blamed (em117_202). Before blaming a converted effect, list every shell the variant posts and the PEL list-2
+  ids its kinds post (ef files = cParam {list, id}). The fix without touching GU's monster: copies of the defs on
+  the port's PEL, the records on edited EFL copies, swapped in by the core (module/shellswap.c).

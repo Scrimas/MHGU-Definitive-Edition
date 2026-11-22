@@ -7,7 +7,9 @@ version = "3.1.0"          # 3.1.0: the shell framework in core (shell.c, from D
                            #        G-rank Crimson Fatalis' shells, its variant 6 on GU Crimson's branches and
                            #        its quests 11498 / 11499 / 11497 (allocations.toml, appended); GU's hub
                            #        quest limits raised: 1024 loaded quests (GU 864), 255 per star board (GU
-                           #        99; build.py QUEST_LIMIT_SITES);
+                           #        99; build.py QUEST_LIMIT_SITES); a port's own shell family copies swapped in
+                           #        GU's shell request by the core (shellswap.c: Desert Seltas' swap moved there,
+                           #        G-rank Crimson's clod-free fireball families the second user);
                            # 3.0.0: the mod's own save files (notes/mod-save-format.md): everything added to a
                            #        character moves from GU's save to mhgu_de_N.bin next to it (savefile.c,
                            #        modsave.c); GU's save keeps vanilla data only;
