@@ -157,9 +157,12 @@ int nextact_pick_c(uint32_t *regs)          /* 0x85a10, before setAction(this, c
     static uint32_t s_seen;
     if (ok && q.seq != s_done && q.seq != s_seen) {     /* in: say so before the monster picks */
         s_seen = q.seq;
-        logf("nextact: request %u seen (em %x %u/%u), waiting for that monster's next AI pick", q.seq, q.em, q.cat, q.num);
+        logf("nextact: request %u seen (em %x %u/%u), waiting for that monster's next AI pick of category %u", q.seq,
+             q.em, q.cat, q.num, q.cat);
     }
-    if (ok && q.seq != s_done && q.em == em) {
+    if (ok && q.seq != s_done && q.em == em && q.cat == cat) {   /* only over a pick of the same category: */
+        /* the EMC entry sets the target up for its own kind of action before `00 cat num`; a 7/x swapped over a 2/x
+         * move kept the move's set-up and her 7/56 ended at once into 1/32 (test 2026-11-22) */
         s_done = q.seq;
         regs[R1] = q.cat, regs[R2] = q.num;
         logf("nextact: slot %d em %x: AI pick %u/%u -> %u/%u (request %u)", slot, em, cat, num, q.cat, q.num, q.seq);

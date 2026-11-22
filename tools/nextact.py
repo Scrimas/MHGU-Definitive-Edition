@@ -1,7 +1,8 @@
 """nextact.py : choose a monster's next AI action while the game runs (test aid; module/nextact.c, build switch
 TEST_NEXT_ACTION).
 
-Pause the game, pick the monster and the action here, unpause: the module swaps the monster's next AI pick for it (once).
+Pause the game, pick the monster and the action here, unpause: the module swaps the monster's next AI pick of the same
+category for it, once (a 7/x request replaces its next attack).
 The request is one UDP datagram to 127.0.0.1:47123 (the module listens there; Ryujinx's sockets are the PC's), so
 it reaches the game at once. What the monsters pick, and when a request applied, comes from the module's "nextact:" lines in the latest Ryujinx log. Action lists and names: tools/actions.py
 (a port's monsters/<package>/actions.toml, GU's own from its AI table).
@@ -140,9 +141,10 @@ def main_gui(mods, port=PORT):
                 for i, (em, d) in enumerate(rows):
                     t.update_cell_at((i, 3), '%d/%d' % d['last']); t.update_cell_at((i, 4), str(d['picks']))
             if self.sel is None and rows: self.select(rows[0][0])
-            pend = ('waiting: %s %d/%d (request %d, %s), applies at its next AI pick' % (
+            pend = ('waiting: %s %d/%d (request %d, %s), applies at its next AI pick of category %d' % (
                 monster_name(self.pending[1]), self.pending[2], self.pending[3], self.pending[0],
-                'received by the game' if self.seen == self.pending[0] else 'not received by the game yet')
+                'received by the game' if self.seen == self.pending[0] else 'not received by the game yet',
+                self.pending[2])
                 if self.pending else 'no request waiting')
             self.query_one('#status', Static).update('%s\n%s\nEnter on an action = request it for the selected '
                                                      'monster (pause the game first)' % (self.card, pend))
@@ -184,8 +186,8 @@ def main_gui(mods, port=PORT):
             cat, num = map(int, event.row_key.value.split('/'))
             seq = send_request(self.sel, cat, num, port)
             self.pending = (seq, self.sel, cat, num)
-            self.query_one('#events', RichLog).write('%s request %d: %s %d/%d sent (unpause: it applies at its next '
-                                                     'AI pick)' % (time.strftime('%H:%M:%S'), seq,
+            self.query_one('#events', RichLog).write('%s request %d: %s %d/%d sent (unpause: it replaces its next AI '
+                                                     'pick of that category)' % (time.strftime('%H:%M:%S'), seq,
                                                                    monster_name(self.sel), cat, num))
             self.redraw()
 
