@@ -13,7 +13,7 @@ import glob, os, re, shutil, struct, subprocess, sys, tomllib
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
-import alloc, nso, paths, ui_icons
+import actions, alloc, nso, paths, ui_icons
 
 MONSTERS = alloc.monsters()        # registry order (allocations.toml): registry indexes, append order
 QUESTS_PER_ENTRY = alloc.QUESTS_PER_ENTRY   # port.h PORT_QUESTS
@@ -447,6 +447,8 @@ if 'MOTION_GUARD' in os.environ.get('GOG_DEFINES', '').split():   # diagnostic: 
     MID_EXIT['motion_guard'] = 0x88F4D4  # add r7, r7, #1: the update loop's next material, this one not evaluated
 if 'TEST_QUEST_RANK' in os.environ.get('GOG_DEFINES', ''):   # test: Stygian's quests at that rank (em057_01_ai.c)
     HOOKS += [('em057_01_rank', 0x3A8D68)]                   # GU quest rank getter (4U 0x69ae70)
+if 'TEST_NEXT_ACTION' in os.environ.get('GOG_DEFINES', '').split():   # test: the AI's next pick from tools/nextact.py
+    HOOKS += [('nextact_pick', 0x85A10)]   # the AI selector's setAction(this, cat, num, 0) of an EMC pick (nextact.c)
 
 
 def movw_imm(word, imm):
@@ -780,6 +782,8 @@ def main():
     open(os.path.join(OUT, 'tables.S'), 'w').write(reg_tables_asm(img))
     errs = alloc.check()
     if errs: sys.exit('allocations.toml:\n  ' + '\n  '.join(errs))
+    errs = actions.check()   # each port's AI action list (tools/nextact.py), kept with its AI table
+    if errs: sys.exit('actions.toml:\n  ' + '\n  '.join(errs))
     check_data_pool()
     open(os.path.join(OUT, 'alloc.h'), 'w').write(alloc.header())
     open(os.path.join(OUT, 'modsave_quests.h'), 'w').write(modsave_quests_h())
@@ -793,7 +797,7 @@ def main():
     srcs = [os.path.join(HERE, f) for f in ('crt0.S', 'main.c', 'util.c', 'port.c', 'quest.c', 'items.c', 'gear.c',
                                             'notes.c', 'stage_alias.c', 'bgm.c', 'icons.c', 'save.c',
                                             'modsave.c', 'savefile.c', 'b0gate.c', 'shell.c', 'efx.c',
-                                            'shellswap.c')]
+                                            'shellswap.c', 'nextact.c')]
     for d in mods:                                     # every registered monster's code, registry order
         srcs += sorted(glob.glob(os.path.join(d, '*.c')))
     srcs += [os.path.join(OUT, 'port_monsters.c'), os.path.join(OUT, 'tables.S')]

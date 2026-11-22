@@ -112,6 +112,11 @@ pairs where possible (tools/dt_vote.py, dt_map.py, snd4u2gu.py selftest), then a
    the core patches the loaded tables (module/items.c, gear.c, notes.c), never ships resident arcs: UI mods
    replace resident.arc / resident_<lang>.arc (the
    maintainer's HD UI v4 does), and shipping blacksmith.arc from the v1.0 RomFS could undo update changes.
+5. **AI action list** `monsters/<name>/actions.toml`: every native (cat, num) pair its AI table (cmd_tbl) picks, in
+   GU's numbering, with names and a "needs" note where known, for the next-action test aid (tools/nextact.py, module
+   nextact.c, switch TEST_NEXT_ACTION: pause, pick an attack, the monster's next AI pick is that attack).
+   `python3 tools/actions.py init <package>` writes / extends it (names kept); module/build.py refuses a port whose
+   table picks a pair the file lacks, so rerun `init` after any AI table change and name the new pairs.
 
 ## 4. Pipeline, in order
 ### Phase 0: identify (do not guess)
