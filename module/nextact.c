@@ -8,12 +8,13 @@
  * pair) and no chained step does (setActionNext, the end slots 247..250 and class code call setAction themselves).
  * It runs only where the monster is controlled: online, the request applies on the machine that runs that monster,
  * and GU replicates the action to the others (S).
- * The request: the SD card file sd:/mhgu_de_next_action.txt (Ryujinx: <its root>/sdcard/), one line
- * `seq=N em=0xID cat=C num=N` written by tools/nextact.py. Read at each AI pick; a seq applies once, to the first
- * monster of that ID that picks; the seq found when the card is first mounted counts as old (no replay of a previous
- * session's request). GU never mounts the SD card and imports no SD call: the module imports nn::fs::MountSdCard (or
- * MountSdCardForDebug: main.npdm grants the debug permission only) weakly from the sdk NSO, resolved by rtld (G: on
- * console the permission may refuse it; the first pick logs the result).
+ * The request: romfs/nativeNX/mhgu_de/nextact.txt in the mod folder, 64 bytes, written by module/build.py install for
+ * this switch and rewritten IN PLACE (same size) by tools/nextact.py: one line `seq=N em=0xID cat=C num=N`. Ryujinx
+ * serves a mod's RomFS file from the host file when the game reads it (its size fixed at launch, S), so a fresh
+ * request shows on the next read. Read at each AI pick; a seq applies once, to the first monster of that ID that
+ * picks; the seq found at the first read counts as old (no replay of a previous session's request). Before it: the
+ * SD card (nn::fs::MountSdCard / ...ForDebug imported from the sdk NSO): Ryujinx refused both, FS 6400 permission
+ * denied (result 0x320002, test 2026-11-22: main.npdm has no SdCard permission).
  * Limits: a combo script passes here at each step (the request replaces the next one, the rest of the script goes
  * on); idle picks (0, 0xff) do not pass here; a pair outside the monster's state (flying, its rider, Dalamadur's
  * halves) can misbehave; online, setAction mode 0 runs the class's remap slot 127. Log: "nextact:" (every pick, every
@@ -35,20 +36,14 @@ typedef void (*fs_close_t)(fs_file f);
 #define fs_read FN(fs_read_t, 0x13f0448)
 #define fs_close FN(fs_close_t, 0x13f046c)
 
-/* the sdk NSO's exports, imported by name (weak: 0 when rtld finds none) */
-extern uint32_t nn_fs_mount_sd(const char *name) __asm__("_ZN2nn2fs11MountSdCardEPKc")
-    __attribute__((weak, visibility("default")));
-extern uint32_t nn_fs_mount_sd_debug(const char *name) __asm__("_ZN2nn2fs19MountSdCardForDebugEPKc")
-    __attribute__((weak, visibility("default")));
-
 #define ENEMY_MGR 0x1851fe0u            /* the enemy manager (module/main.c) */
 typedef uint8_t *(*enemy_at_t)(void *mgr, uint32_t k);
 #define enemyAt FN(enemy_at_t, 0x5ceb4) /* the k-th of the 10 monster slots, or 0 */
-#define REQ_PATH "sd:/mhgu_de_next_action.txt"
+#define REQ_PATH "app:/nativeNX/mhgu_de/nextact.txt"
 
 struct req { uint32_t seq, em, cat, num; };
 
-static int s_card;                      /* 0 not tried, 1 mounted, -1 refused */
+static int s_first = 1;                 /* the first read: its seq is old */
 static uint32_t s_done = 0xffffffffu;   /* the last seq applied (or found old) */
 
 static int slot_of(void *self)
@@ -106,30 +101,25 @@ static int read_req(struct req *r)
     return parse(buf, r);
 }
 
-static void mount_card(void)
-{
-    typedef uint32_t (*mount_t)(const char *name);
-    mount_t sd = nn_fs_mount_sd, dbg = nn_fs_mount_sd_debug;   /* rtld's GOT words (R_ARM_GLOB_DAT) */
-    __asm__("" : "+r"(sd), "+r"(dbg));       /* called through them: no PLT slot, no lazy binding asked of rtld */
-    uint32_t r = 0xffffffffu;
-    const char *how = "no SD call found by rtld";
-    if (sd) { r = sd("sd"); how = "MountSdCard"; }
-    if (r && dbg) { r = dbg("sd"); how = "MountSdCardForDebug"; }
-    s_card = r ? -1 : 1;
-    struct req q;
-    if (s_card > 0 && read_req(&q)) s_done = q.seq;            /* a previous session's request: old */
-    logf("nextact: SD card %s (%s, result %x); requests from " REQ_PATH "%s", s_card > 0 ? "mounted" : "NOT mounted",
-         how, r, s_card > 0 && s_done != 0xffffffffu ? " (its current request is old)" : "");
-}
-
 int nextact_pick_c(uint32_t *regs)          /* 0x85a10, before setAction(this, cat, num, 0) of an AI pick */
 {
     void *self = (void *)regs[R0];
     uint32_t em = FIELD(uint16_t, self, EN_ID), cat = regs[R1], num = regs[R2];
     int slot = slot_of(self);
-    if (!s_card) mount_card();
     struct req q;
-    if (s_card > 0 && read_req(&q) && q.seq != s_done && q.em == em) {
+    int ok = read_req(&q);
+    if (s_first) {
+        s_first = 0;
+        if (ok) s_done = q.seq;
+        logf("nextact: request file " REQ_PATH " %s (seq %u, old)", ok ? "read" : "NOT readable (build.py install with "
+             "TEST_NEXT_ACTION writes it)", ok ? q.seq : 0);
+    }
+    static uint32_t s_seen;
+    if (ok && q.seq != s_done && q.seq != s_seen) {     /* the file is read live: say so before the monster picks */
+        s_seen = q.seq;
+        logf("nextact: request %u seen (em %x %u/%u), waiting for that monster's next AI pick", q.seq, q.em, q.cat, q.num);
+    }
+    if (ok && q.seq != s_done && q.em == em) {
         s_done = q.seq;
         regs[R1] = q.cat, regs[R2] = q.num;
         logf("nextact: slot %d em %x: AI pick %u/%u -> %u/%u (request %u)", slot, em, cat, num, q.cat, q.num, q.seq);
