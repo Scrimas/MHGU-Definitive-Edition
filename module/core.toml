@@ -3,7 +3,9 @@
 # version (tools/release.py). Bump on every published change of the module or of any data file.
 name = "core"
 title = "MHGU Definitive Edition core"
-version = "3.0.0"          # 3.0.0: the mod's own save files (notes/mod-save-format.md): everything added to a
+version = "3.1.0"          # 3.1.0: the shell framework in core (shell.c, from Dalamadur's dala_shell.c; efx.c),
+                           #        G-rank Crimson Fatalis' shells and its variant 6 on GU Crimson's branches;
+                           # 3.0.0: the mod's own save files (notes/mod-save-format.md): everything added to a
                            #        character moves from GU's save to mhgu_de_N.bin next to it (savefile.c,
                            #        modsave.c); GU's save keeps vanilla data only;
                            # 2.2.0: Harvest Tours: a map's tours (allocations.toml [[map]], maps/<map>/
