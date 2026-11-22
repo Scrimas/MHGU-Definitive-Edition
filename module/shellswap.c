@@ -44,9 +44,11 @@ static const struct shellswap *port_of(void *owner)
 
 static void note(const struct shellswap *p, const char *what, uint32_t id, uint32_t fid)
 {
-    static uint32_t s_n, s_quest;
-    if (port_quest_id() != s_quest) { s_quest = port_quest_id(); s_n = 0; }
-    if (s_n++ < MAX_LOG)
+    static uint32_t s_n[NPORTS], s_quest;     /* a budget per port: one port's shots never mute another's */
+    if (port_quest_id() != s_quest) { s_quest = port_quest_id(); for (uint32_t i = 0; i < NPORTS; i++) s_n[i] = 0; }
+    uint32_t i = 0;
+    while (i < NPORTS - 1 && s_ports[i] != p) i++;
+    if (s_n[i]++ < MAX_LOG)
         logf("mhgu-de: shell swap %s%s: GU shell 0x%x%s (file 0x%x)", p->tag, what, id,
              fid ? " with its own family" : " (no copy)", fid);
 }
@@ -91,7 +93,16 @@ int shellswap_req_c(uint32_t *regs)         /* 0x48c5e4, before the cache read: 
 
 int shellswap_end_c(uint32_t *regs)         /* 0x48c54c, the request's exit (every path) */
 {
-    (void)regs;
+    if (s_mark) {   /* a marked request that never reached the def read (GU 0x48c4f0 exits first when the
+                     * owner is dead, 144 shells live (mgr + 0x6d8c), or the param class is not the row's) */
+        static uint32_t s_n;
+        uint32_t live = 0, *slots = (uint32_t *)(uintptr_t)(regs[R4] + 0x6d8c);
+        for (uint32_t k = 0; k < 0x90; k++)
+            if (slots[k] && (FIELD(uint32_t, (void *)(uintptr_t)slots[k], 0xc) & 7) - 1 < 2) live++;
+        const struct shellswap *p = port_of(s_mark);
+        if (++s_n <= 30) logf("mhgu-de: shell swap %s: marked request refused by GU before its def read (%u shells live)",
+                              p ? p->tag : "?", live);
+    }
     if (s_slot) { *s_slot = s_saved; s_slot = 0; }
     s_mark = 0;
     return 0;

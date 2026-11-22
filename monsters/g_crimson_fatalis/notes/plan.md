@@ -408,3 +408,10 @@ Follow-ups done (2026-11-22, the maintainer's go):
   1025, Dalamadur 10792, Desert Seltas 1068 / 11138 / 11139 / 11140, Monoblos 1057 / 1058 / 10784 / 10785, Stygian
   Zinogre 11429 (rows A and B), Tigerstripe 11493, ours 11499; Heaven's Mount's tours unchanged.
 - The board pass log: the fullest of the 18 boards from their u16 counts (L+0x38 + 2k) instead of 0x3bc9f8's list 14.
+
+Test 3 (2026-11-22, c04613d + 0d701d0 + 1356171): G-rank Crimson's impacts without rocks, GU's Crimson with them,
+Dalamadur's impact explosions back: all good (the maintainer). Desert Seltas Queen "water shots gone": her two 7/15
+in quest 11374 logged no swap; a diagnostic build (her mark sites logged, a refused-request log at the request's exit,
+a log budget per port in shellswap.c) then showed her 7/9 marked, swapped (0x127 x3, splashes 0x128) and drawn (the
+maintainer: fixed). So the shared swap works for her; whether her 7/15 reaches the posts at all is not seen yet (no
+7/15 in that run; the logs stay).

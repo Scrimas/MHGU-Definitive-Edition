@@ -95,14 +95,23 @@ int seltas_shot_q_c(uint32_t *regs)                               /* 0xf987d0, 0
 {
     void *self = (void *)regs[R4];
     if (!IS_DSQ(self)) return 0;
+    static uint32_t s_n;
+    if (++s_n <= 30) logf("dsport: dsq shot 7/56 marked");
     shellswap_mark(self);
     return 1;
 }
 /* 0xf96a38 (7/9 7/15 7/34 7/79): GU posts the normal Queen's three shots for her; mark each (r4 = this) */
-static int mark_dsq(uint32_t *regs) { if (IS_DSQ((void *)regs[R4])) shellswap_mark((void *)regs[R4]); return 0; }
-int seltas_shot_q1_c(uint32_t *regs) { return mark_dsq(regs); }   /* 0xf96bc4 */
-int seltas_shot_q2_c(uint32_t *regs) { return mark_dsq(regs); }   /* 0xf96c74 */
-int seltas_shot_q3_c(uint32_t *regs) { return mark_dsq(regs); }   /* 0xf96d24 */
+static int mark_dsq(uint32_t *regs, int k)
+{
+    static uint32_t s_n;                  /* her posts reached (G-rank Crimson test 3: two 7/15 with no swap logged) */
+    if (!IS_DSQ((void *)regs[R4])) return 0;
+    if (++s_n <= 30) logf("dsport: dsq shot %d marked", k);
+    shellswap_mark((void *)regs[R4]);
+    return 0;
+}
+int seltas_shot_q1_c(uint32_t *regs) { return mark_dsq(regs, 1); }   /* 0xf96bc4 */
+int seltas_shot_q2_c(uint32_t *regs) { return mark_dsq(regs, 2); }   /* 0xf96c74 */
+int seltas_shot_q3_c(uint32_t *regs) { return mark_dsq(regs, 3); }   /* 0xf96d24 */
 
 /* 0xfdcbe4: GU's shell class at a ground hit, right before it posts the splash 0x13a (r4 = the shell that hit) */
 int seltas_shot_g_c(uint32_t *regs)
