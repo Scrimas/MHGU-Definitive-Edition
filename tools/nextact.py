@@ -24,6 +24,7 @@ REQ_SIZE = 64
 PICK = re.compile(r'nextact: slot (-?\d+) em ([0-9a-f]+): AI pick (\d+)/(\d+)(?: -> (\d+)/(\d+) \(request (\d+)\))?')
 CARD = re.compile(r'nextact: (request file .*)$')
 SEEN = re.compile(r'nextact: request (\d+) seen')
+READ = re.compile(r'nextact: (read .*)$')
 
 
 def mods_dir(arg):
@@ -119,6 +120,10 @@ def main_gui(mods):
                 self.card = m.group(1)
                 self.query_one('#events', RichLog).write(self.card)
                 return
+            m = READ.search(line)
+            if m:
+                self.query_one('#events', RichLog).write('game ' + m.group(1))
+                return
             m = SEEN.search(line)
             if m:
                 self.seen = int(m.group(1))
@@ -193,8 +198,9 @@ def main_gui(mods):
             cat, num = map(int, event.row_key.value.split('/'))
             seq = write_request(mods, self.sel, cat, num)
             self.pending = (seq, self.sel, cat, num)
-            self.query_one('#events', RichLog).write('request %d: %s %d/%d written' % (seq, monster_name(self.sel),
-                                                                                        cat, num))
+            self.query_one('#events', RichLog).write('%s request %d: %s %d/%d written (unpause: it applies at its next '
+                                                     'AI pick)' % (time.strftime('%H:%M:%S'), seq,
+                                                                   monster_name(self.sel), cat, num))
             self.redraw()
 
     NextAct().run()

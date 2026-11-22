@@ -85,20 +85,33 @@ static int parse(const char *s, struct req *r)
     return got == 15;
 }
 
+/* 1 = a request parsed; every change of what the read returns is logged (open / size / read results, the text) */
 static int read_req(struct req *r)
 {
     fs_file h;
-    int64_t size;
-    uint32_t n = 0;
-    char buf[128];
-    if (fs_open(&h, REQ_PATH, 1)) return 0;
-    if (fs_size(&size, h) || size <= 0) { fs_close(h); return 0; }
-    if (size > (int64_t)sizeof buf - 1) size = sizeof buf - 1;
-    uint32_t e = fs_read(&n, h, 0, buf, (uint32_t)size);
-    fs_close(h);
-    if (e) return 0;
-    buf[n < sizeof buf ? n : sizeof buf - 1] = 0;
-    return parse(buf, r);
+    int64_t size = 0;
+    uint32_t n = 0, e_open, e_size = 0, e_read = 0;
+    char buf[80];
+    buf[0] = 0;
+    if (!(e_open = fs_open(&h, REQ_PATH, 1))) {
+        if (!(e_size = fs_size(&size, h)) && size > 0) {
+            if (size > (int64_t)sizeof buf - 1) size = sizeof buf - 1;
+            e_read = fs_read(&n, h, 0, buf, (uint32_t)size);
+            buf[e_read ? 0 : n < sizeof buf ? n : sizeof buf - 1] = 0;
+        }
+        fs_close(h);
+    }
+    int ok = parse(buf, r);
+    static uint32_t s_sum = 1, s_n;           /* FNV of the outcome: log only what changed */
+    uint32_t sum = 2166136261u ^ e_open ^ (e_size << 8) ^ (e_read << 16) ^ (uint32_t)size;
+    for (const char *c = buf; *c; c++) sum = (sum ^ (uint8_t)*c) * 16777619u;
+    if (sum != s_sum && ++s_n <= 40) {
+        s_sum = sum;
+        for (char *c = buf; *c; c++) if (*c == '\n' || *c == '\r') *c = 0;
+        logf("nextact: read " REQ_PATH ": open %x size %d read %x bytes %u -> %s \"%s\"", e_open, (int32_t)size, e_read,
+             n, ok ? "request" : "no request", buf);
+    }
+    return ok;
 }
 
 int nextact_pick_c(uint32_t *regs)          /* 0x85a10, before setAction(this, cat, num, 0) of an AI pick */
@@ -111,8 +124,8 @@ int nextact_pick_c(uint32_t *regs)          /* 0x85a10, before setAction(this, c
     if (s_first) {
         s_first = 0;
         if (ok) s_done = q.seq;
-        logf("nextact: request file " REQ_PATH " %s (seq %u, old)", ok ? "read" : "NOT readable (build.py install with "
-             "TEST_NEXT_ACTION writes it)", ok ? q.seq : 0);
+        logf("nextact: request file " REQ_PATH " %s (seq %u, old)", ok ? "read" : "NOT readable or no request (the read "
+             "line above says which; build.py install with TEST_NEXT_ACTION writes it)", ok ? q.seq : 0);
     }
     static uint32_t s_seen;
     if (ok && q.seq != s_done && q.seq != s_seen) {     /* the file is read live: say so before the monster picks */
