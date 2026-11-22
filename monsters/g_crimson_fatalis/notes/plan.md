@@ -213,3 +213,40 @@ Stygian's own copies untouched). 4U spec read 2026-11-22 (C unless marked), tran
   flag left to GU.
 - em013_06_alias.c: variant 6 takes variant 1's branch at slot 86 (shell preload, rows 134..137), slot 79 (7/59 7/60
   attack flags) and the four shot posts (section 7).
+
+## 9. Phase 4: behaviour (module, 2026-11-22; built, 0 warnings, hookcheck / fncheck clean; not tested in game)
+
+4U spec read line by line on 2026-11-22 (slot 48 0x89cc6c, 7/74..76 0x899c30, zone 0x89e990 / 0x89ebdc / 0xb30050,
+slot 39 / 40, 0x89c2f4, 11/1, slot 50), then GU's twins. Corrections to section 2 (C): the prominence stores the
+**angles** this+0x8d20 (yaw W+0x7c) and the **position** this+0x40, not the other way round; W+0x1d2 -> W+0x98 is a
+counter, not the area (never read back); W+0x70 starts at 0 (no first cooldown); the trigger is frame 2; slot 50's
+kind-52 writes go to model materials (+0x14 bits 14..21), not hit parts; 11/1 is the **death** action (the carve
+points at its end), and this+0xd38 the blend of a smoothed position copy; 0x89ebdc's capsule radius is the zone's r;
+the W+0x2c object is a uMhHazeFilter made for every species.
+- em013_06.h: state struct gcf (one per unit and quest, Monoblos' pattern), GU twins: 4U this+0xd58 = GU this+0x13b8
+  (C, Monoblos), 4U W+0x5f5 = this+0x1065 floor (S) for the area list 0x6c1570 = GU 0x497cc (S, pairs), groundRay
+  0x183ad0 (to = 0 accepted, C), rage W+0x530 / W+0x538 = rec+0x518 / rec+0x520 (0x8172c / 0xbd100, C).
+- em013_06_state.c: slot 118 entry (spawn): rage layers of kinds 1 / 50 and 51 / 52 at the end of "Angry_End" (4U runs
+  White's 0x89ed3c, then 51 / 52; GU's slot 118 does variants 1 / 2 only); the haze filter; the theme registered
+  (bgm.c stand-in: type 13 only while our quests run). Slot 119 entry: the event quest's permanent rage (0xbd100 each
+  frame), the zone timer, the zone against the hunter; kinds 51 / 52 follow GU's glow state work+0x36 (4U 0x89e8a0
+  beside 0x89e670; GU's slot-132 variant-6 branch does 50 / 1 only, its exit is not hookable: up to one frame late, S).
+- em013_06_frame.c: slot 130 entry: the haze fade, the prominence (pattern table, frame 2, clock 630, post k at 60 k,
+  grid 0xe0db0c, rows 1400, size scale, ground ray with the area-list mask 128) -> uShell018 6. GU 0xd815d0 entry
+  (replaced for 0x60d): rage hitzones unless the event quest. Stepfire: GU moved 4U's footstep bit tracks into its PSL
+  files and ours carry em117_1's 2000..2003 on 4U's bits, so GU's PSL post of one of them is 4U's new footstep
+  section: the core b0gate's post list calls gcf_footstep -> uShell003 177 at joint 40 / 50 / 90 / 80 + sound 220 (S).
+- em013_06_moves.c: uEm013_00's cat-7 dispatcher 0xd8bc74 entry (one caller, slot 125; 74..76 go to the no-case thunk
+  there, Tigerstripe's 0xca10c hook untouched): 7/74..76 literally (motions 0x23d / 0x23e / 0x23c blend 4, 7/76
+  attack 46, shot at 128 / 284, event subtypes 67 / 68 / 66), the zone (one at a time, 300 frames).
+- em013_06_zone.c: the local hunter in the zone's area and capsule -> haze on, h+0x2850 |= 0x1000, every 11 frames of
+  its clock 0x2f4930(h, -2) (GU's HP change with Guts / faint, damage lock first; C), no skill test (4U: Cool Drinks
+  do not protect). Run from our slot 119 for the local hunter (4U: the player tick, local only: same result per
+  machine, S). GU tick gates h+0x2506 / h+0x274a taken as 4U's (G). Haze: GU uHazeFilter (0x8c090c, line 29 mask
+  0x10 as sEffect's filters, S), strength -> mHazeScale 0.05 x a / 255 (G), draw bits +0xc 0x400 / 0x800 (S); killed
+  in uEm013_00's destructors (port-only; 4U's delete not traced).
+- Not ported: 11/1's position-smoothing freeze (GU dropped it for its own Crimson; reader of this+0xd00 unknown);
+  slot 50's part-7 draw values (GU replaced 4U's material writes by its parts states, ours are GU em013_01's, S);
+  4U P+0x7fe (stops a hot area's drain inside the zone; Ingle Isle is not hot).
+- For the first test (logged): the haze draws at all and looks like 4U's (strength / range), its delete at quest
+  end; the stepfire on every footstep (one post per PSL section); the prominence grid on slopes; the m51 / m52 glow.

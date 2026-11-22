@@ -650,6 +650,9 @@ def main():
         'em013_06_shell.h GCF_EFX_* != CODE_FX'
     assert [int(x) for x in re.findall(r'GCF_HDS_\w+ = (\d+)', hdr)] == list(range(len(SHELL_HDS))), \
         'em013_06_shell.h GCF_HDS_* != SHELL_HDS'
+    hdr = open(os.path.join(MON, 'module', 'em013_06.h'), encoding='utf-8').read()   # the theme's STQR (bgm.c)
+    assert int(re.search(r'GCF_BGM_STQR (0x[0-9a-f]+)u', hdr).group(1), 16) == extra_ids['bgm_stqr'], \
+        'em013_06.h GCF_BGM_STQR != the bgm_stqr file ID'
     for k in range(51):
         if k not in own and manifest[k] != -1: src_of[k] = 'shared (GU em013_01, its file ID)'
 

@@ -212,6 +212,13 @@ HOOKS = [
     # four shot posts (register rewrites, one MID_EXIT)
     ('em013_06_preload', 0xD8E334), ('em013_06_flags', 0xD8E0F8), ('em013_06_shot_d', 0xD89840),
     ('em013_06_shot_a', 0xD831CC), ('em013_06_shot_b', 0xD851C4), ('em013_06_shot_c', 0xD89320),
+    # its 4U em117 behaviour (entry hooks, return 0 = GU's body runs on): slot 118 spawn setup, slot 119 state frame
+    # (em013_06_state.c), slot 130 prominence (em013_06_frame.c), the hitzone switch 0xd815d0 (replaced for it), the
+    # cat-7 dispatcher for 7/74..76 (em013_06_moves.c), the destructors (slots 0 / 1: its heat haze filter killed,
+    # em013_06_zone.c); its stepfire through the core b0gate's post list
+    ('em013_06_spawn', 0xD808F0), ('em013_06_state', 0xD81A08), ('em013_06_frame', 0xD80EEC),
+    ('em013_06_meat', 0xD815D0), ('em013_06_act7', 0xD8BC74), ('em013_06_dtor', 0xD807F0),
+    ('em013_06_delete', 0xD80844),
     ('seltas_ds_act', 0xFDC074),   # uEm076_00 slot 125: Desert Seltas (variant 1): his 4U entry and death (monsters/desert_seltas/module/seltas.c)
     ('seltas_dsq_react', 0xF9BE10),  # uEm069_00 category 10, which GU ends at once for a variant: her 4U reactions (seltas_react.c)
     # their own 4U shots (monsters/desert_seltas/module/seltas_shots.c): GU's variant skips before a post (MID_EXIT: on to

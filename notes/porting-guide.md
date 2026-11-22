@@ -753,3 +753,15 @@ Notes: monsters/tigerstripe_zamtrios/notes/ (plan, phase1-variant-map, missing-a
 - A GU hook pair cannot hold a branch: to change a variant compare, rewrite the register in the pair just before the
   `cmp` (the trampoline replays it with the new value), or point the load's offset register at a byte holding the
   wanted value when the pair before the load must not be skipped (em013_06_alias.c shot_c).
+- 4U's motion bit tracks (the footstep "slots" a class reads through 0x960478, codes like 2000..2003) became GU's PSL
+  files: a 4U action tied to a new section of such a track (Crimson's stepfire shell) runs from the PSL post of that
+  record. The core b0gate (GU's PSL post, every monster's) tells a port of its unit's PEL u posts (s_posts).
+- A GU class's own sub-dispatcher (uEm013_00's cat-7 0xd8bc74, one caller) is a cleaner hook for missing actions than
+  the shared no-case thunks 0xca118 / 0xca10c (Tigerstripe's, which need a return-address filter): an entry hook that
+  returns 1 goes back to slot 125 as GU's own case would.
+- Before adding a field to a core struct that ports initialize positionally (port_bgm, b0port), look for a way
+  without it: every port's initializer then warns (-Wmissing-field-initializers). A variant run by GU's class takes
+  the BGM stand-in path (its em type, answered only while its quests run).
+- Hunter-side 4U code (heat ticks, HP drains) can often run from the monster's own slot 119 for the local hunter:
+  4U's player tick is local too, so every machine gets the same result. GU's HP change is 0x2f4930(h, delta) (damage
+  lock, Guts, faint; C).

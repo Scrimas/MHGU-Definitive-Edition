@@ -7,7 +7,8 @@
  * current action. Each port lists its records, the bits each action sets (tools/gate4u.py finds them in 4U's
  * dispatcher; each row is read in the 4U code before it goes in) and the bits 4U sets outside its actions. GU's own
  * records (other ids) are never touched. Stygian Zinogre's GU class keeps 4U's bits as one number (EN_MOVECLASS),
- * which its own PSL hook tests (em057_01_efx.c). */
+ * which its own PSL hook tests (em057_01_efx.c). A port whose 4U code is tied to the post of its own records is
+ * told of them (s_posts: G-rank Crimson Fatalis' stepfire, whose footstep sections GU keeps only as PSL records). */
 #include <stdint.h>
 #include "game.h"
 #include "util.h"
@@ -22,6 +23,7 @@ static const struct b0port *const s_ports[] = {
     &em005_01_b0port, &em068_01_b0port, &em069_01_b0port, &em070_01_b0port, &em089_b0port, &em090_00_b0port,
     &em090_01_b0port,
 };
+static const struct b0post *const s_posts[] = { &em013_06_b0post };
 
 static uint32_t mask4u(const struct b0port *p, const void *self, uint8_t cat, uint8_t num)
 {
@@ -40,6 +42,10 @@ int b0gate_c(uint32_t *regs)
     const struct b0port *p = 0;
     uint32_t slot = regs[R3], id;
     if (!self || !data || slot >= 32) return 0;
+    for (uint32_t i = 0; i < sizeof s_posts / sizeof s_posts[0]; i++)
+        if (FIELD(uint16_t, self, EN_ID) == s_posts[i]->em &&
+            FIELD(uint32_t, data, PSL_KIND + 4 * slot) == KIND_PEL_U)
+            s_posts[i]->posted((void *)self, FIELD(uint16_t, data, 4 + 2 * slot));
     for (uint32_t i = 0; i < sizeof s_ports / sizeof s_ports[0]; i++)
         if (FIELD(uint16_t, self, EN_ID) == s_ports[i]->em) p = s_ports[i];
     if (!p || FIELD(uint32_t, data, PSL_KIND + 4 * slot) != KIND_PEL_U) return 0;
