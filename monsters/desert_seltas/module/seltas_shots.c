@@ -113,6 +113,15 @@ int seltas_shot_q1_c(uint32_t *regs) { return mark_dsq(regs, 1); }   /* 0xf96bc4
 int seltas_shot_q2_c(uint32_t *regs) { return mark_dsq(regs, 2); }   /* 0xf96c74 */
 int seltas_shot_q3_c(uint32_t *regs) { return mark_dsq(regs, 3); }   /* 0xf96d24 */
 
+/* 0xf96b14 (cmp r5, #3 / cmpne r5, #0: only modes 0 / 3 reach the three shots, r5 = the mode, r4 = this): her 7/15 / 7/34
+ * (modes 1 / 2, motion 0x426) fire 7/9's three shots too, at its frames 100 / 110 / 120, right after her burst at 101. The
+ * maintainer's choice (2026-11-22), a DEVIATION: 4U's 0x78e688 posts no shell in modes 1 / 2 (C), GU's own Queen neither. */
+int seltas_shot_qm_c(uint32_t *regs)
+{
+    if (IS_DSQ((void *)regs[R4]) && (regs[R5] == 1 || regs[R5] == 2)) regs[R5] = 0;
+    return 0;
+}
+
 /* 0xfdcbe4: GU's shell class at a ground hit, right before it posts the splash 0x13a (r4 = the shell that hit) */
 int seltas_shot_g_c(uint32_t *regs)
 {

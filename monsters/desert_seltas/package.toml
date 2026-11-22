@@ -6,10 +6,10 @@ title = "Desert Seltas"
 class = "Neopteron"        # its class, GU's name (monsterName 253..267): the installer's subtitle in every language
 version = "0.1.20"      # bump on every published change of this package's files (data, assets or code); 0.1.20:
                         # their one-shot motion effects (4U MEF slot mode 0) play to their end, no longer stopped
-                        # one frame after their post (build_seltas_arc.py pel_ground_records): the Queen's shot
+                        # one frame after their post (build_seltas_arc.py pel_ground_records): the Queen's water
                         # burst of 7/15 / 7/34, his 0x341 spray, his impact burst, her qe006_007 puffs;
-                        # her 7/15 / 7/34 water bullets from Capcom's GU record of the same 4U record (em069_00_003,
-                        # a DEVIATION by the maintainer's choice: our conversion drew no bullets);
+                        # her 7/15 / 7/34 also fire 7/9's three shots after the burst (seltas_shots.c seltas_shot_qm,
+                        # a DEVIATION by the maintainer's choice: 4U fires none there);
                         # 4U's fully random reward lists (flags 0x8003) as GU condition 2 (tools/quest4u.py rem_4u;
                         # was 1: their first item always drawn): 1068, 11138, 11139 rows B, 11140's sub row;
                         # their quest HP rows (issue #49, tools/build_seltas_quest.py): 11374 his 89 (was 81: his 4U

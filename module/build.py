@@ -226,6 +226,7 @@ HOOKS = [
     ('seltas_shot_a', 0xFD531C), ('seltas_shot_b', 0xFD6130), ('seltas_shot_c0', 0xFD7C78), ('seltas_shot_c', 0xFD7F30),
     ('seltas_shot_d', 0xFD8240), ('seltas_shot_e', 0xFD86E4), ('seltas_shot_q', 0xF987D0),
     ('seltas_shot_q1', 0xF96BC4), ('seltas_shot_q2', 0xF96C74), ('seltas_shot_q3', 0xF96D24),
+    ('seltas_shot_qm', 0xF96B14),  # her 7/15 / 7/34 (modes 1 / 2) past the gate to 7/9's three shots (seltas_shots.c)
     ('seltas_shot_g', 0xFDCBE4),   # GU's Seltas shell class 0xfdca90, before its ground-splash post 0x13a: his own splash
                                    # (seltas_shots.c, 0.1.8)
     ('seltas_shot_g2', 0xFC6C00), ('seltas_shot_g3', 0xFC6DE0),  # GU's Seltas shell callback 0xfc6a30, before its two

@@ -559,46 +559,6 @@ def pel_ground_records(e, pel, S, notes):
     return res
 
 
-# Her 7/15 / 7/34 water bullets: Capcom's record (the maintainer's choice, 2026-11-22), a DEVIATION from 4U's look.
-# The bullets are MEF id 1 of motion 0x426 (em095_005, the normal Queen's 4U record byte for byte: em026_005); our
-# conversion of it draws the burst but no bullets (three test rounds, cause not found: notes/plan.md "One-shots").
-# Capcom's GU conversion of that same 4U record is em069_00u list-1 record 260 (em069_00_003, the same motion's
-# 1-frame run); the EFL and every file it names are among the shared GU files of our arc. id -> GU record id.
-CAPCOM_RECORDS = {'em069_01': {1: 260}}
-
-
-def capcom_records(e, pel, gu_pel_u, notes):
-    """PEL list 1 with the records of CAPCOM_RECORDS replaced by GU's (path and record bytes, our id kept)"""
-    want = CAPCOM_RECORDS.get(e.c['ours'])
-    if not want:
-        return pel
-    gn, gb = efl4u2gu.pel_lists(gu_pel_u)[1]
-    gu, i = {}, 0
-    for _ in range(gn):
-        j = i + 3 + gb[i] + 160
-        gu[struct.unpack_from('<H', gb, j - 160 + 0x30)[0]] = gb[i:j]
-        i = j
-    lists = efl4u2gu.pel_lists(pel)
-    n, body = lists[1]
-    out, i, done = bytearray(), 0, []
-    for _ in range(n):
-        j = i + 3 + body[i] + 160
-        rec = bytearray(body[i:j])
-        rid = struct.unpack_from('<H', rec, len(rec) - 160 + 0x30)[0]
-        if rid in want:
-            rec = bytearray(gu[want[rid]])
-            struct.pack_into('<H', rec, len(rec) - 160 + 0x30, rid)
-            done.append((rid, want[rid], rec[1:1 + rec[0]].decode('ascii')))
-        out += rec
-        i = j
-    assert sorted(r for r, _, _ in done) == sorted(want), ('CAPCOM_RECORDS: a record is missing', done)
-    notes.append('effects: Capcom\'s GU records for the same 4U records (our id, GU id, file), a DEVIATION: %s' % done)
-    res = pel[:8]
-    for k, (cnt, b) in enumerate(lists):
-        res += struct.pack('<I', cnt) + (bytes(out) if k == 1 else b)
-    return res
-
-
 def soil_units(d):
     """(units 4U multiplies by the area (soil) colour, other units with an Intensity level) of a 4U EFL: an area colour block (header +0x2c
     word 0 bit 4, +0xc byte 2 = 0) multiplies its mode-0 / mode-5 units, else only mode-5 units take it (tools/efl4u2gu.py convert_efl)"""
@@ -676,8 +636,6 @@ def effects(e, S, gu_pel_u, gu_pel_c, gu_psls, soil, notes):
     for b in e.c['banks']:
         left = {i: v for (kind, i), v in psl_ids(out[(e.psl % b, efl4u2gu.T['PSL'])]).items() if kind == 4 and i in ground}
         notes.append('effects bank %d: 4U ground-flag records left in its motions: %s' % (b, left))
-    # after the PSL merge: gu_common_effects takes a list-1 name outside em09N_* for 4U common dust and drops it
-    out[(e.pel_u, efl4u2gu.T['PEL'])] = capcom_records(e, out[(e.pel_u, efl4u2gu.T['PEL'])], gu_pel_u, notes)
     notes.append('effects: %d entries (tools/efl4u2gu.py effect_set)' % len(out))
     notes += ['  ' + l for l in log if not l.startswith('EFL ')]
     return [(p, t, d) for (p, t), d in out.items()]
