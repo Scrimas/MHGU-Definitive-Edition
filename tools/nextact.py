@@ -63,6 +63,7 @@ def main_gui(mods, port=PORT):
             self.card = 'no "nextact:" line yet (module built without TEST_NEXT_ACTION, or no monster has picked)'
             self.seen = None          # the last request seq the module has read
             self.acts = {}
+            self.filled = -1          # 'seen' pairs of the selected monster when its list was last drawn
 
         def compose(self) -> ComposeResult:
             yield Header()
@@ -141,6 +142,8 @@ def main_gui(mods, port=PORT):
                 for i, (em, d) in enumerate(rows):
                     t.update_cell_at((i, 3), '%d/%d' % d['last']); t.update_cell_at((i, 4), str(d['picks']))
             if self.sel is None and rows: self.select(rows[0][0])
+            elif self.sel is not None and len(self.mons.get(self.sel, {}).get('seen', ())) != self.filled:
+                self.fill()                       # a new pair seen: the 'seen' column (cursor kept on its action)
             pend = ('waiting: %s %d/%d (request %d, %s), applies at its next AI pick of category %d' % (
                 monster_name(self.pending[1]), self.pending[2], self.pending[3], self.pending[0],
                 'received by the game' if self.seen == self.pending[0] else 'not received by the game yet',
@@ -162,16 +165,25 @@ def main_gui(mods, port=PORT):
 
         def fill(self):
             t = self.query_one('#actlist', DataTable)
+            keep = None
+            if t.row_count and t.is_valid_row_index(t.cursor_row):
+                keep = t.coordinate_to_cell_key(t.cursor_coordinate).row_key.value
             t.clear()
             if self.sel is None: return
             pairs, names = self.acts[self.sel]
             seen = self.mons.get(self.sel, {}).get('seen', set())
+            self.filled = len(seen)
             flt = self.query_one('#filter', Input).value.strip().lower()
             for p in sorted(set(pairs) | seen):
                 a = names.get(p, {})
                 label = '%d/%d' % p
                 if flt and flt not in label and flt not in a.get('name', '').lower(): continue
                 t.add_row(label, a.get('name', ''), a.get('needs', ''), 'yes' if p in seen else '', key=label)
+            if keep is not None:
+                try:
+                    t.move_cursor(row=t.get_row_index(keep), animate=False)
+                except Exception:                 # that action filtered out
+                    pass
 
         def on_input_changed(self, event):
             self.fill()
