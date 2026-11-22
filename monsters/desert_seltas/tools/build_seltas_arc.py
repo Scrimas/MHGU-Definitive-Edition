@@ -26,8 +26,7 @@ names hold here unless written otherwise). GU's classes run them as variant 1 an
                                      differ: notes/plan.md "Effects"), a PSL per motion list; GU's common effects where their motions are GU's (the
                                      user's rule), and there GU's dust instead of their own 4U sand (the rule on environment effects);
                                      4U ground-flag records as world records on their ground (module/seltas_fx.c); grey rock chunks hidden
-                                     (hide_grey_models 'opaque_chunks', issue #6; translucent models in their own
-                                     colour kept), 4U's common dust and their own sand at 1x (DUST_1X, own_sand())
+                                     (hide_grey_models 'chunks', issue #6), 4U's common dust and their own sand at 1x (DUST_1X, own_sand())
       sound call / waves / bank / request   tools/snd4u2gu.py monster_entries
       dt_tune\\<ours>_dttune        their 4U values (tools/dt_convert.py on GU's file) + GU's retunes of the species where their 4U bytes equal the
                                      species' (dttune())
@@ -75,11 +74,6 @@ DUST_1X = tuple('qe006_%03d' % k for k in range(64))
 # brightness, for GU's look (the dust's lesson: 4U's x2 draws too bright in GU).
 SHOT_1X = ('em095_020', 'em095_021')
 SOLID_FILL = (127, 127, 127, 255)       # colourless 4U solid effect meshes: vertex RGB 127 = 1.0
-# Colourless 4U meshes of blended materials too (2026-11-22, her 7/15 / 7/34 water bullets: em095_005 entry 0 = ten
-# cm000_000 balls in 79b2b2b2, entries 2 / 5 qe001_000, all blended): 4U draws them in the unit colour, efl4u2gu's
-# default (0, 0, 0, 255) times GU's x2 vertex colour drew them black (as their rock units, 0.1.16). Capcom's model for
-# the same bullets in GU (cm101_000, em069_00_003 entry 10) carries RGB 127 on its translucent groups.
-BLEND_FILL = (127, 127, 127, 255)
 # Her underside glow 'XfB__m03_add' (0.1.17; the contributor on 0.1.16: "on the Queen's tail the textures on its underside look odd"):
 # a 4U constant-colour additive overlay (CBMaterialConstant, RSMeshBias10; mesh 29, g14: 112 vertices on the underside of her thorax and abdomen, 90 of
 # them on body vertices). 4U em095's material = 4U em026's (the Seltas Queen) byte for byte, its 4 animations too, and Capcom's GU em069_00 draws it
@@ -565,42 +559,40 @@ def pel_ground_records(e, pel, S, notes):
     return res
 
 
-# Capcom's own tail for the same 4U record (2026-11-22): her 7/15 / 7/34 bullet, id 1 of motion 0x426 (em095_005), is
-# the normal Queen's 4U record byte for byte (4U em026 id 1: em026_005, slot mode 0, joint 1, flags 0x224, k 0, the
-# same LMT slot and run), and Capcom gave that record GU em069_00u list-1 record 260 (em069_00_003, the same motion's
-# 1-frame run): +0x36 1 (placed), +0x38 1 (the body's rotation, 4U MEF flag 4), +0x3a 0, +0x86 1. Our follow tail
-# turned it with joint 1 and followed the joint. id -> GU record id; offset, scale, id, joint and mask stay ours.
-CAPCOM_TAILS = {'em069_01': {1: 260}}
+# Her 7/15 / 7/34 water bullets: Capcom's record (the maintainer's choice, 2026-11-22), a DEVIATION from 4U's look.
+# The bullets are MEF id 1 of motion 0x426 (em095_005, the normal Queen's 4U record byte for byte: em026_005); our
+# conversion of it draws the burst but no bullets (three test rounds, cause not found: notes/plan.md "One-shots").
+# Capcom's GU conversion of that same 4U record is em069_00u list-1 record 260 (em069_00_003, the same motion's
+# 1-frame run); the EFL and every file it names are among the shared GU files of our arc. id -> GU record id.
+CAPCOM_RECORDS = {'em069_01': {1: 260}}
 
 
-def capcom_tails(e, pel, gu_pel_u, notes):
-    """PEL list 1 with the tails of CAPCOM_TAILS (bytes 0x34.. of the GU record, our element mask +0x48 kept)"""
-    want = CAPCOM_TAILS.get(e.c['ours'])
+def capcom_records(e, pel, gu_pel_u, notes):
+    """PEL list 1 with the records of CAPCOM_RECORDS replaced by GU's (path and record bytes, our id kept)"""
+    want = CAPCOM_RECORDS.get(e.c['ours'])
     if not want:
         return pel
     gn, gb = efl4u2gu.pel_lists(gu_pel_u)[1]
     gu, i = {}, 0
     for _ in range(gn):
-        L = gb[i]
-        gu[struct.unpack_from('<H', gb, i + 3 + L + 0x30)[0]] = (gb[i + 1:i + 1 + L].decode('ascii'), gb[i + 3 + L:i + 3 + L + 160])
-        i += 3 + L + 160
+        j = i + 3 + gb[i] + 160
+        gu[struct.unpack_from('<H', gb, j - 160 + 0x30)[0]] = gb[i:j]
+        i = j
     lists = efl4u2gu.pel_lists(pel)
     n, body = lists[1]
-    out, i, done = bytearray(body), 0, []
+    out, i, done = bytearray(), 0, []
     for _ in range(n):
-        L = out[i]
-        st = i + 3 + L
-        rid = struct.unpack_from('<H', out, st + 0x30)[0]
+        j = i + 3 + body[i] + 160
+        rec = bytearray(body[i:j])
+        rid = struct.unpack_from('<H', rec, len(rec) - 160 + 0x30)[0]
         if rid in want:
-            path, src = gu[want[rid]]
-            assert path.endswith('em069_00_003') and out[i + 1:i + 1 + L].endswith(b'em095_005'), (rid, path)
-            msk = bytes(out[st + 0x48:st + 0x4c])
-            out[st + 0x34:st + 160] = src[0x34:]
-            out[st + 0x48:st + 0x4c] = msk
-            done.append((rid, want[rid]))
-        i = st + 160
-    assert sorted(r for r, _ in done) == sorted(want), ('CAPCOM_TAILS: a record is missing', done)
-    notes.append('effects: Capcom\'s GU tails for the same 4U records (our id, GU id): %s' % done)
+            rec = bytearray(gu[want[rid]])
+            struct.pack_into('<H', rec, len(rec) - 160 + 0x30, rid)
+            done.append((rid, want[rid], rec[1:1 + rec[0]].decode('ascii')))
+        out += rec
+        i = j
+    assert sorted(r for r, _, _ in done) == sorted(want), ('CAPCOM_RECORDS: a record is missing', done)
+    notes.append('effects: Capcom\'s GU records for the same 4U records (our id, GU id, file), a DEVIATION: %s' % done)
     res = pel[:8]
     for k, (cnt, b) in enumerate(lists):
         res += struct.pack('<I', cnt) + (bytes(out) if k == 1 else b)
@@ -656,8 +648,7 @@ def effects(e, S, gu_pel_u, gu_pel_c, gu_psls, soil, notes):
     spec = dict(arc=e.src4u, stage_unpacked=[], mef=e.c['mef'], em_efl=e.c['efl_dir'], groups=groups, extra=[],
                 lmts=[(e.c['mot4u'] % b, e.psl % b) for b in e.c['banks']], pel=e.pel_u, soil=soil,
                 list2=efl4u2gu.pel_lists(gu_pel_u)[2], solid_fill=SOLID_FILL, intensity=True, intensity_skip=DUST_1X + sand + SHOT_1X,
-                hide_grey_models='opaque_chunks',   # issue #6's rule, but translucent models in their own colour stay (efl4u2gu keep_translucent)
-                blend_fill=BLEND_FILL)
+                hide_grey_models='chunks')
     log = []
     out = efl4u2gu.effect_set(spec, log)
     # Their own rock model (0.1.16; the contributor on 0.1.15: at one of her moves "stones on the ground, completely black"): their
@@ -674,7 +665,6 @@ def effects(e, S, gu_pel_u, gu_pel_c, gu_psls, soil, notes):
             out[k] = efl4u2gu.hide_grey_models(out[k], S[k], hid, {model})
             notes += ['  own rock model %s in %s: %s' % (model, name, h) for h in hid]
     out[(e.pel_u, efl4u2gu.T['PEL'])] = pel_ground_records(e, out[(e.pel_u, efl4u2gu.T['PEL'])], S, notes)
-    out[(e.pel_u, efl4u2gu.T['PEL'])] = capcom_tails(e, out[(e.pel_u, efl4u2gu.T['PEL'])], gu_pel_u, notes)
     her_u, gu_c = pel_names(out[(e.pel_u, efl4u2gu.T['PEL'])], 1), {}
     for li in (1, 2):
         gu_c.update(pel_names(gu_pel_c, li))
@@ -686,6 +676,8 @@ def effects(e, S, gu_pel_u, gu_pel_c, gu_psls, soil, notes):
     for b in e.c['banks']:
         left = {i: v for (kind, i), v in psl_ids(out[(e.psl % b, efl4u2gu.T['PSL'])]).items() if kind == 4 and i in ground}
         notes.append('effects bank %d: 4U ground-flag records left in its motions: %s' % (b, left))
+    # after the PSL merge: gu_common_effects takes a list-1 name outside em09N_* for 4U common dust and drops it
+    out[(e.pel_u, efl4u2gu.T['PEL'])] = capcom_records(e, out[(e.pel_u, efl4u2gu.T['PEL'])], gu_pel_u, notes)
     notes.append('effects: %d entries (tools/efl4u2gu.py effect_set)' % len(out))
     notes += ['  ' + l for l in log if not l.startswith('EFL ')]
     return [(p, t, d) for (p, t), d in out.items()]
