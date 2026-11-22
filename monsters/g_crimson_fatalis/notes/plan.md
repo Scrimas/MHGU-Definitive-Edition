@@ -185,3 +185,31 @@ New in Phase 2 for the module (C):
   test at their twins (its fireball post 0x89e788 tests em 79 only: em 77 / 78 / 117 post the same uShell001 kinds), so
   variant 6 takes variant 1's branch there (module alias hooks).
 - BGM: the core's bgm_select matches em types (u8: 13 = every Fatalis); our registration needs the full ID 0x60d.
+
+## 8. The new shells and the variant aliases (module, 2026-11-22; built, 0 warnings, tools/hookcheck.py clean; not
+## posted yet: their posters are Phase 4's behaviour hooks)
+
+Shell framework moved to core (the maintainer's choice): module/shell.{c,h} (Dalamadur's dala_shell.c, the family a
+parameter), plus module/efx.{c,h} (world-point and on-unit posts of PEL u list 2; Dalamadur's, Gogmazios' and
+Stygian's own copies untouched). 4U spec read 2026-11-22 (C unless marked), translated literally:
+- em013_06_shell018.c, marker (uShell018 6): em117_205 at the point with the angles (x, y) for 30 frames, then the
+  eruption at its point with its angles; the kill finishes the effect.
+- em013_06_shell037.c, eruption (uShell037 8): ground snap (y - 500 .. y + 500, result not tested) + volume 8's -50;
+  em117_202 mask 1 at y + 50 with the yaw; hit record 6 (delay 15, window 60, power 10, sphere r150 on bone 1001 =
+  the capsule origin -> position); **it slides out horizontally along its yaw** once the delay is over (d = 3 x 1650 x
+  e / 60 up to e = 20, then 1650): no rise; scorch (em117_202 mask 2 at the ground under it) once e > 16, a latch set
+  before its ray; sound 216 every 30 frames from init (once); life 60.
+- em013_06_shell012.c, heatwave (uShell012 51 / 54 / 55, event 66..68): from the owner position + A turned by the
+  owner's angles (Rz, Rx, Ry); v and a turned by the yaw; 7/74 (r5 0): 54 / 67, motionCheck frame 128, A (0, 0, 600),
+  v (10, 0, 0), a (3, 0, 0); 7/75: 55 / 68, v and a negated; 7/76: 51 / 66, frame 284, A (0, 0, 1400), v (0, 0, 10),
+  a (0, 0, 3); all group 0xffff; window reset to 100 every frame, no map or hit test, life 60 (6000 units); em117_204
+  on the shell (mask 1 ahead, 2 sides); sound 221 once (timer arithmetic); angles from the velocity. Kill: the effect
+  is finished and waited for (GU: an effect must not outlive its unit).
+- em013_06_shell003.c, stepfire (uShell003 177): the default path (window 0 + 20, power 20, type 1, sphere r100 on bone
+  255), no effect, no sound; end when the slot is no longer active or age 200. The poster plays sound 220 at the joint.
+- Open (S / G, logged for the first test): GU's attack-slot start delay at slot +0x5c (4U +0x54; S from ATK_TIME's +8
+  shift); 4U's request flags 0x83 / 0x20 of the em117_202 posts and 0x110 of the heatwave are not mapped (G); the
+  eruption's init stage tests 0x6c5e88 / 0x6c3b94 not ported (G: area / stage-object tests); the marker's area draw
+  flag left to GU.
+- em013_06_alias.c: variant 6 takes variant 1's branch at slot 86 (shell preload, rows 134..137), slot 79 (7/59 7/60
+  attack flags) and the four shot posts (section 7).

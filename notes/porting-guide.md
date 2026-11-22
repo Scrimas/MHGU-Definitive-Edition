@@ -211,7 +211,10 @@ pairs where possible (tools/dt_vote.py, dt_map.py, snd4u2gu.py selftest), then a
   | 0xbfe98c | 0x49eac | camera shake |
   | 0x91df20 | 0x712a4 | species row; 4U row +0x48 (emd word 20, map-hit sphere: 4 offsets + radius +48) = the block GU 0x712a4 returns directly ([dtbase+0x84]) |
 - Shells: 4U posts uShellNNN objects through 0x660e88 (type = class). Port each as a GU uShellEnemy subclass
-  (examples: module/em089_shell*.c for uShell050 tar blobs, 051 ground splashes, 016 beams, 005 tremor). Port
+  on the core framework module/shell.h (class set-up, our copy of GU's request, arming, sounds; the port passes its
+  family {def file ID, row, log tag}) with code-posted effects through module/efx.h (examples:
+  monsters/dalamadur/module/dala_shell*.c, monsters/g_crimson_fatalis/module/em013_06_shell*.c; Gogmazios'
+  module/em089_shell*.c keeps its own copy: uShell050 tar blobs, 051 ground splashes, 016 beams, 005 tremor). Port
   their lifetimes completely: a shell's attack object (+0x168) clears byte +5 (= shell +0x16d) when the attack
   window (start + length of the attackdata record) runs out, and several 4U shells die on that.
 - Effects: GU PEL records posted through em089_efx.c. A live effect that follows something needs GU's per-frame
@@ -738,3 +741,15 @@ Notes: monsters/tigerstripe_zamtrios/notes/ (plan, phase1-variant-map, missing-a
 - A GU twin may drop a 4U call that edits shared species data at runtime: the Desert Queen's hold points (4U 0x799e24
   on the em data object's +0xa0 = GU dtbase +0x80, the points a held hunter is put on). Search GU's data files for the
   4U values (here joint 144 and the 0x8000 rotation) to find the twin of a runtime array.
+
+## Lessons from G-rank Crimson Fatalis (a 4U form GU's class keeps but never ships, 2026-11-22)
+- A variant number GU never ships (4U em117 = uEm013_00 variant 6, whose 4U tests GU kept as `cmp #6`) misses every
+  per-variant table and switch GU wrote for its own variants 0..2: slot 86 preloads the shell families for 0 / 1 / 2
+  only and returns for any other, so every shot of variant 6 would be refused for want of a resource; four shot
+  posts and slot 79 switch on 0 / 1 / 2 with no default. List every variant read of the class (`tools/variants_gu.py`
+  misses loads through the record: `ldrb rX, [rec, #0xa1cd]` = this+0xb5f5; grep `#0xa1cd` too), then take the 4U
+  twin's species reads to decide which GU variant's branch the new one takes (monsters/g_crimson_fatalis/module/
+  em013_06_alias.c: variant 1's, as 4U treats em117 as em078 there).
+- A GU hook pair cannot hold a branch: to change a variant compare, rewrite the register in the pair just before the
+  `cmp` (the trampoline replays it with the new value), or point the load's offset register at a byte holding the
+  wanted value when the pair before the load must not be skipped (em013_06_alias.c shot_c).

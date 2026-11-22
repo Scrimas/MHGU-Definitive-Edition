@@ -642,6 +642,14 @@ def main():
         new_files.append((fid,) + extras[name])
         extra_ids[name] = fid
     assert new_files[-1][0] <= FILE_ID_LAST, 'file IDs past the allocations.toml range: widen file_ids'
+    # the module's shells name this family by file ID, its HDS entries and our list-2 records (em013_06_shell.h)
+    hdr = open(os.path.join(MON, 'module', 'em013_06_shell.h'), encoding='utf-8').read()
+    assert int(re.search(r'GCF_SHELL_FILE (0x[0-9a-f]+)u', hdr).group(1), 16) == extra_ids['shell01'], \
+        'em013_06_shell.h GCF_SHELL_FILE != the shell01 file ID'
+    assert sorted(int(x) for x in re.findall(r'GCF_EFX_\w+ = (\d+)', hdr)) == [r[0] for r in CODE_FX], \
+        'em013_06_shell.h GCF_EFX_* != CODE_FX'
+    assert [int(x) for x in re.findall(r'GCF_HDS_\w+ = (\d+)', hdr)] == list(range(len(SHELL_HDS))), \
+        'em013_06_shell.h GCF_HDS_* != SHELL_HDS'
     for k in range(51):
         if k not in own and manifest[k] != -1: src_of[k] = 'shared (GU em013_01, its file ID)'
 

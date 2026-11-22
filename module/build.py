@@ -207,6 +207,11 @@ HOOKS = [
     ('em070_01_act', 0xFAE550),    # uEm070_00 slot 125: Shrouded Nerscylla (variant 1) log (monsters/shrouded_nerscylla/module/em070_01.c)
     ('em070_01_line', 0xF9F3EC),   # uEm070_00 slot 130's web line sound, GU's variant test: GU's variant-0 path for her (mid hooks, return 0)
     ('em070_01_line2', 0xF9F534),
+    # G-rank Crimson Fatalis (uEm013_00 variant 6): variant 1's branch where GU switches on 0 / 1 / 2 only
+    # (monsters/g_crimson_fatalis/module/em013_06_alias.c): slot 86's shell preload and slot 79's flags (MID_EXIT),
+    # four shot posts (register rewrites, one MID_EXIT)
+    ('em013_06_preload', 0xD8E334), ('em013_06_flags', 0xD8E0F8), ('em013_06_shot_d', 0xD89840),
+    ('em013_06_shot_a', 0xD831CC), ('em013_06_shot_b', 0xD851C4), ('em013_06_shot_c', 0xD89320),
     ('seltas_ds_act', 0xFDC074),   # uEm076_00 slot 125: Desert Seltas (variant 1): his 4U entry and death (monsters/desert_seltas/module/seltas.c)
     ('seltas_dsq_react', 0xF9BE10),  # uEm069_00 category 10, which GU ends at once for a variant: her 4U reactions (seltas_react.c)
     # their own 4U shots (monsters/desert_seltas/module/seltas_shots.c): GU's variant skips before a post (MID_EXIT: on to
@@ -280,6 +285,10 @@ MID_EXIT = {
     'seltas_shot_a': 0xFD5328, 'seltas_shot_b': 0xFD613C, 'seltas_shot_c': 0xFD7F40, 'seltas_shot_d': 0xFD824C,
     'seltas_shot_e': 0xFD86F0, 'seltas_shot_q': 0xF987E0,
     'seltas_mark': 0x4E4B20,     # seltas.c: past sSoundControl's clear of the unit's announce mark (it stays set)
+    # em013_06_alias.c: variant 1's branch for variant 6
+    'em013_06_preload': 0xD8E3FC,  # slot 86: rows 134..137 preloaded
+    'em013_06_flags': 0xD8E108,    # slot 79: this+0x13f4 |= 0x38000
+    'em013_06_shot_d': 0xD898F8,   # 0xd8775c: variant 1's post
 }
 # GU code that third-party Forge plugins check against v1.4 before hooking it (each plugin's table of main address +
 # v1.4 bytes, read with tools/plugin_sigs.py); a plugin whose check fails installs nothing. main() refuses a hook
@@ -731,7 +740,7 @@ def main():
     incs = ['-I', OUT, '-I', HERE] + [a for d in mods for a in ('-I', d)]
     srcs = [os.path.join(HERE, f) for f in ('crt0.S', 'main.c', 'util.c', 'port.c', 'quest.c', 'items.c', 'gear.c',
                                             'notes.c', 'stage_alias.c', 'bgm.c', 'icons.c', 'save.c',
-                                            'modsave.c', 'savefile.c', 'b0gate.c', 'shell.c')]
+                                            'modsave.c', 'savefile.c', 'b0gate.c', 'shell.c', 'efx.c')]
     for d in mods:                                     # every registered monster's code, registry order
         srcs += sorted(glob.glob(os.path.join(d, '*.c')))
     srcs += [os.path.join(OUT, 'port_monsters.c'), os.path.join(OUT, 'tables.S')]
