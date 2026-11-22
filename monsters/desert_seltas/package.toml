@@ -1,8 +1,11 @@
-# Desert Seltas package: Desert Seltas and Desert Seltas Queen (allocations.toml entries desert_seltas,
-# desert_seltas_queen), what the installer shows and installs, and the version written into the entries' data files.
+# Desert Seltas package: Desert Seltas Queen and Desert Seltas (allocations.toml entries desert_seltas_queen,
+# desert_seltas), what the installer shows and installs, and the version written into the entries' data files.
 name = "desert_seltas"
 kind = "monster"
-title = "Desert Seltas"
+title = "Desert Seltas Queen"
+main = "desert_seltas_queen"  # the entry the installer shows (name, icon; "with" the others): she is the package's
+                              # monster, her Desert Seltas comes with her (the maintainer, 2026-11-22); allocations.toml
+                              # keeps him first (its order orders the appended quests)
 class = "Neopteron"        # its class, GU's name (monsterName 253..267): the installer's subtitle in every language
 version = "0.1.20"      # bump on every published change of this package's files (data, assets or code); 0.1.20:
                         # their one-shot motion effects (4U MEF slot mode 0) play to their end, no longer stopped

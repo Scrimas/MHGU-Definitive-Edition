@@ -2,8 +2,9 @@
 
   ui_icons.py OUT_DIR     write micon_sd.tex and micon_hd.tex into OUT_DIR (module/build.py does)
 
-package_icons(): each monster package's icon (its first entry with a ui_icon) as 72 x 72 RGBA, the 4U 36-pixel art at
-2x: the installer's list icons (tools/release.py icons-<release>.zip, a release asset like the zips; never in git).
+package_icons(): each monster package's icon (its package.toml `icon` picture, else its `main` entry's or first entry's
+with a ui_icon) as 72 x 72 RGBA, the 4U 36-pixel art at 2x: the installer's list icons (tools/release.py
+icons-<release>.zip, a release asset like the zips; never in git).
 
 GU's icon setter 0x56ef50 only knows UI indexes 0..195 (micon00 / 01); index 196 + k is cell k of this atlas, shown by
 the module's hook on that setter. The atlas has the size and cell grid of the micon01 the game loaded, because the
@@ -78,14 +79,22 @@ def build(out_dir):
 
 
 def package_icons():
-    """{package: 72 x 72 x 4 uint8}: the icon of each package's first entry with a ui_icon, 4U art at 2x (nearest)"""
+    """{package: 72 x 72 x 4 uint8}: its package.toml `icon` (a picture in the repo, for a monster without 4U art:
+    the Crimson Fatalis), else the 4U art at 2x (nearest) of its `main` entry, else of its first entry with a ui_icon"""
+    from PIL import Image
     _, e = arcpack.read(open(SRC_4U, 'rb').read())
     src = tex.decode([d for p, _, d in e if p.endswith('cmn_micon_BM_MQ_NOMIP')][0])
     out = {}
-    for m in alloc.monsters():
-        p = alloc.package(m)
-        if 'ui_icon' in m and p not in out:
-            out[p] = np.ascontiguousarray(icon_4u(src, m['icon_4u']).repeat(2, 0).repeat(2, 1))
+    for p in alloc.packages():
+        pt = paths.package_toml(p)
+        if 'icon' in pt:
+            img = Image.open(os.path.join(paths.ROOT, pt['icon'])).convert('RGBA')
+            out[p] = np.asarray(img.resize((72, 72), Image.LANCZOS))
+            continue
+        ms = sorted((m for m in alloc.monsters() if alloc.package(m) == p and 'ui_icon' in m),
+                    key=lambda m: m['name'] != pt.get('main'))
+        if ms:
+            out[p] = np.ascontiguousarray(icon_4u(src, ms[0]['icon_4u']).repeat(2, 0).repeat(2, 1))
     return out
 
 

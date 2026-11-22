@@ -117,8 +117,14 @@ def shown_names(p):
         return map_titles(p), {}, []
     if p.get('kind') == 'bundle':
         return dict(p.get('titles', {'en': p['title']})), dict(p.get('subtitles', {})), []
-    names = [n for n in (entry_names(m['name']) for m in p['entries']) if n]
+    names = [n for n in (entry_names(m['name']) for m in shown_entries(p)) if n]
     return names[0], gu_classes()[p['class']], names[1:]
+
+
+def shown_entries(p):
+    """a package's entries with its package.toml `main` first (its name and icon in the installer: the Desert Seltas
+    Queen's package), else in allocations.toml order (which never changes: it orders the appended quests)"""
+    return sorted(p['entries'], key=lambda m: m['name'] != p.get('main'))
 
 
 def vtuple(v):
@@ -210,7 +216,7 @@ def check():
                 titles = shown_names(p)[0]
                 if titles['en'] != p['title']:
                     bad.append('%s: package.toml title %r, the game shows %r' % (name, p['title'], titles['en']))
-                if p.get('zh') and titles['zh_CN'] != p['zh'][p['entries'][0]['name']][1]:
+                if p.get('zh') and titles['zh_CN'] != p['zh'][shown_entries(p)[0]['name']][1]:
                     bad.append('%s: data file has no Chinese name (rebuild its name step)' % name)
         if p.get('kind') == 'bundle':        # no files: its requires are checked by tools/alloc.py
             codes = {code for code, _ in SHOWN}
@@ -486,7 +492,7 @@ def quests(p):
     sys.path.insert(0, paths.GU_PY)
     import gmd
     rf, out = p['romfs'], []
-    for m in p['entries'] + ([{'title': p['title'] + ' (Harvest Tours)', 'quests': p['boards']}] if p.get('boards')
+    for m in shown_entries(p) + ([{'title': p['title'] + ' (Harvest Tours)', 'quests': p['boards']}] if p.get('boards')
                              else []):
         for q in m.get('quests', []):
             qd = open(os.path.join(rf, 'nativeNX/loc/quest/questData/questData_%07d.ext' % q), 'rb').read()
