@@ -3,7 +3,9 @@ name = "stygian_zinogre"
 kind = "monster"
 title = "Stygian Zinogre"
 class = "Fanged Beast"     # its class, GU's name (monsterName 253..267): the installer's subtitle in every language
-version = "1.0.5"       # bump on every published change of this monster's files (data, assets or code); 1.0.5:
+version = "1.0.6"       # bump on every published change of this monster's files (data, assets or code); 1.0.6:
+                        # 4U's fully random reward lists (flags 0x8003) as GU condition 2 (tools/quest4u.py rem_4u;
+                        # was 1: their first item always drawn): 11429's rows A and B; 1.0.5:
                         # its Chinese text (lang/zh_TW.toml, zh_CN.toml; core 2.1.0)
 requires_core = "1.7.3"    # oldest core module (exefs) that runs this version: its sound-variable / aura hooks (issue #8)
 requires = ["heavens_mount"]  # packages it needs besides the core (maps/<name>; later shared utilities)

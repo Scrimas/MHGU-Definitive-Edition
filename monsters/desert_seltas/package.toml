@@ -5,6 +5,8 @@ kind = "monster"
 title = "Desert Seltas"
 class = "Neopteron"        # its class, GU's name (monsterName 253..267): the installer's subtitle in every language
 version = "0.1.20"      # bump on every published change of this package's files (data, assets or code); 0.1.20:
+                        # 4U's fully random reward lists (flags 0x8003) as GU condition 2 (tools/quest4u.py rem_4u;
+                        # was 1: their first item always drawn): 1068, 11138, 11139 rows B, 11140's sub row;
                         # their quest HP rows (issue #49, tools/build_seltas_quest.py): 11374 his 89 (was 81: his 4U
                         # row over the Seltas' in 4U's G2 Queen hunt), 11373 her 56 / his 64 (were 50 / 71: two-boss
                         # against two-boss, GU's q1011003); 0.1.19:

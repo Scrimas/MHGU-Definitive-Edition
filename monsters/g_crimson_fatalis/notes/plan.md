@@ -400,3 +400,11 @@ on em013_06u (em013_06_shell10 / 11, file IDs 0x10a92 / 0x10a93), em013_06u's id
 which now also holds Desert Seltas' swap: the three hook sites 0x48c4f8 / 0x48c5e4 / 0x48c54c take one owner each).
 GU's PSLs post no clods (S). Test 3: impacts without rocks, GU's Crimson (q11456) still with, Desert Seltas' shots
 unchanged (log "mhgu-de: shell swap ds" / "gcf").
+
+Follow-ups done (2026-11-22, the maintainer's go):
+- Reward condition of 4U's 0x8003 lists (C both games): 4U 0xaaf2fc passes "first entry fixed" only for list flags
+  0x8000 / 4, 0xaad870 draws the rest fully at random; GU 0x381d30 passes it to 0x38211c only for conditions 1 / 4.
+  quest4u.rem_4u: 0x8003 -> condition 2. 13 shipped quests change, each in one byte (rem +8, 1 -> 2): Black Gravios
+  1025, Dalamadur 10792, Desert Seltas 1068 / 11138 / 11139 / 11140, Monoblos 1057 / 1058 / 10784 / 10785, Stygian
+  Zinogre 11429 (rows A and B), Tigerstripe 11493, ours 11499; Heaven's Mount's tours unchanged.
+- The board pass log: the fullest of the 18 boards from their u16 counts (L+0x38 + 2k) instead of 0x3bc9f8's list 14.

@@ -285,9 +285,13 @@ static void board_place_ported(void *boards, uint32_t id, uint32_t star)
     s_cur = idx;
     if (boards != s_boards || idx < s_last || s_last == 0xffffffffu) {      /* a new pass */
         static uint32_t s_n;
-        if (++s_n <= 8)                       /* the raised caps (build.py QUEST_LIMIT_SITES): loaded quests, and the */
-            logf("mhgu-de: board pass: %u quests loaded (list %u), G4 board %u (previous pass)",   /* fullest board */
-                 FIELD(uint32_t, boards, 0x28), n, qlist_count(boards, QLIST_STAR_LAST));
+        if (++s_n <= 8) {                     /* the raised caps (build.py QUEST_LIMIT_SITES): loaded quests, and the */
+            uint32_t full = 0, top = 0;       /* fullest of the 18 boards (u16 counts at L+0x38, C; list 14 through */
+            for (uint32_t k = 0; k < 18; k++) /* 0x3bc9f8 read 0 in test 2: its slot map is not the board index) */
+                if (FIELD(uint16_t, boards, 0x38 + 2 * k) > top) top = FIELD(uint16_t, boards, 0x38 + 2 * k), full = k;
+            logf("mhgu-de: board pass: %u quests loaded (list %u), fullest board %u: %u quests (previous pass)",
+                 FIELD(uint32_t, boards, 0x28), n, full, top);
+        }
         s_done = s_bseen = 0;
     }
     s_boards = boards, s_last = idx;
