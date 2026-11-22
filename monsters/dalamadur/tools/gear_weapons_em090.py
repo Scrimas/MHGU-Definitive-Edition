@@ -18,8 +18,8 @@ Choices (G unless noted; Tigerstripe / Gogmazios rules):
     GL / IG / Bow; no element anywhere. Hidden (Awaken) values made visible (all but SA and IG: GU has no Awaken).
   - Stand-ins: Gogmazios' (GU's Akantor / Demonlord weapons: only the recipe templates come from them on melee) except
     HBG Demonic Cannon 73 (4U deviation 0; Akantor Cannon has mBure 1), LBG Demonlord Blaster 58 (mBure 6 = 4U's).
-    Kept from them (logged): bowgun recoil / reload / rapid or crouch fire / special ammo / slot 32, the bow arc shot
-    (not in the 4U record; Akantor Bow's).
+    Kept from them (logged): bowgun ammo slot 32, the bow arc shot (not in the 4U record; Akantor Bow's). Bowgun
+    rapid / crouching fire, internal ammo, recoil, reload, deviation: the 4U records' (issue #51, weapons4u).
   - Class data from the 4U records (weapons4u.py notes): bowgun ammo and loadable flags, bow charges (Spread 2-3 /
     Spread 2-4 / Pierce 4-5 / Rapid 5), 4 charge levels, coatings Poison / Para / Sleep / C.Range / Paint / Exhaust
     (+ an unknown bit 10), defense; SA Element phial (4U 1), GL Wide shelling Lv3 / 4 / 4 / 5 / 5, HH note set 44 =

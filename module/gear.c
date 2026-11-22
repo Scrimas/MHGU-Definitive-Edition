@@ -265,7 +265,12 @@ int gear_listed_get_c(uint32_t *regs)
 /* TBLA entry (40 B): path, flags, alloc, free, ctor, parse, u16 mem size, u16 record bytes, base, count, records */
 #define TBL_KIREAJI 1u          /* the sharpness table */
 #define TBL_NEEDS_KIREAJI 2u    /* LevelData rows use the monster's sharpness entries: skipped if those were refused */
+#define TBL_RAPIDSHOT 4u        /* rapidshotData: rapid-fire rows GU lacks (tools/weapons4u.py) */
+#define TBL_NEEDS_RAPIDSHOT 8u  /* LBG LevelData rows naming them: skipped unless they are in. GU's row getter 0x13f298
+                                   answers 0 past the count and cWeapon06LevelData vt34..37 read +4 of it (C); the
+                                   table loads before weapon06LevelData (resident.arc order, as kireajiData) */
 static int s_kire[PORT_N];      /* 0 not loaded, 1 appended, -1 refused */
+static int s_rapid[PORT_N];     /* the same for the rapidshotData rows */
 
 /* A weapon's own sharpness past the full table (KIRX, tools/weapons4u.py exact; gear_kire_slash_c below). KIRX entry
  * (20 B): u8 class NN, u8 weapon ID (mNo), u8 mLevel, u8 mKireType (the GU row its record holds), u16 mSlash[7], u16 0.
@@ -337,11 +342,17 @@ void gear_tables_loaded(void *res)        /* also items.c: the item table's TBLA
                     logf("mhgu-de: gear %s: %s sharpness refused, its levels not appended", path, port_monsters[m].name);
                     continue;
                 }
+                if ((flags & TBL_NEEDS_RAPIDSHOT) && s_rapid[m] <= 0) {
+                    logf("mhgu-de: gear %s: %s rapid-fire rows not in, its levels not appended", path,
+                         port_monsters[m].name);
+                    continue;
+                }
                 struct tbl_cls c = {PORT_U32(t, 8), PORT_U32(t, 12), PORT_U32(t, 16), PORT_U32(t, 20),
                                     FIELD(uint16_t, t, 24)};
                 int ok = tbl_append(res, &c, s + PORT_U32(t, 36), PORT_U32(t, 32), FIELD(uint16_t, t, 26),
                                     PORT_U32(t, 28), path);
                 if (flags & TBL_KIREAJI) s_kire[m] = ok ? 1 : -1;
+                if (flags & TBL_RAPIDSHOT) s_rapid[m] = ok ? 1 : -1;
                 if (flags & TBL_NEEDS_KIREAJI) kirx_level_loaded(m, path, ok);
             }
         }

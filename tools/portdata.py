@@ -46,6 +46,7 @@ LANGS = ('eng', 'fre', 'ger', 'ita', 'spa')       # text order in every section 
 ZH = ('chT', 'chS')                               # GU's Chinese text languages, which 4U lacks (lang/zh_*.toml)
 TEXT_LANGS = LANGS + ZH                           # a format-2 data file's text order (items.c language index)
 TBL_KIREAJI, TBL_NEEDS_KIREAJI = 1, 2
+TBL_RAPIDSHOT, TBL_NEEDS_RAPIDSHOT = 4, 8      # module/gear.c
 
 
 class Section:

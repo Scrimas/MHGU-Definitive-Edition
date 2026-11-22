@@ -240,6 +240,7 @@ armor_series = 8                        # 4 pairs (tools/gear_em090.py)
 armor_create = 4
 armor_process = 28                      # the templates' level rows: 2 x Akantor's + 2 x Akantor X's
 kireaji = 28                            # the weapons' 4U sharpness entries (tools/gear_weapons_em090.py)
+rapidshot = 1                           # the G LBGs' rapid fire Blast S Lv2 x2, a row GU lacks (tools/weapons4u.py)
 
 [monster.append.weapons]                # BaseData / MsgData / LevelData rows per class: one line each (create, HR
 w00 = 5                                 # upgrade, G, two Dalamadur X; the IG one more, tools/gear_weapons_em090.py)
@@ -735,6 +736,7 @@ w13 = 44
 armor_series = 2                        # Wroth (Blademaster + Gunner)
 armor_create = 1
 armor_process = 5                       # the template's level rows (GU Fatalis Crimson; tools/gear_em013_06.py)
+rapidshot = 1                           # Dith Valor's rapid fire Blast S Lv2 x2, a row GU lacks (tools/weapons4u.py)
 
 [monster.append.weapons]                # BaseData / MsgData / LevelData rows per class: one weapon each
 w00 = 1                                 # (tools/gear_weapons_em013_06.py); no sharpness row of its own (the table is

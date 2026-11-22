@@ -37,9 +37,12 @@ Sources:
     pair, S = on most, GU retuned the rest): 40-B records +14 defense (C), +15 bow charge levels = mTameDankai (C),
     bow +18 / +19 element, +20 / +21 status (type, s8 value: as melee +12..+15; S), bow +32 u32 coatings (S, bit 1
     Power, 2 Poison, 3 Para, 4 Sleep, 5 C.Range, 6 Paint, 7 Exhaust, 8 Blast; bits 9..15 unknown), bowgun +5
-    deviation = GU mBure (C, kept from the stand-in like recoil / reload), +7 ammo record index into the 39-B count
-    records AMMO_4U (one per bowgun; code literals 0x282368 / 0x28236c) and +32 40-bit loadable mask (C: decodes
-    Gogmazios' kiranico ammo exactly); melee +17 SA / CB phial = GU mBinType (S), GL (level - 1) * 3 + type =
+    deviation = GU mBure (C), +6 reload = GU mReloadSpeed - 3 and +15 recoil = 9 - GU mRecoil (S: 62 of the 70 GU
+    bowguns of a 4U name), +7 ammo record index into the 39-B count records AMMO_4U (one per bowgun; code literals
+    0x282368 / 0x28236c) and +32 40-bit loadable mask (C: decodes Gogmazios' kiranico ammo exactly); bowgun +22..+26
+    five special-fire slots, 0xff empty (C: getter 0x2f5e10, read by the clip size 0x28200c): HBG crouching fire = a
+    4U ammo index, LBG rapid fire = a row of RAPID_4U (Bethorned Dystopia: kiranico's Pierce 2 x3, Pellet 1 x3,
+    Sleep 1 x2); melee +17 SA / CB phial = GU mBinType (S), GL (level - 1) * 3 + type =
     GU mShootType / mShootLevel + 1 (S), HH note set = an index into NOTES_4U, byte-equal to GU fueMusicData (C;
     identity on most HH pairs). 4U elements +12 1..5 (fire, water, thunder, dragon, ice) = GU mElement 1..5 (C).
     Bow arc shot: not in the 40-B record (searched; G: another table).
@@ -63,7 +66,13 @@ Rules (notes section 8; port choices made for Gogmazios, kept for every monster)
     items GU lacks); create: mLv 1, mKey[0] 2, no provision, no scraps; process: one level-1 record per weapon,
     all-zero for a create weapon, no provision, no scraps.
   - Bowguns: ammo in section 2's slot order (n -> count n enabled, (n) -> count n disabled), from the 4U record
-    (ammo_4u); kept from the stand-in (logged): special ammo, rapid / crouch fire, recoil, reload, deviation, slot 32.
+    (ammo_4u). 4U's loadable Slicing / Demon / Armor / WyvernFire / Blast (no GU ammo slot) = GU internal ammo
+    (mUniqueShell), clip = the 4U count, quest supply = the 4U item's carry limit. Crouching fire (HBG mDownShot) =
+    the squatshotData row of each slot's ammo, rapid fire (LBG mQuickShot) = the rapidshotData row of the same ammo
+    and shot count; a 4U rapid row GU lacks is appended to rapidshotData (the 4U row's power and wait; allocations.toml
+    [monster.append] rapidshot). Slicing / Blast are GU Lv2 on a 4U G-rank weapon (rarity 8..10, the maintainer's
+    choice), Lv1 below. Recoil, reload, deviation: the 4U record's. Kept from the stand-in: ammo slot 32 (3, enabled
+    on every GU bowgun).
   - Names: A = B = C = the 4U name; descriptions: 4U's (EXP_4U index tables; create and upgrade share one in 4U).
 """
 import os, re, struct, sys, pickle
@@ -73,6 +82,7 @@ sys.path.insert(0, HERE)
 import paths
 sys.path.insert(0, paths.GU_PY)
 import alloc, gu, portdata                          # noqa: E402
+from items4u import ITEM_TABLE as ITEM_TABLE_4U     # noqa: E402
 from gear4u import text4u, gu_item_names, gu_str, exp_4u, LANGS, GU_ROMFS, EXE, EXE_BASE  # noqa: E402
 from build_assets import RomFS, arc as gu_arc, gmd  # noqa: E402
 
@@ -91,6 +101,12 @@ DB2_4U = 0xf588f4
 # 4U ammo index -> GU ammo slot (section 2): 0..19 the same (Normal .. Dragon), 20 none (Slicing, G), 21..30 -> 20..29
 # (Poison .. Recover), 31 / 32 none (G: Demon / Armor), 33 / 34 -> 30 / 31 (Paint / Tranq; order G, both 2 everywhere)
 AMMO_SLOT = dict([(k, k) for k in range(20)] + [(k, k - 1) for k in range(21, 31)] + [(33, 30), (34, 31)])
+# 4U ammo index without a GU slot -> (4U item: its carry limit is the internal ammo's quest supply, GU shell ID Lv1, Lv2).
+# GU shell IDs = the ammo slots 0..31, then GU item - 132 (S: 74 = item 206 "(None)", the empty mUniqueShell; 4U Slime
+# = 36, Slicing = 34 in GU's crouch rows of 4U's weapons; rapidshotData 26 / 28 = 4U's Slicing / Slime x2 rows exactly)
+SPECIAL_4U = {20: (115, 34, 35), 31: (120, 38, None), 32: (121, 40, None), 37: (116, 33, None), 38: (117, 36, 37)}
+SHELL_NONE = 74
+RAPID_4U = 0xe05f54     # LBG rapid-fire rows, 12 B: u32 4U ammo index, f32 power, u8 shots, u8 wait (C: 0x28200c)
 # bow coating mask bit -> GU mLoadEnableBottle indexes (4U Power = GU Power Lv1 + Lv2, as the Gogmazios / Tigerstripe
 # specs; [2] / [3] element coatings: GU only; [11]: set on every GU row)
 COATING_4U = {1: (0, 1), 2: (5,), 3: (6,), 4: (7,), 5: (4,), 6: (10,), 7: (8,), 8: (9,)}
@@ -169,6 +185,10 @@ PROCESS = Layout([('mNo', 'H'), ('mLv', 'H')] + sum([[('mItem[%d]' % k, 'H'), ('
                  sum([[('mPiece[%d]' % k, 'H'), ('mPieceNum[%d]' % k, 'H')] for k in range(3)], []))
 MSGIDX = Layout([('mIndex', 'I')])
 KIRE = Layout([('mSlash[%d]' % k, 'H') for k in range(7)])
+# table\rapidshotData / squatshotData rows (C: GU getters 0x13f298 / 0x13f2a0 index them by the LevelData byte, bounded
+# by the loaded count; cWeapon06LevelData vt34..37 read the shell, shots, power and wait); names ours
+RAPID = Layout([('shell', 'B'), ('shots', 'B'), ('power', 'B'), ('wait', 'B')])
+SQUAT = Layout([('shell', 'B'), ('shots', 'B')])
 
 
 def table(data, lay):
@@ -194,8 +214,8 @@ def weapon_4u(exe, nn, ptab, i):
             w.update(elem=r[18], elem_value=s8(r, 19), status=r[20], value=s8(r, 21), tame=r[15],
                      coatings=struct.unpack_from('<I', r, 32)[0])
         else:
-            w.update(bure=r[5], ammo=exe[AMMO_4U[nn] - EXE_BASE + 39 * r[7]:][:39],
-                     loadable=int.from_bytes(r[32:37], 'little'))
+            w.update(bure=r[5], reload=r[6], recoil=r[15], fire=tuple(k for k in r[22:27] if k != 0xff),
+                     ammo=exe[AMMO_4U[nn] - EXE_BASE + 39 * r[7]:][:39], loadable=int.from_bytes(r[32:37], 'little'))
         return w
     r = exe[u32(exe, PTAB_4U + 4 * ptab) - EXE_BASE + 24 * i:][:24]
     return dict(model=struct.unpack_from('<H', r, 0)[0], sharp=r[2], kire=r[3], price=struct.unpack_from('<I', r, 4)[0],
@@ -257,6 +277,16 @@ def ammo_4u(w):
         n = w['ammo'][k]
         out[s] = '%d' % n if (w['loadable'] >> k) & 1 else '(%d)' % n if s < 15 and n else '0'
     return ' '.join(out), [k for k in range(39) if k not in AMMO_SLOT and (w['loadable'] >> k) & 1]
+
+
+def shell_gu(a4, g_rank):
+    """GU shell ID of a 4U ammo index (Slicing / Blast: Lv2 on a G-rank weapon)"""
+    if a4 in AMMO_SLOT:
+        return AMMO_SLOT[a4]
+    if a4 not in SPECIAL_4U:
+        sys.exit('4U ammo index %d has no GU shell' % a4)
+    _, lv1, lv2 = SPECIAL_4U[a4]
+    return lv2 if g_rank and lv2 else lv1
 
 
 def bottles_4u(mask):
@@ -409,6 +439,13 @@ def build(spec, exact=None):
         hooks.append((hook, c['site'], name))
         return c
 
+    rd = res['table\\rapidshotData']
+    rn, rapid_gu = table(rd, RAPID)
+    rn += alloc.offset(name, 'rapidshot')
+    rapid_new = []                              # this monster's rapidshotData rows, appended at rn
+    squat_gu = table(res['table\\squatshotData'], SQUAT)[1]
+    carry_4u = lambda item: exe[ITEM_TABLE_4U - EXE_BASE + 20 * item + 3]
+
     for cs in classes:
         nn, ids4u, sid = cs['nn'], cs['ids4u'], cs['standin']
         short, txt, ptab, ctype = CLASS_INFO[nn]
@@ -449,19 +486,58 @@ def build(spec, exact=None):
                 for s, tok in enumerate(ammo.split()):
                     r['mLoadShellCount[%d]' % s] = int(tok.strip('()'))
                     r['mLoadEnableShell[%d]' % s] = int(tok != '0' and not tok.startswith('('))
-                if no_slot:
-                    log.append('%s %d %s: loadable 4U ammo without a GU slot (4U index: count) %s: left out' % (
-                        short, ids[k], t4['eng'][txt + 'Name'][i4], ['%d: %d' % (a, w['ammo'][a]) for a in no_slot]))
-                if w['bure'] != r['mBure']:
-                    log.append('%s %d %s: 4U deviation %d, the stand-in\'s mBure %d kept' % (
-                        short, ids[k], t4['eng'][txt + 'Name'][i4], w['bure'], r['mBure']))
-                fire = 'mDownShot' if nn == 4 else 'mQuickShot'
-                log.append('%s %d %s: kept from the stand-in (ID %d Lv%d): mRecoil %d, mReloadSpeed %d, mBure %d, '
-                           '%s %s, special ammo (shell, have, count) %s, ammo slot 32 (%d, %d)' % (
-                               short, ids[k], t4['eng'][txt + 'Name'][i4], sid, rows[-1]['mLevel'],
-                               r['mRecoil'], r['mReloadSpeed'], r['mBure'], fire, [r['%s[%d]' % (fire, j)] for j in range(5)],
-                               [(r['mUniqueShell[%d]' % j], r['mUniqueHaveShellCount[%d]' % j],
-                                 r['mUniqueShellCount[%d]' % j]) for j in range(5)],
+                wname = '%s %d %s' % (short, ids[k], t4['eng'][txt + 'Name'][i4])
+                g_rank = w['rare'] >= 8
+                left = [a for a in no_slot if a not in SPECIAL_4U]
+                if left:
+                    log.append('%s: loadable 4U ammo without a GU shell (4U index: count) %s: left out' % (
+                        wname, ['%d: %d' % (a, w['ammo'][a]) for a in left]))
+                uniq = [(shell_gu(a, g_rank), carry_4u(SPECIAL_4U[a][0]), w['ammo'][a]) for a in sorted(SPECIAL_4U)
+                        if (w['loadable'] >> a) & 1 and w['ammo'][a]]
+                assert len(uniq) <= 5, (wname, uniq)
+                uniq += [(SHELL_NONE, 0, 0)] * (5 - len(uniq))
+                for j, (sh, have, cnt) in enumerate(uniq):
+                    r.update({'mUniqueShell[%d]' % j: sh, 'mUniqueHaveShellCount[%d]' % j: have,
+                              'mUniqueShellCount[%d]' % j: cnt})
+                fire, fire_sh = [], []
+                for e in w['fire']:
+                    if nn == 4:                                  # crouching fire: a 4U ammo index
+                        sh = shell_gu(e, g_rank)
+                        row = [j for j, q in enumerate(squat_gu) if q['shell'] == sh]
+                        if not row:
+                            sys.exit('%s: crouching fire 4U ammo %d = GU shell %d, no squatshotData row' % (wname, e, sh))
+                        fire.append(row[0])
+                        fire_sh.append(sh)
+                        continue
+                    a4, power, shots, wait = struct.unpack_from('<IfBB', exe, RAPID_4U + 12 * e - EXE_BASE)
+                    q = dict(shell=shell_gu(a4, g_rank), shots=shots, power=round(100 * power), wait=wait)
+                    fire_sh.append(q['shell'])
+                    row = [j for j, x in enumerate(rapid_gu) if (x['shell'], x['shots']) == (q['shell'], shots)]
+                    if row:
+                        fire.append(row[0])
+                        if (rapid_gu[row[0]]['power'], rapid_gu[row[0]]['wait']) != (q['power'], wait):
+                            note = 'rapid fire GU row %d %s, 4U row %d power %d wait %d: GU\'s row' % (
+                                row[0], tuple(rapid_gu[row[0]].values()), e, q['power'], wait)
+                            if note not in log: log.append(note)
+                        continue
+                    if q not in rapid_new:
+                        rapid_new.append(q)
+                        log.append('rapid fire 4U row %d (shell %d x%d): no GU row, appended as rapidshotData row %d %s' % (
+                            e, q['shell'], shots, rn + rapid_new.index(q), tuple(q.values())))
+                    fire.append(rn + rapid_new.index(q))
+                fire_f = 'mDownShot' if nn == 4 else 'mQuickShot'
+                for j in range(5):
+                    r['%s[%d]' % (fire_f, j)] = fire[j] if j < len(fire) else 0
+                # the vote's ranges (GU mRecoil 5..8, mReloadSpeed 3..7, mBure 0..6)
+                if not (1 <= w['recoil'] <= 4 and w['reload'] <= 4 and w['bure'] <= 6):
+                    sys.exit('%s: 4U recoil %d / reload %d / deviation %d outside the GU map' % (
+                        wname, w['recoil'], w['reload'], w['bure']))
+                r.update(mRecoil=9 - w['recoil'], mReloadSpeed=w['reload'] + 3, mBure=w['bure'])
+                unloadable = [sh for sh in fire_sh if sh >= 32 and sh not in [u[0] for u in uniq]]
+                log.append('%s: %s %s%s, internal ammo (shell, supply, clip) %s; kept from the stand-in (ID %d Lv%d): '
+                           'ammo slot 32 (%d, %d)' % (
+                               wname, fire_f, fire, ' (internal shells it lacks, as 4U lists them: %s)' % unloadable
+                               if unloadable else '', [u for u in uniq if u[0] != SHELL_NONE], sid, rows[-1]['mLevel'],
                                r['mLoadShellCount[32]'], r['mLoadEnableShell[32]']))
             elif nn == 10:
                 bow = cs['bow']
@@ -590,6 +666,11 @@ def build(spec, exact=None):
     if kire:
         tables.append(('table\\kireajiData', cls('rKireajiData', kd[:4], 'gear_kireaji'), KIRE.size, kn,
                        [KIRE.enc(k) for k in kire]))
+    assert m_alloc['append'].get('rapidshot', 0) == len(rapid_new), \
+        'allocations.toml [monster.append] rapidshot != the %d rapid-fire rows GU lacks' % len(rapid_new)
+    if rapid_new:
+        tables.append(('table\\rapidshotData', cls('rRapidshotData', rd[:4], 'gear_rapidshot'), RAPID.size, rn,
+                       [RAPID.enc(q) for q in rapid_new]))
     for lang in LANGS:
         for nn in [c['nn'] for c in classes]:                    # every language: the same versions as eng
             assert lres[lang]['%s\\table\\weapon%02dMsgData' % (lang, nn)][:4] == lres['eng']['eng\\table\\weapon%02dMsgData' % nn][:4]
@@ -601,9 +682,13 @@ def sections(tables, texts, hooks, pwl_fix, exact=()):
     "eng\\table\\weapon00MsgData" is matched by "table\\weapon00MsgData"), TXTA, PWLF, KIRX (exact: build's list);
     and the hook lines"""
     tbl = []
+    rapid = any(t[0].endswith('rapidshotData') for t in tables)
     for path, c, rb, expect, recs in tables:
         flags = portdata.TBL_KIREAJI if path.endswith('kireajiData') else \
-            portdata.TBL_NEEDS_KIREAJI if path.endswith('LevelData') else 0
+            portdata.TBL_NEEDS_KIREAJI if path.endswith('LevelData') else \
+            portdata.TBL_RAPIDSHOT if path.endswith('rapidshotData') else 0
+        if rapid and path.endswith('weapon06LevelData'):    # its rapid fire names this monster's rapidshotData rows
+            flags |= portdata.TBL_NEEDS_RAPIDSHOT
         tbl.append(dict(path=path, cls=(c['alloc'], c['free'], c['ctor'], c['parse'], c['size']), rec_bytes=rb,
                         base=expect, records=b''.join(recs), flags=flags))
     secs = [portdata.tbla(tbl), portdata.txta([(n, e, [[gu_str(s) for s in ss] for ss in strs]) for n, e, strs in texts])]

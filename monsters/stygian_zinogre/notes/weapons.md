@@ -126,12 +126,10 @@ except hbg046 = set 19 = Oppressor's Wedge's (4U model 19 = GU Loyal Thunder 19)
 ### Stand-ins and deviations from 4U (each one explicit)
 1. Bow arc shot (G): not in the 4U record (weapons4u notes) -> the stand-in Usurper's Rumble's mKyoku 1 (GU's form
    of the Brimstren bow's 4U parent line Distant Thunder). 4U's value for the Brimstren bows unread.
-2. Bowgun recoil / reload / deviation / rapid (LBG) or crouch (HBG) fire / special ammo / ammo slot 32 (G): from the
-   GU parent's final level row (HBG Loyal Thunder 101 Lv3 = Orcus Quarcus: recoil 7, reload 5, mBure 0, crouch
-   [45, 24, 4]; LBG Usurper's Crime 18 Lv8 = Oppressor's Rift: recoil 7, reload 5, mBure 0, rapid [16, 27]). 4U
-   deviation +5 = 0 on all six records = mBure 0 (agrees). Recoil / reload / rapid / special maps are unresolved.
-3. 4U loadable ammo without a GU slot, left out: HBG Slicing (3 / 4), 4U 32 (1), 37 (1), 38 (2); LBG Slicing 4,
-   4U 31 / 32 (Demon / Armor, 1 each).
+2. Bowgun ammo slot 32 (G): from the GU parent's final level row (HBG Loyal Thunder 101 Lv3, LBG Usurper's Crime 18
+   Lv8). Rapid (LBG) / crouching (HBG) fire, internal ammo, recoil, reload, deviation: the 4U records' since issue #51
+   (tools/weapons4u.py, notes/gear-weapons.md section 2).
+3. 4U loadable ammo without a GU slot (Slicing, Demon, Armor, WyvernFire, Slime) = GU internal ammo since issue #51.
 4. Recipe item GU lacks (G): I.Lagi D-Shocker (Ivory Lagiacrus, not in GU) -> Deathly Shocker (Lagiacrus' G shell,
    same part and rank), Brimstren Drakesong+ upgrade.
 5. First weapon's forge recipe for the 10 lines without a 4U create recipe: the materials of its 4U upgrade recipe

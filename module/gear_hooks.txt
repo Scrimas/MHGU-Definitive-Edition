@@ -43,3 +43,4 @@ gear_w14_msg 0x13BAA4
 gear_w_create 0x4CA100
 gear_w_process 0x4CA57C
 gear_kireaji 0x12D9C4
+gear_rapidshot 0x12E7E0

@@ -387,9 +387,14 @@ def moved_ids():
     bad = []
     if [n for n in now if n in old] != names:
         bad.append('allocations.toml: the entries shipped in %s changed order or left (registry order)' % tag)
+    # a table no entry appended to at the tag (rapidshot since 3.1.0) moves no shipped ID, whoever appends to it now
+    shipped_tables = {t for o in old.values() for t in o.get('append', {})}
     for n, o in old.items():
         for k in ID_KEYS:
-            if n in now and o.get(k) != now[n].get(k):
+            cur = now[n].get(k) if n in now else None
+            if k == 'append' and cur is not None:
+                cur = {t: v for t, v in cur.items() if t in shipped_tables}
+            if n in now and o.get(k) != cur:
                 bad.append('allocations.toml: %s %s changed since %s (%s -> %s)' % (n, k, tag, o.get(k), now[n].get(k)))
     steps = [s for s in migrations(core()['version']) if s['release'] == core()['version']]
     if bad and steps:

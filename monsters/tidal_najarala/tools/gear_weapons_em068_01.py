@@ -20,8 +20,8 @@ Each first weapon has a 4U create recipe and is forged from it (no GU record tou
 (one of her parts in another line's upgrade): Violet Pincer, Jajala Blade, Barroth Basher, Gaia Horizon, Weird Wacha Nakha, Monsieur Gore+,
 Diviathan Gunlance, Viand Bowfish and others (their lines are not hers).
 Data: raw, element, affinity, defense, slots, rarity, price, sharpness, bowgun ammo = the 4U records'.
-Stand-ins (records copied, then every 4U field set): as Tigerstripe's and Monoblos' per class: SnS 44, Lance 52, HBG 97 (recoil / reload /
-deviation / rapid fire / special ammo kept from it, logged by weapons4u), LS 81, SA 14, HH 43, IG 23.
+Stand-ins (records copied, then every 4U field set): as Tigerstripe's and Monoblos' per class: SnS 44, Lance 52, HBG 97 (only ammo slot 32
+kept from it since issue #51: crouching fire, internal ammo, recoil, reload, deviation from 4U, weapons4u), LS 81, SA 14, HH 43, IG 23.
 Kinsect (C): 4U extra 1 = Impact on all three Medusa -> GU mInsectType 12 Mauldrone (insectData_eng 12; GU's own IGs are 1 Culldrone x 42, 12
 Mauldrone x 38, 3 special ones).
 Recipe items GU lacks (SUBSTITUTES, G, listed for review), the rules of the earlier ports: Desert Seltas Queen -> Seltas Queen, Black Diablos ->

@@ -120,11 +120,13 @@ Bow enums (G, from StartMenuMsg string order):
   - [0] Power Lv1, [1] Power Lv2, [2] Elem Lv1, [3] Elem Lv2, [4] C.Range, [5] Poison, [6] Para, [7] Sleep, [8] Exhaust, [9] Blast, [10] Paint;
   - [10] and [11] are 1 on every row.
 
-Bowgun enums (G):
-- The 33 ammo slots follow the ammo item order 100..131: 0-2 Normal 1-3, 3-5 Pierce, 6-8 Pellet, 9-11 Crag, 12-14 Clust, 15 Flaming, 16 Water, 17 Thunder, 18 Freeze, 19 Dragon, 20-21 Poison 1-2, 22-23 Para, 24-25 Sleep, 26-27 Exhaust, 28-29 Recover, 30 Paint, 31 Tranq, 32 unknown (max 3). The maximum count per slot fits this order (Dragon max 3, Paint and Tranq max 2).
+Bowgun enums (G unless marked):
+- The 33 ammo slots follow the ammo item order 100..131: 0-2 Normal 1-3, 3-5 Pierce, 6-8 Pellet, 9-11 Crag, 12-14 Clust, 15 Flaming, 16 Water, 17 Thunder, 18 Freeze, 19 Dragon, 20-21 Poison 1-2, 22-23 Para, 24-25 Sleep, 26-27 Exhaust, 28-29 Recover, 30 Paint, 31 Tranq, 32 unknown (3 and enabled on every GU bowgun). The maximum count per slot fits this order (Dragon max 3, Paint and Tranq max 2).
 - mLoadEnableShell is 0/1. Count > 0 with enable 0 occurs (~4200 times per class): the ammo is listed but not loadable.
-- mUniqueShell values 33..74 are the special ammo (Slicing, Wyvern, ...); the ID map is not resolved.
-- mRecoil 5..8 (mode 7), mReloadSpeed 3..7 (mode 5) and mBure 0..6 (0 on ~75 % of rows) are internal values. The UI has 8 recoil, 8 reload and 6+1 deviation strings; the map is not resolved.
+- Shell IDs (S): 0..31 = the ammo slots, then GU item - 132: 33 Wyvern S, 34 / 35 Slicing S Lv1 / Lv2, 36 / 37 Blast S Lv1 / Lv2, 38 Demon S, 39 Demon Aff S, 40 Armor S, 41 Super Armor S, 42.. Force, Heavy, Sting, element Lv2, P.element, Cannon, Long, then the support shells, 74 = none (item 206 "(None)"). Evidence: 74 is the empty mUniqueShell; GU's crouch rows of 4U's weapons put 4U Slime at 36 and Slicing at 34; rapidshotData rows 26 / 28 equal 4U's Slicing x2 / Slime x2 rows.
+- mUniqueShell / mUniqueHaveShellCount / mUniqueShellCount = internal ammo: shell ID, quest supply, clip (unused: 74, 0, 0). GU's own ports of 4U weapons do not keep 4U's specials (GU redesigned them per weapon).
+- mDownShot (HBG crouching fire) = a row of table\squatshotData (2 B: shell, shots; row k = shell k - 1 up to 31, then shell k), mQuickShot (LBG rapid fire) = a row of table\rapidshotData (4 B: shell, shots, power %, wait; 55 rows, Blast S Lv2 has none); 0 = empty. C: GU getters 0x13f298 / 0x13f2a0 index the loaded table by row, bounded by its count (0 past it), cWeapon06LevelData vt34..37 read the row's four bytes.
+- mBure = 4U +5 (C), mReloadSpeed = 4U +6 + 3, mRecoil = 9 - 4U +15 (S: 62 of the 70 GU bowguns of a 4U name each). The UI has 8 recoil, 8 reload and 6+1 deviation strings.
 
 ## 3. pl_wNN (weapon\wNN\pwl\pl_wNN in resident.arc): rPlayerWeaponList
 
@@ -290,7 +292,9 @@ Values:
 - Bows and bowguns are 40 B:
   - model +0, rarity-1 +4, price +8, raw +12 (display x1.2 bow, x1.3 LBG, x1.5 HBG), slots +16, affinity +17.
   - Bow charges at +22: 08 03 08 03 = Spread4 Rapid4 Spread4 Rapid4, upgrade 08 03 09 04 (4U enum Rapid n = n-1, Spread n = n+4, G).
-  - The rest is not decoded; kiranico values are used below.
+  - Bow +15 = charge levels (C: 0x2f4304; the UI shows one more, greyed, with Load Up).
+  - Bowguns: +5 deviation, +6 reload, +15 recoil (section 2), +7 ammo count record, +22..+26 five special-fire slots, 0xff empty (C: getter 0x2f5e10): HBG crouching fire = a 4U ammo index, LBG rapid fire = a row of the 28-row table 0xe05f54 (12 B: u32 ammo index, f32 power, u8 shots, u8 wait), +28 flags (0x20 is not G rank: Nightfall Blaster, rarity 9, has 0x01), +32 40-bit loadable mask. A listed ammo outside the mask loads with its ammo-up skill (C: clip size 0x28200c).
+  - 4U ammo indexes 20 Slicing, 31 Demon, 32 Armor, 37 WyvernFire, 38 Slime (Blast) have no GU slot; 35 / 36 are 0 everywhere.
 
 Gogma weapons (C exe; status, sharpness and extras also C(k)). Status is Sleep everywhere, visible except IG. Defense 0, rarity 10, models as listed.
 
