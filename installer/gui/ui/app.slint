@@ -279,7 +279,8 @@ component Dialog inherits Rectangle {
     TouchArea { }
     Rectangle {
         width: root.box-width;
-        height: box.preferred-height;
+        // on a short window the list (Lines) gives way, the buttons stay in it
+        height: min(box.preferred-height, root.height - 32px);
         border-radius: 8px;
         background: Tok.raised;
         border-width: 1px;
@@ -302,7 +303,8 @@ component Dialog inherits Rectangle {
 
 component Lines inherits ScrollView {
     in property <[Line]> lines;
-    height: min(root.lines.length * 28px + 16px, 360px);
+    preferred-height: min(root.lines.length * 28px + 16px, 360px);
+    max-height: self.preferred-height;
     VerticalLayout {
         spacing: 4px;
         for l in root.lines: Text {
@@ -350,13 +352,17 @@ component SettingRow inherits Rectangle {
 export component AppWindow inherits Window {
     title: @tr("MHGU Definitive Edition Installer");
     icon: @image-url("../assets/icon-256.png");
-    // a fixed size (min = max): Hyprland and other tiling compositors open it floating, centered, at this size
-    preferred-width: 1066px;
-    preferred-height: 600px;
-    min-width: 1066px;
-    min-height: 600px;
-    max-width: 1066px;
-    max-height: 600px;
+    // opens at this size (src/main.rs), or smaller on a small screen (1920 x 1080 at 200 %: 960 x 540), cut to the
+    // compositor's bounds; a minimum of the same size would undo that and leave the buttons off the screen. The
+    // minimum still shows the list's switches
+    out property <length> open-width: 1066px;
+    out property <length> open-height: 600px;
+    preferred-width: open-width;
+    preferred-height: open-height;
+    min-width: 800px;
+    min-height: 360px;
+    max-width: open-width;
+    max-height: open-height;
     background: Tok.page;
 
     // header

@@ -1010,6 +1010,9 @@ fn main() {
     #[cfg(all(unix, not(target_os = "macos")))]
     let _ = slint::set_xdg_app_id(desktop::NAME);
     let ui = AppWindow::new().expect("the window opens");
+    // an explicit size before the window opens: winit cuts it to the compositor's bounds (Wayland), where Slint would
+    // ask for the preferred size again once the window is open
+    ui.window().set_size(slint::LogicalSize::new(ui.get_open_width(), ui.get_open_height()));
     i18n::set(i18n::index_of(&s.language));
     // CI (.github/workflows/installer.yml): the window opens, then closes by itself (--smoke); MHGU_DE_SNAPSHOT=<png>
     // also draws it into that file first (a crash, a hang or no picture fails the job)
