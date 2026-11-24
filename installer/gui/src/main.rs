@@ -5,6 +5,7 @@
 #![cfg_attr(windows, windows_subsystem = "windows")]
 
 mod desktop;
+mod fit;
 mod fonts;
 mod i18n;
 
@@ -1009,6 +1010,8 @@ fn main() {
     // any window.
     #[cfg(all(unix, not(target_os = "macos")))]
     let _ = slint::set_xdg_app_id(desktop::NAME);
+    // the window fits a small screen (src/fit.rs). Where winit cannot start, AppWindow::new() below says why
+    let _ = slint::BackendSelector::new().with_winit_custom_application_handler(fit::Fit).select();
     let ui = AppWindow::new().expect("the window opens");
     i18n::set(i18n::index_of(&s.language));
     // CI (.github/workflows/installer.yml): the window opens, then closes by itself (--smoke); MHGU_DE_SNAPSHOT=<png>

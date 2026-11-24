@@ -279,30 +279,37 @@ component Dialog inherits Rectangle {
     TouchArea { }
     Rectangle {
         width: root.box-width;
-        height: box.preferred-height;
+        // never taller than the window (a small screen, src/fit.rs): what does not fit scrolls, the buttons too
+        height: min(box.preferred-height, root.height - 32px);
         border-radius: 8px;
         background: Tok.raised;
         border-width: 1px;
         border-color: Tok.line;
         drop-shadow-blur: 24px;
         drop-shadow-color: #00000060;
-        box := VerticalLayout {
-            padding: 20px;
-            spacing: 12px;
-            Text {
-                text: root.title;
-                font-size: 18px;
-                font-weight: 600;
-                wrap: word-wrap;
+        ScrollView {
+            content-width: self.visible-width;
+            content-height: box.preferred-height;
+            box := VerticalLayout {
+                width: parent.width;
+                padding: 20px;
+                spacing: 12px;
+                Text {
+                    text: root.title;
+                    font-size: 18px;
+                    font-weight: 600;
+                    wrap: word-wrap;
+                }
+                @children
             }
-            @children
         }
     }
 }
 
 component Lines inherits ScrollView {
     in property <[Line]> lines;
-    height: min(root.lines.length * 28px + 16px, 360px);
+    in property <length> room: 360px;
+    height: min(root.lines.length * 28px + 16px, root.room);
     VerticalLayout {
         spacing: 4px;
         for l in root.lines: Text {
@@ -350,13 +357,19 @@ component SettingRow inherits Rectangle {
 export component AppWindow inherits Window {
     title: @tr("MHGU Definitive Edition Installer");
     icon: @image-url("../assets/icon-256.png");
-    // a fixed size (min = max): Hyprland and other tiling compositors open it floating, centered, at this size
+    // a fixed size (min = max): Hyprland and other tiling compositors open it floating, centered. src/fit.rs cuts it
+    // to a small or scaled screen (1920 x 1080 at 200 %: 944 x 444)
+    in-out property <length> fixed-width: 1066px;
+    in-out property <length> fixed-height: 600px;
     preferred-width: 1066px;
     preferred-height: 600px;
-    min-width: 1066px;
-    min-height: 600px;
-    max-width: 1066px;
-    max-height: 600px;
+    min-width: self.fixed-width;
+    min-height: self.fixed-height;
+    max-width: self.fixed-width;
+    max-height: self.fixed-height;
+    // a dialog's list on a short window: its title, the rows below it and its buttons stay on the window (360 px at
+    // the full 600)
+    property <length> lines-room: min(360px, self.height - 240px);
     background: Tok.page;
 
     // header
@@ -700,7 +713,10 @@ export component AppWindow inherits Window {
         width: root.width;
         height: root.height;
         title: root.dialog-title;
-        Lines { lines: root.dialog-lines; }
+        Lines {
+            lines: root.dialog-lines;
+            room: root.lines-room;
+        }
         if root.clean-shown: HorizontalLayout {
             spacing: 12px;
             Text {
@@ -734,7 +750,10 @@ export component AppWindow inherits Window {
         width: root.width;
         height: root.height;
         title: root.dialog-title;
-        Lines { lines: root.dialog-lines; }
+        Lines {
+            lines: root.dialog-lines;
+            room: root.lines-room;
+        }
         HorizontalLayout {
             alignment: end;
             Button {

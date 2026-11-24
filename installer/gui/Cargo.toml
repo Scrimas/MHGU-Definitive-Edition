@@ -23,6 +23,8 @@ slint = { version = "=1.18.1", default-features = false, features = [
     "renderer-femtovg",
     "renderer-software",
     "compat-1-2",
+    # winit's events before Slint's (src/fit.rs); the pin above keeps this unstable API fixed
+    "unstable-winit-030",
 ] }
 rfd = { version = "0.15", default-features = false, features = ["xdg-portal", "tokio"] }
 # the menu entry's folders (src/desktop.rs; core uses the same)
