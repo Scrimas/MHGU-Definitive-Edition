@@ -11,6 +11,7 @@ releases on MHGU-Definitive-Edition. Rust + Slint (Fluent), like MHGU_Editor.
 | `core/` | everything without a window: `manifest.rs` (schema 1), `source.rs` (GitHub or a local folder), `places.rs`, `record.rs` (`mhgu-de-install.json`), `plan.rs`, `apply.rs` (download, check, extract, swap), `selfupdate.rs`, `settings.rs`; `src/bin/cli.rs` = `mhgu-de-cli` |
 | `gui/` | the window: `ui/app.slint`, `src/main.rs`, `src/i18n.rs`, `src/desktop.rs` (the menu entry / Start Menu shortcut), `src/fonts.rs` (the AppImage's own fonts when the system has none), `src/fit.rs` (the window cut to a small or scaled screen), `lang/` (gettext catalogs) |
 | `tools/i18n.py` | keeps `gui/lang/` in step with the strings (`@tr` in .slint, `tr` / `trf` / `trn` in Rust) |
+| `tools/window_matrix.py` | the window on small and scaled screens under headless KWin (Wayland, X11), Hyprland, sway, GNOME and Wine (Linux): where it goes, whether it fits and floats |
 | `tests/cli_test.py` | end to end: a fake release of dummy files installed into every kind of place by `mhgu-de-cli` |
 | `packaging/build.py` | the release files, each for x86_64 and arm64: `.exe` (mingw-w64; llvm-mingw for arm64), `.AppImage` (zig, glibc 2.28, with its fallback fonts), `SHA256SUMS-<v>` |
 | `packaging/fonts.py` | the AppImages' fallback fonts, cut at each build to the characters the installer shows: Inter, Noto Sans Symbols, Noto Sans SC and TC (`build.py` runs it; needs fontTools) |

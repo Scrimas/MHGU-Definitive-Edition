@@ -122,6 +122,7 @@ cargo build --manifest-path installer/Cargo.toml -p mhgu-de-core --bin mhgu-de-c
 python3 installer/tests/cli_test.py                                 # end to end: a fake release, every place kind
 cargo run --manifest-path installer/Cargo.toml -p mhgu-de-installer  # the window, on the real releases
 python3 installer/tools/i18n.py                                     # after changing a shown string: the catalogs
+python3 installer/tools/window_matrix.py OUT new=installer/target/release/mhgu-de-installer  # window size, Linux
 ```
 
 It reads the mod's releases from MHGU-Definitive-Edition-Packages and its own from this repository;
