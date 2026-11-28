@@ -5,7 +5,8 @@ title = "Gogmazios"
 class = "Elder Dragon"     # its class, GU's name (monsterName 253..267): the installer's subtitle in every language
 icon = ".github/icons/Gogmazios.png"   # the installer's icon (tools/ui_icons.py package_icons): 4U has no
                            # art of its own (its boards show '?'), so the README's icon
-version = "1.1.10"      # bump on every published change of this monster's files (data, assets or code); 1.1.10:
+version = "1.1.11"      # bump on every published change of this monster's files (data, assets or code); 1.1.11:
+                        # rebuilt on Arch: arcs recompressed, music re-encoded, same content; 1.1.10:
                         # Gogma X defense 134 / 81 (was 132 / 77: all four Elder X anchors, issue #50); 1.1.9:
                         # the Demolisher's effects at their points, its charge sound, its prompt icon (issue #6;
                         # core 3.0.0)

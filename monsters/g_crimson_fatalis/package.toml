@@ -8,7 +8,8 @@ icon = ".github/icons/Crimson_Fatalis.png"   # the installer's icon (tools/ui_ic
                            # art of its own (its boards show '?'), so Jeremiah V10's fan icon from the Monster Hunter
                            # Fanon wiki (Crimson Fatalis FourthGen Icon), used with the credit its licence asks for
                            # (README Credits)
-version = "0.4.0"          # bump on every published change of this monster's files (data, assets or code); 0.4.0:
+version = "0.4.1"          # bump on every published change of this monster's files (data, assets or code); 0.4.1:
+                           # rebuilt on Arch: arcs recompressed, music re-encoded, same content; 0.4.0:
                            # test 1 fixes: GX Fatalis Crimson and its ticket dropped (GU ships that set), the third
                            # quest is 11497 (11400 never loaded), opaque weapon blades, haze at half strength, its
                            # fireball impacts without GU's clods (copies of GU Crimson's families 0x86 / 0x87, core

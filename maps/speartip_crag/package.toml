@@ -4,7 +4,9 @@
 name = "speartip_crag"
 kind = "map"
 title = "Speartip Crag"
-version = "1.0.1"          # bump on every published change of this map's files. 1.0.1: supply rockets land on
+version = "1.0.2"          # bump on every published change of this map's files. 1.0.2:
+                           # rebuilt on Arch: arcs recompressed, music re-encoded, same content;
+                           # 1.0.1: supply rockets land on
                            # its floors (map_com landing points, issue #47)
 requires_core = "2.0.0"    # oldest core that knows map packages (module/port.c port_installed: a monster whose
                            # map is missing counts as not installed)

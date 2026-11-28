@@ -2,7 +2,8 @@
 name = "tidal_najarala"
 title = "Tidal Najarala"
 class = "Snake Wyvern"     # its class, GU's name (monsterName 253..267): the installer's subtitle in every language
-version = "0.2.13"      # bump on every published change of this monster's files (data, assets or code); 0.2.13:
+version = "0.2.14"      # bump on every published change of this monster's files (data, assets or code); 0.2.14:
+                        # rebuilt on Arch: arcs recompressed, same content; 0.2.13:
                         # her Azure Blast HBGs' 4U crouching fire, internal ammo, recoil, reload and deviation
                         # (tools/weapons4u.py, issue #51; data only, core 3.1.0); 0.2.12:
                         # its Chinese text (lang/zh_TW.toml, zh_CN.toml; core 2.1.0); 0.2.11: each

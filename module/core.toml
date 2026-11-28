@@ -3,7 +3,11 @@
 # version (tools/release.py). Bump on every published change of the module or of any data file.
 name = "core"
 title = "MHGU Definitive Edition core"
-version = "3.1.0"          # 3.1.0: the shell framework in core (shell.c, from Dalamadur's dala_shell.c; efx.c),
+version = "3.1.1"          # 3.1.1: battle theme hooks at the selector's four calls, off the bytes the Forge
+                           #        plugin FFXIVGenU checks (bgm.c, build.py PLUGIN_CHECKED, issue #57); the quest
+                           #        list rename and the has-skill check out of the hot path (quest.c, gear.c,
+                           #        issue #30);
+                           # 3.1.0: the shell framework in core (shell.c, from Dalamadur's dala_shell.c; efx.c),
                            #        G-rank Crimson Fatalis' shells, its variant 6 on GU Crimson's branches and
                            #        its quests 11498 / 11499 / 11497 (allocations.toml, appended); GU's hub
                            #        quest limits raised: 1024 loaded quests (GU 864), 255 per star board (GU

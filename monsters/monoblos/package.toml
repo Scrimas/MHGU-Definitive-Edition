@@ -3,7 +3,8 @@ name = "monoblos"
 kind = "monster"
 title = "Monoblos"
 class = "Flying Wyvern"    # its class, GU's name (monsterName 253..267): the installer's subtitle in every language
-version = "1.0.2"       # bump on every published change of this monster's files (data, assets or code); 1.0.2:
+version = "1.0.3"       # bump on every published change of this monster's files (data, assets or code); 1.0.3:
+                        # rebuilt on Arch: arcs recompressed, same content; 1.0.2:
                         # 4U's fully random reward lists (flags 0x8003) as GU condition 2 (tools/quest4u.py rem_4u;
                         # was 1: their first item always drawn): rows B of 1057, 1058, 10784, 10785; 1.0.1:
                         # its Chinese text (lang/zh_TW.toml, zh_CN.toml; core 2.1.0); 1.0.0:

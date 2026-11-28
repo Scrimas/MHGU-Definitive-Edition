@@ -4,6 +4,14 @@ tools/release.py puts the section of the core version being packaged into the re
 groups, **New** (something added) and **Fixed** (what works now, not what was broken), one short plain line each,
 written for players; write the section before `release.py package`.
 
+## v3.1.1
+**Fixed**
+- Compatibility with the FFXIVGenU music mod.
+- Towns and the Gathering Hub load faster.
+- Advanced: Escaped Convicts: the Queen's Desert Seltas shows up.
+- The Tigrex and Zinogre in Black Gravios' and Stygian Zinogre's quests no longer have Hyper icons on the quest board.
+- The installer fits small and scaled screens.
+
 ## v3.1.0
 **New**
 - Crimson Fatalis from MH4U's G rank, as *Crimson Fatalis (4U)* next to MHGU's own, with its MH4U AI and attacks
