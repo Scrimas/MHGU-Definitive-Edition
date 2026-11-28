@@ -610,3 +610,14 @@ S = strong, G = guess. 4U addresses: the v1.1 exe (dump/exefs_v11), read 2026-11
   there 9256; her 50 was below every GU G3 two-boss hub hunt's first boss, 54..84), his 71 -> 64 (5575 -> 5050 HP;
   GU's Seltas there 4040). Against 0.1.19 only those three HP bytes of the two questData files differ (and the data
   files' version). Not played.
+- 0.1.21 (2026-11-28, issue #53: "the Desert Seltas Queen's quest with the Cephalos didn't spawn a male Seltas at
+  any point"): 11373 had boss spawn type 0 (questData +0xB2) and setEmMain rounds 0 / 1 / 1. GU's quest start
+  0x3adbcc spawns boss slots 0 and 1 only; a later slot comes by the spawn type's waves (GU table 0x162a680, read
+  there and in 0x3a08e8), an intruder roll or an appear condition (+0xB3 + 5 k), and 11373 had none, so slot 2 (her
+  Desert Seltas) never came (C). GU's own quests with the Queen and her Seltas after another boss use a spawn type
+  with every round 0 (q1011003 row 4, q10634 row 2, q10739 row 7; C over GU's 15 Queen quests). Now row 3 (4U's waves
+  1, 2: the Cephadrome, then the Queen and her Desert Seltas; quest4u.spawn_type, Stygian's issue #44 rule, moved
+  there) and rounds 0. Test 1 (log 2026-11-28 13:32, spawn type set, quest type still 0): the Queen still came at
+  the start with the Cephadrome. The wave code runs only with the quest's flag word bit 8, which the setup 0x3abd38
+  takes from table 0x162a7e0 by quest type (+0x10: 0..5 -> 3, 1, 2, 4, 0x101, 8); every GU quest with a spawn type is
+  type 5 (70 quests, the four Queen hunts above too; C). 11373 is now type 5 (its template q11306 was type 0).

@@ -69,8 +69,14 @@ Sources (C unless marked):
                  template's subquest is another kind (11139: q11105 "slay 8", 2400; 11373: q11305, the Queen's tail). Without
                  a subquest 0 (as GU's own quests without one). The village quest keeps its 4U subquest with the template's 0
                  sub money (GU's village G quests have none, C; as Shrouded Nerscylla's and Tidal Najarala's village quests).
-  Rounds         setEmMain +8 = the rank of (4U list, spawn byte +0xC): m10818's DS after the Seltas, m10928's Queen and DS
-                 after the Cephadrome (S: 4U's reader of +0xC is not traced). The intruder: round 0 (q11124).
+  Rounds         setEmMain +8 = the rank of (4U list, spawn byte +0xC): m10818's DS after the Seltas (S: 4U's reader of +0xC
+                 is not traced). The intruder: round 0 (q11124). More than two bosses (m10928): GU's quest start spawns
+                 boss slots 0 and 1 only (C, 0x3adbcc), the later ones come by the boss spawn type +0xB2, the row of 4U's
+                 waves (quest4u.spawn_type: m10928's 1, 2 = row 3, the Cephadrome, then the Queen and her Desert Seltas;
+                 GU's q1011003, a boss, then the Queen and her Seltas, has row 4 = 1, 2, 2), every round 0 as in
+                 GU's quests with a spawn type (q1011003, q10634, q10739), and quest type +0x10 = 5, the type GU reads
+                 the spawn type for (quest4u.spawn_type; GU's four hunt quests with a spawn type are type 5 too). Issue
+                 #53: with spawn type 0, quest type 0 and rounds 0 / 1 / 1, 11373 never brought her Desert Seltas.
   Small monsters 4U's first set (+0x2C) per area as a GU emSetList (esl_4u, format below); species GU lacks (Delex) are left
                  out, logged. 4U's sets 1 / 2 are not used (what switches them is not traced on either side, G; only m10815's
                  set 1 differs). m10815 needs its Bnahabra and Konchu: GU's Dunes sets hold few (C: q605).
@@ -400,6 +406,11 @@ def build(R, exe, nando, gu_item, names, zmap, out, spec, hp_table=None):
     qd[0x1F:0x29] = bytes(10)
     for i, t in enumerate(targets):
         struct.pack_into('<BHH', qd, 0x1F + 5 * i, *t)
+    if len(sp) > 2:                         # docstring: Rounds (issue #53)
+        qd[0x10] = 5
+        qd[0xB2] = quest4u.spawn_type([sum(1 for s in sp if s[4] == li) for li in sorted({s[4] for s in sp})])
+        for b in bosses:
+            b['round'] = 0
     # subquest
     sub, sub_text = spec.get('sub'), None
     if not sub:

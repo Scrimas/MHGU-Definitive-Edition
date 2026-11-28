@@ -7,7 +7,9 @@ main = "desert_seltas_queen"  # the entry the installer shows (name, icon; "with
                               # monster, her Desert Seltas comes with her (the maintainer, 2026-11-22); allocations.toml
                               # keeps him first (its order orders the appended quests)
 class = "Neopteron"        # its class, GU's name (monsterName 253..267): the installer's subtitle in every language
-version = "0.1.20"      # bump on every published change of this package's files (data, assets or code); 0.1.20:
+version = "0.1.21"      # bump on every published change of this package's files (data, assets or code); 0.1.21:
+                        # 11373 spawns the Cephadrome, then the Queen with her Desert Seltas (quest type 5 with boss
+                        # spawn type +0xB2, quest4u.spawn_type): her Desert Seltas never came (issue #53); 0.1.20:
                         # their one-shot motion effects (4U MEF slot mode 0) play to their end, no longer stopped
                         # one frame after their post (build_seltas_arc.py pel_ground_records): the Queen's water
                         # burst of 7/15 / 7/34, his 0x341 spray, his impact burst, her qe006_007 puffs;

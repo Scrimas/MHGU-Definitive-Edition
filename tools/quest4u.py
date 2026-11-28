@@ -42,10 +42,28 @@ REWARD_ROWS_4U = (0x1C, 0x20)
 SUB_ROW_4U = 0x24
 STATS_4U = 0x34
 NANDO_4U = 0xf3a330                # 4U em_nando_tbl, 32-B rows {HP, attack, other: defense + 5 status} (f32)
+# GU's boss spawn types (C, GU main 0x162a680, read by the quest start 0x3adbcc): 9 rows x 5 waves, each the number of
+# bosses that spawn together, in record order (row 0 = 1, 1, 1, 1, 1); the next wave once the last one is gone (S, the
+# log of issue #44)
+SPAWN_TYPES = 0x162a680
 
 
 def arc_files(data):
     return {p: (t, d) for p, t, d in arcpack.read(data)[1]}
+
+
+def spawn_type(waves):
+    """questData +0xB2, the boss spawn type (mhgen_editor.js mBossRushType; GU's cQuestData property list names it):
+    the first row of SPAWN_TYPES whose waves are 4U's (waves = the number of bosses in each 4U spawn list, in order).
+    GU reads it only in a quest of type 5 (questData +0x10, C): the quest setup 0x3abd38 takes the quest's flag word
+    from table 0x162a7e0 by type (0..5 -> 3, 1, 2, 4, 0x101, 8), and the quest start 0x3adbcc / the spawn update
+    0x3a08e8 use the spawn type only with flag 8; every GU quest with a spawn type is type 5 (70). Otherwise GU's start
+    spawns boss slots 0 and 1 only, the later ones by an intruder roll or an appear condition (issue #53: 11373's
+    third boss never came)"""
+    rows = open(paths.GU_MAIN, 'rb').read()[SPAWN_TYPES:SPAWN_TYPES + 45]
+    types = [t for t in range(9) if list(rows[5 * t:5 * t + len(waves)]) == waves]
+    assert types, ('no GU boss spawn type has the 4U waves', waves)
+    return types[0]
 
 
 def stats_4u(q, R):

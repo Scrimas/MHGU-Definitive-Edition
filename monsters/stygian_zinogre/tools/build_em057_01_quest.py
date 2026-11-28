@@ -33,7 +33,7 @@ three Heaven's Mount quests m10607 m10930 m11010 on the stage alias (GU stage 24
 tools/build_heavens_mount.py, notes/heavens-mount.md). Opt-in keys for those (the other quests' outputs are
 unchanged): waves (bosses from every 4U spawn list, in list order; GU spawns them in record order), hunt_all (GU
 objective type 3 "hunt all large monsters", rule 0, as GU's q10742 / q11488; the boss spawn type whose waves are 4U's,
-SPAWN_TYPES), tpl_stage (the
+quest4u.spawn_type), tpl_stage (the
 template sits on another stage: its stage byte is replaced), ('slay', 4U em, count) subquests (GU type 1 small-monster
 hunt, ZAKO_GU), zako (the small monsters come from the 4U quest's own per-area lists, ZAKO_GU species only, instead
 of the template's GU-terrain sets).
@@ -75,10 +75,6 @@ PARTNER_GU = {48: 0x39,     # Zinogre
 # 4U small monsters -> GU ID (C: GU quests naming them as objectives, q10230 "Ioprey Hunting" 0x100b); the others of
 # the 4U lists (Kelbi, Conga, Remobra, Felyne, Melynx, Bnahabra) are left out (no GU ID read: a DEVIATION)
 ZAKO_GU = {60: 0x100b}      # Ioprey
-# GU's boss spawn types (C, GU main 0x162a680, read by the quest start 0x3adbcc): 9 rows x 5 waves, each the number of
-# bosses that spawn together, in record order (row 0 = 1, 1, 1, 1, 1); the next wave once the last one is gone (S, the
-# log of issue #44)
-SPAWN_TYPES = 0x162a680
 REM_EMPTY = struct.pack('<fI', 1.0, 1) + bytes(176)     # GU's rem_000000 (184 B, no group; C: q10706)
 # 4U species GU lacks, spawned as their base species (PARTNER_GU): their 4U names in the quest texts become the base
 # species' 4U names (emName, 5 languages): Brute Tigrex 12 -> Tigrex 11, Azure Rathalos 4 -> Rathalos 2
@@ -287,14 +283,9 @@ def build(R, exe, gu_item, out, spec, hp_table=None):
     if spec.get('hunt_all'):    # GU type 3 = all large monsters, target / count 0, rule 0 (q10742 / q11488, C)
         qd[0x1D] = 0
         qd[0x1F] = 3
-        # +0xB2 boss spawn type (mhgen_editor.js mBossRushType) = a row of SPAWN_TYPES, the first whose waves are 4U's:
-        # m10607's 1, 1, 2 = row 2, as GU's Seltas pair quest q10634; the template's row 0 brought the Seltas only after
-        # the Queen (issue #44)
-        waves = [sum(1 for s in sp if s[4] == w) for w in sorted({s[4] for s in sp})]
-        rows = open(paths.GU_MAIN, 'rb').read()[SPAWN_TYPES:SPAWN_TYPES + 45]
-        types = [t for t in range(9) if list(rows[5 * t:5 * t + len(waves)]) == waves]
-        assert types, (m4, 'no GU boss spawn type has the 4U waves', waves)
-        qd[0xB2] = types[0]
+        # +0xB2 boss spawn type (quest4u.spawn_type): m10607's 1, 1, 2 = row 2, as GU's Seltas pair quest q10634; the
+        # template's row 0 brought the Seltas only after the Queen (issue #44)
+        qd[0xB2] = quest4u.spawn_type([sum(1 for s in sp if s[4] == w) for w in sorted({s[4] for s in sp})])
     else:
         for i, (t, e, n) in enumerate(objs):
             target = EM_ID if e == EM_4U else PARTNER_GU[e]
