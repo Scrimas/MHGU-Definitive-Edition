@@ -480,8 +480,17 @@ int gear_pwl_c(uint32_t *regs)
  * Up 76 + Status Atk +1 79; GU has no Awaken). */
 int gear_has_skill_c(uint32_t *regs)
 {
+    /* Looked up once: the game calls this check 87 times a frame in town and ~34000 times a second in a hunt, and a
+     * port_section scan of every data file was ~820 instructions a call, which MHGURecomp interprets (issue #30). Its
+     * answer is final once port_data has settled (it waits for a load in progress), and loaded data never changes. */
+    static const uint8_t *skil[PORT_N];
+    static int ready;
+    if (!__atomic_load_n(&ready, __ATOMIC_ACQUIRE)) {
+        for (int m = 0; m < PORT_N; m++) skil[m] = port_section(m, "SKIL", 0, 0);
+        __atomic_store_n(&ready, 1, __ATOMIC_RELEASE);
+    }
     for (int m = 0; m < PORT_N; m++) {
-        const uint8_t *s = port_section(m, "SKIL", 0, 0);
+        const uint8_t *s = skil[m];
         for (uint32_t i = 0, cnt = s ? PORT_U32(s, 0) : 0; i < cnt; i++) {
             const uint8_t *e = s + 4 + 16 * i;
             uint32_t skill = PORT_U32(e, 0);

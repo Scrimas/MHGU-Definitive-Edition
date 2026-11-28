@@ -26,24 +26,38 @@ static uint8_t qg_colour(uint32_t id)
 
 static void quest_group_rename(void)
 {
-    uint32_t mgr = *(volatile uint32_t *)MAIN(0x188ad90u), grp, n, e, i, k;
+    uint32_t mgr = *(volatile uint32_t *)MAIN(0x188ad90u), grp, n, e, i, j, np = 0, lo = ~0u, hi = 0;
+    uint16_t pair[PORT_N * PORT_QUESTS];       /* m * PORT_QUESTS + k */
     if (!mgr || !(grp = FIELD(uint32_t, mgr, 0xb4))) return;
     n = FIELD(uint32_t, grp, 0x64);
     e = FIELD(uint32_t, grp, 0x6c);
     if (!e) return;
+    /* The slots, gathered before the list instead of checked for every entry: the loader step calls this ~1000 times
+     * a town load, and every entry against every monster's slots cost ~2 M instructions a call, which MHGURecomp runs
+     * in its interpreter (issue #30; its docs/STATUS.md). Same order as the per-entry loops it replaces. */
+    for (int m = 0; m < PORT_N; m++)
+        for (uint32_t k = 0; k < PORT_QUESTS; k++) {
+            uint32_t s = port_monsters[m].quest_slots[k];
+            /* slot 0 = none (a quest_append entry has no slots): GU's own quest 0 is entry 0 */
+            if (!s || !port_monsters[m].quests[k]) continue;
+            pair[np++] = (uint16_t)(m * PORT_QUESTS + k);
+            if (s < lo) lo = s;
+            if (s > hi) hi = s;
+        }
     for (i = 0; i < n; i++) {
         volatile uint8_t *p = (volatile uint8_t *)(uintptr_t)(e + 12 * i);
         uint32_t id = *(volatile uint32_t *)(p + 4);
-        for (int m = 0; m < PORT_N; m++)
-            for (k = 0; k < PORT_QUESTS; k++) {
-                const struct port_monster *pm = &port_monsters[m];
-                /* slot 0 = none (a quest_append entry has no slots): GU's own quest 0 is entry 0 */
-                if (!pm->quest_slots[k] || id != pm->quest_slots[k] || !pm->quests[k] || !port_installed(m)) continue;
-                *(volatile uint32_t *)(p + 4) = pm->quests[k];
-                p[8] = 0;                              /* group: regular */
-                p[10] = qg_colour(pm->quests[k]);      /* the DUMMY slot's 1 -> GU's row for the quest's rank */
-                logf("mhgu-de: quest_group entry %u: %u -> %u (%s)", i, pm->quest_slots[k], pm->quests[k], pm->name);
-            }
+        if (id < lo || id > hi) continue;
+        for (j = 0; j < np; j++) {
+            int m = pair[j] / PORT_QUESTS;
+            uint32_t k = pair[j] % PORT_QUESTS;
+            const struct port_monster *pm = &port_monsters[m];
+            if (id != pm->quest_slots[k] || !port_installed(m)) continue;
+            *(volatile uint32_t *)(p + 4) = pm->quests[k];
+            p[8] = 0;                              /* group: regular */
+            p[10] = qg_colour(pm->quests[k]);      /* the DUMMY slot's 1 -> GU's row for the quest's rank */
+            logf("mhgu-de: quest_group entry %u: %u -> %u (%s)", i, pm->quest_slots[k], pm->quests[k], pm->name);
+        }
     }
 }
 
