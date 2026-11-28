@@ -60,7 +60,8 @@ ICON = alloc.board_byte(ALLOC['ui_icon'])   # board icon: Black Gravios' cell (m
 PARTNER_GU = {40: 0x5,              # Gravios
               12: 0x20,             # Brute Tigrex: not in GU -> Tigrex (a DEVIATION, as Stygian's m10608)
               44: 0x3f}             # Brachydios
-ICON_QUEST = {0x5: 10671, 0x20: 10724, 0x3f: 1003}   # GU quests with it first (their board icon; Stygian's, C)
+# GU quests with it first, not Hyper (their board icon, C; q10724 was a Hyper Tigrex quest: issue #53)
+ICON_QUEST = {0x5: 10671, 0x20: 10602, 0x3f: 1003}
 # 4U species GU lacks, spawned as their base species: their 4U names in the quest texts become the base species' 4U
 # names (emName, 5 languages): Brute Tigrex 12 -> Tigrex 11 (Stygian's NAME_SUB)
 NAME_SUB = {12: 11}
@@ -223,7 +224,8 @@ def gu_id(em4, spec):
 
 def partner_icon(R, gid):
     qd = quest_data(R, ICON_QUEST[gid])
-    assert struct.unpack_from('<H', qd, 0x64)[0] == gid and qd[0xD6], (gid, 'icon quest')
+    # +0x67 = the first boss's aura (mAuraType_1): a Hyper monster's quest shows the Hyper icon
+    assert struct.unpack_from('<H', qd, 0x64)[0] == gid and not qd[0x67] and qd[0xD6], (gid, 'icon quest')
     return qd[0xD6]
 
 

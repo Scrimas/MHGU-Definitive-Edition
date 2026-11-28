@@ -406,3 +406,7 @@ Test 2026-11-03 (log 16-52-51, quest 11430): lasers "condensed, not full height 
   state bit 4); Gravios (40) only when its state bits say so. The maintainer died to it twice (2026-11-03, "all around his
   body"). Since then its look is posted (records 4045 / 4046), on joint 2 instead of 4U's monster origin (the maintainer's choice:
   4U's look, on the body; deviation, placement only). Sound 216 still not posted.
+- Issue #53 (2026-11-23, "Tigrex in Black Gravios' quest isn't a Hyper"): 11451's Tigrex (4U's Brute Tigrex, spawned as
+  GU's Tigrex: a DEVIATION, not Hyper) showed GU's Hyper Tigrex board icon 160, copied from q10724, a Hyper quest
+  (questData +0x67 = 1); 10782's too (C). The icon now comes from q10602 (regular Tigrex, icon 28), and partner_icon
+  refuses a Hyper source (Stygian Zinogre's builder had the same trap, monsters/stygian_zinogre/notes/quests.md).

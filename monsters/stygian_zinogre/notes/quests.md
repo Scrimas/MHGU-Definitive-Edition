@@ -211,3 +211,7 @@ extdata); m10603's output is byte-identical to before the rewrite (cmp). C unles
     (quest+0x12d8 + 16 i, the questData boss record) is the killed one. Slot 0 held the stand-in 0x39, Stygian dies
     as 0x139. The core hook hunt_all_slot (module/main.c) also counts a slot whose stand-in is swapped to the killed
     ID. The same fix covers Black Gravios' 10782 (slot 0 = 0x5).
+- Issue #53 (2026-11-23, Black Gravios' 11451 board): a partner's board icon is copied from a GU quest it leads
+  (ICON_QUEST); q10724 (Tigrex) and q10735 (Zinogre) are Hyper quests (questData +0x67, the first boss's aura, = 1),
+  so 10777 / 10778 showed the Hyper icons 160 / 172 on bosses that are not Hyper (C, every GU quest: GU shows 28 /
+  45 on its normal Tigrex / Zinogre). Now q10602 / q10708 (regular, icons 28 / 45); partner_icon refuses a Hyper source.

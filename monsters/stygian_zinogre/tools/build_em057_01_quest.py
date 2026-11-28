@@ -230,13 +230,15 @@ def gu_id(em4, spec):
     return PARTNER_GU[em4]
 
 
-ICON_QUEST = {0x39: 10735, 0x20: 10724, 0x3f: 1003, 0x4d: 10706, 0x9: 514,   # GU quests with it first (C)
+# GU quests with it first, not Hyper (C; q10735 / q10724 were Hyper Zinogre / Tigrex quests: issue #53)
+ICON_QUEST = {0x39: 10708, 0x20: 10602, 0x3f: 1003, 0x4d: 10706, 0x9: 514,
               0x2: 917, 0x45: 10605, 0x4c: 703, 0x47: 10604}
 
 
 def partner_icon(R, gid):
     qd = quest_data(R, ICON_QUEST[gid])
-    assert struct.unpack_from('<H', qd, 0x64)[0] == gid and qd[0xD6], (gid, 'icon quest')
+    # +0x67 = the first boss's aura (mAuraType_1): a Hyper monster's quest shows the Hyper icon
+    assert struct.unpack_from('<H', qd, 0x64)[0] == gid and not qd[0x67] and qd[0xD6], (gid, 'icon quest')
     return qd[0xD6]
 
 
