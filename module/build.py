@@ -123,7 +123,9 @@ HOOKS = [
     ('set_hp', 0x9A764),       # diagnostic: enemy setHP(this, value)
     ('add_hp', 0x9A7B8),       # diagnostic: enemy addHP(this, delta)
     ('name_index', 0x55BDA4),  # (mgr, id) -> monsterName GMD entry (= 0x50b64(id)); 137 -> EM089_NAME_ENTRY
-    ('bgm_select', 0x4E60D4),  # (ctl, boss entry, u8 *has, u32 *id): battle theme id -> a registered monster's (bgm.c)
+    ('bgm_select_a', 0x4DE1BC), ('bgm_select_b', 0x4E4524),  # the four calls of the battle theme selector
+    ('bgm_select_c', 0x4E567C), ('bgm_select_d', 0x4E5B00),  # 0x4e60d4(ctl, boss entry, u8 *has, u32 *id): its id ->
+                                                             # a registered monster's (bgm.c; issue #57)
     ('bgm_stqr', 0xB6D72C),    # (stqr, id) -> sequence: its bgm_ids looked up in its own STQR (bgm.c)
     ('bgm_play', 0x4E34A4),    # sSoundControl play stream request: log only while its quests run (bgm.c)
     ('stage_spear_count', 0x502694), ('stage_siege_phase', 0x3A5EC4), ('stage_dragonator_fire', 0x503BB0),  # stage_gimmick.c
@@ -298,6 +300,8 @@ MID_EXIT = {
     'em013_06_preload': 0xD8E3FC,  # slot 86: rows 134..137 preloaded
     'em013_06_flags': 0xD8E108,    # slot 79: this+0x13f4 |= 0x38000
     'em013_06_shot_d': 0xD898F8,   # 0xd8775c: variant 1's post
+    # bgm.c: the selector call skipped, the caller's next instruction kept
+    'bgm_select_a': 0x4DE1C0, 'bgm_select_b': 0x4E4528, 'bgm_select_c': 0x4E5680, 'bgm_select_d': 0x4E5B04,
 }
 # GU code that third-party Forge plugins check against v1.4 before hooking it (each plugin's table of main address +
 # v1.4 bytes, read with tools/plugin_sigs.py); a plugin whose check fails installs nothing. main() refuses a hook
@@ -314,6 +318,9 @@ PLUGIN_CHECKED = {
     **{f: 0x40 for f in (
         0x09978C, 0x09D6F8, 0x0A2664, 0x0AAC54, 0x16DC6C, 0x16DD7C, 0x170968, 0x178660, 0x276278, 0x285C6C,
         0x2A87A8, 0x885844, 0xB8909C, 0xBC0B74, 0x172E52C)},
+    # FFXIVGenU 1.0.0 (issue #57): an FNV-1a hash of 0x4ec bytes of the battle theme selector, no byte table (so
+    # tools/plugin_sigs.py does not see it); Forge copies the first two words of a hooked function unrelocated
+    0x4E60D4: 0x4EC,
 }
 
 

@@ -8,9 +8,11 @@
  * GU picks a quest boss's battle theme in 0x4e60d4(ctl, entry, u8 *has_theme, u32 *id) (callers 0x4de1bc,
  * 0x4e4524, 0x4e567c, 0x4e5b00 in sSoundControl): entry = {u16 em descriptor (low byte = em type), ..., u16 unit
  * key @+6}; a switch on em types 12..88 sets the id (Kushala 24 -> bgm_em024_Daola), em > 88 falls to the map
- * theme. The id is a sequence id of bgm_bt.stqr. Hook (entry, both instructions displaceable): a registered monster
- * (the unit found by the key has one of its em types, or the entry says one, or it says one of its stand-ins while
- * one of its quests runs) -> *has = 1, *id = phase 1 or 2 by its phase getter. */
+ * theme. The id is a sequence id of bgm_bt.stqr. Hooks at its four calls (same registers as its entry; the selector
+ * is skipped, the caller's next instruction runs): a registered monster (the unit found by the key has one of its em
+ * types, or the entry says one, or it says one of its stand-ins while one of its quests runs) -> *has = 1, *id = phase
+ * 1 or 2 by its phase getter. Not at the selector itself: the Forge plugin FFXIVGenU hooks it, checks 0x4ec bytes of
+ * it and copies its first two words unrelocated (issue #57); a plugin's hook there runs for every other monster. */
 #include <stdint.h>
 #include "game.h"
 #include "util.h"
@@ -46,7 +48,7 @@ static int has_type(const uint8_t *types, uint32_t n, uint32_t t)
     return 0;
 }
 
-int bgm_select_c(uint32_t *regs)
+static int select_theme(uint32_t *regs)
 {
     const uint16_t *e = (const uint16_t *)regs[R1];
     if (!e || !regs[R2] || !regs[R3] || !s_count) return 0;
@@ -75,6 +77,11 @@ int bgm_select_c(uint32_t *regs)
     }
     return 0;
 }
+
+int bgm_select_a_c(uint32_t *regs) { return select_theme(regs); }   /* 0x4de1bc */
+int bgm_select_b_c(uint32_t *regs) { return select_theme(regs); }   /* 0x4e4524 */
+int bgm_select_c_c(uint32_t *regs) { return select_theme(regs); }   /* 0x4e567c */
+int bgm_select_d_c(uint32_t *regs) { return select_theme(regs); }   /* 0x4e5b00 */
 
 /* 0xb6d72c(stqr, id) -> 140-B sequence entry or 0: rSoundStreamRequest "get sequence by id" (u16 table +0xb4, else
  * a scan of +0x68 entries at +0x6c). 52 callers: sSoundControl 0x4e1f54..0x4ebc10 and the stream player

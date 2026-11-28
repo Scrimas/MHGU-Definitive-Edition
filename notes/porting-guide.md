@@ -93,9 +93,12 @@ pairs where possible (tools/dt_vote.py, dt_map.py, snd4u2gu.py selftest), then a
    regs[8]; a handler can rewrite them. A handler returning nonzero replaces the function (REPLACE_HOOKS), returns to
    the caller (entry hook) or jumps to a point of the same function (MID_EXIT). Forge plugins check the v1.4 bytes
    of the functions they hook and install nothing on a mismatch, often silently (Key Quest Markers: first 0x20
-   bytes, issue #10; Damage Numbers: first 0x40, issue #13). build.py PLUGIN_CHECKED lists those ranges and refuses
-   any hook site or IPS record inside them; a hook goes past them (MID_EXIT) or behind a test switch. For a new
-   plugin, `python3 tools/plugin_sigs.py <plugin>.nro` prints its checked offsets and width for PLUGIN_CHECKED.
+   bytes, issue #10; Damage Numbers: first 0x40, issue #13; FFXIVGenU: a hash of 0x4ec bytes of the battle theme
+   selector, issue #57). build.py PLUGIN_CHECKED lists those ranges and refuses any hook site or IPS record inside
+   them; a hook goes past them (MID_EXIT), to the function's calls (bgm.c) or behind a test switch. Forge copies the
+   first two words of a function it hooks unrelocated, so a hook of ours at a plugin's function entry breaks the
+   plugin even without a check. For a new plugin, `python3 tools/plugin_sigs.py <plugin>.nro` prints its checked
+   offsets and width for PLUGIN_CHECKED; it does not see a hash check (read the plugin's init code for one).
 3. **RomFS additions** = the monster's assets (`monsters/<name>/romfs/...`): BGM (tools/snd_bgm.py), quest arc
    (build_gog_quest.py) and the gear models (tools/armor4u2gu.py, tools/weapon4u2gu.py); a ported 4U arena is its
    own map package (`maps/<map>/romfs/`, Phase 5). Never a copy of a GU
